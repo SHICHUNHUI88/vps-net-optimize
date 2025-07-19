@@ -52,10 +52,12 @@ sysctl -w net.ipv4.tcp_mtu_probing=2
 echo "📡 设置 MSS Clamping..."
 modprobe ip_tables || true
 modprobe iptable_mangle || true
-iface=$(ip -o -4 route get 1.1.1.1 | awk '{print $5}')
-mtu=$(ip link show dev "$iface" | grep mtu | awk '{print $5}')
+iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
+[ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
+mtu=$(cat /sys/class/net/${iface}/mtu 2>/dev/null)
 [ -z "$mtu" ] && mtu=1500
 mss=$((mtu - 40))
+[ "$mss" -lt 1000 ] && mss=1360
 for chain in OUTPUT INPUT FORWARD; do
     iptables -t mangle -D $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss 2>/dev/null || true
     iptables -t mangle -A $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss
@@ -95,7 +97,7 @@ fix_param net.netfilter.nf_conntrack_max 262144
 fix_param net.netfilter.nf_conntrack_udp_timeout 30
 fix_param net.netfilter.nf_conntrack_udp_timeout_stream 180
 
-# === 9. 写入 sysctl 参数（含 IPv4 转发） ===
+# === 9. 写入 sysctl 参数（含 IPv4 + IPv6）===
 echo "📊 写入其他 sysctl 参数..."
 cat >> /etc/sysctl.conf <<EOF2
 net.core.default_qdisc = fq_pie
@@ -128,10 +130,12 @@ apt-get install -y conntrack >/dev/null 2>&1
 echo "🛠 配置开机自动恢复 ..."
 cat > /root/net-optimize-boot.sh <<EOL
 #!/bin/bash
-iface=\$(ip -o -4 route get 1.1.1.1 | awk '{print \$5}')
-mtu=\$(ip link show dev "\$iface" | grep mtu | awk '{print \$5}')
+iface=\$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(\$i=="dev") print \$(i+1)}')
+[ -z "\$iface" ] && iface=\$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(\$i=="dev") print \$(i+1)}')
+mtu=\$(cat /sys/class/net/\${iface}/mtu 2>/dev/null)
 [ -z "\$mtu" ] && mtu=1500
 mss=\$((mtu - 40))
+[ "\$mss" -lt 1000 ] && mss=1360
 for chain in OUTPUT INPUT FORWARD; do
     iptables -t mangle -D \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss 2>/dev/null || true
     iptables -t mangle -A \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss
