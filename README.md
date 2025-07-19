@@ -19,7 +19,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/
 
 复制以下命令，在 VPS 上粘贴执行：
 
-```bash
 wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-check.sh | bash
 
 ---
@@ -28,7 +27,6 @@ wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/n
 
 复制以下命令，在 VPS 上粘贴执行：
 
-```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-reset.sh)
 
 ---
