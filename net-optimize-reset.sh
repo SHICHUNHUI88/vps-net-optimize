@@ -3,9 +3,10 @@ cat > /root/net-optimize-reset.sh << 'EOF'
 set -e
 
 echo "🧹 开始还原网络优化设置..."
+echo "------------------------------------------------------------"
 
-# === 1. 清除 sysctl.conf 参数 ===
-echo "🔁 清除 /etc/sysctl.conf 中添加的优化项..."
+# === 1. 清除 sysctl.conf 中添加的优化项 ===
+echo "🔁 清除 /etc/sysctl.conf 中的优化项..."
 params=(
   net.core.default_qdisc
   net.ipv4.tcp_congestion_control
@@ -16,6 +17,11 @@ params=(
   net.ipv4.tcp_tw_reuse
   net.ipv4.tcp_fin_timeout
   net.ipv4.ip_local_port_range
+  net.ipv4.ip_forward
+  net.ipv6.conf.all.forwarding
+  net.ipv6.conf.default.forwarding
+  net.ipv6.conf.all.accept_ra
+  net.ipv6.conf.default.accept_ra
   net.ipv4.tcp_mtu_probing
   net.ipv4.udp_rmem_min
   net.ipv4.udp_wmem_min
@@ -27,52 +33,51 @@ params=(
   net.netfilter.nf_conntrack_max
   net.netfilter.nf_conntrack_udp_timeout
   net.netfilter.nf_conntrack_udp_timeout_stream
-  net.ipv6.conf.all.forwarding
-  net.ipv6.conf.default.forwarding
-  net.ipv6.conf.all.accept_ra
-  net.ipv6.conf.default.accept_ra
 )
 
-for p in "${params[@]}"; do
-  sed -i "/^$p/d" /etc/sysctl.conf
+for key in "${params[@]}"; do
+  sed -i "/^$key/d" /etc/sysctl.conf
 done
 
-sysctl -p
+sysctl -p || true
 
-# === 2. 恢复 ulimit 和 systemd 限制 ===
-echo "🔁 恢复 ulimit 设置..."
+# === 2. 恢复 ulimit 限制 ===
+echo "🔁 还原 ulimit 配置..."
 sed -i '/\* soft nofile/d;/\* hard nofile/d' /etc/security/limits.conf
-sed -i '/DefaultLimitNOFILE/d' /etc/systemd/system.conf /etc/systemd/user.conf
-sed -i '/ulimit -n 1048576/d' ~/.bashrc
+sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/system.conf /etc/systemd/user.conf
 rm -f /etc/systemd/system/sshd.service.d/override.conf
-rm -rf /etc/systemd/system/sshd.service.d
+rm -rf /etc/systemd/system/sshd.service.d/
+sed -i '/pam_limits.so/d' /etc/pam.d/common-session
+sed -i '/ulimit -n/d' ~/.bashrc
 
-# === 3. 删除 iptables MSS Clamping 规则 ===
-echo "🔁 清除 MSS Clamping 规则..."
+# === 3. 清除 MSS Clamping 设置 ===
+echo "🔁 清除 MSS Clamping ..."
 for chain in OUTPUT INPUT FORWARD; do
-  iptables -t mangle -D $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1360 2>/dev/null || true
-  iptables -t mangle -F $chain || true
+    iptables -t mangle -D $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1360 2>/dev/null || true
 done
-netfilter-persistent save || true
 
-# === 4. 移除 nf_conntrack 自动加载 ===
-echo "🔁 删除 nf_conntrack 自动加载设置..."
-rm -f /etc/modules-load.d/nf_conntrack.conf
-
-# === 5. 移除开机启动服务和脚本 ===
-echo "🔁 删除 systemd 网络优化服务..."
+# === 4. 删除 systemd 启动项和脚本 ===
+echo "🔁 删除开机自启服务和脚本..."
 systemctl disable net-optimize.service 2>/dev/null || true
 rm -f /etc/systemd/system/net-optimize.service
 rm -f /root/net-optimize-boot.sh
 
-# === 6. 移除 nginx noble 源注释（可选）===
-# echo "🔁 还原 nginx noble 源（如之前被注释）..."
-# sed -i '/nginx.org.*noble/ s/^#//' /etc/apt/sources.list /etc/apt/sources.list.d/*.list || true
+# === 5. 清除模块加载配置 ===
+echo "🔁 清除 nf_conntrack 模块设置..."
+rm -f /etc/modules-load.d/nf_conntrack.conf
 
-# === 7. 删除主优化脚本本体 ===
-rm -f /root/net-optimize-full.sh
+# === 6. 清除 nginx.org noble 源注释 ===
+echo "🔁 恢复 nginx.org noble 源注释..."
+sed -i '/nginx.org.*noble/ s/^#//' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
 
-echo "✅ 网络优化已成功还原，请手动重启以确保完全恢复效果。"
+# === 7. 重载 systemd 并更新 ulimit 生效 ===
+systemctl daemon-reexec
+systemctl daemon-reload
+
+# === 8. 输出结果 ===
+echo "------------------------------------------------------------"
+echo "✅ 所有优化配置已清除，系统已恢复默认状态"
+echo "📌 建议手动重启系统以确保彻底生效"
 EOF
 
 chmod +x /root/net-optimize-reset.sh
