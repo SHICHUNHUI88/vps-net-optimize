@@ -5,7 +5,7 @@ VPS一键执行代码
 bash <(curl -Ls https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-full.sh)
 
 检测代码
-bash /root/net-optimize-check.sh
+wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-check.sh | bash
 
 一键删除所有网络优化设置代码
 bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-reset.sh)
