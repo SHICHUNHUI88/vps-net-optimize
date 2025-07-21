@@ -25,7 +25,7 @@ wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/n
 ```
 ---
 
-## 🔴 一键还原并删除所有网络优化配置
+## 🔄 一键还原并删除所有网络优化配置
 
 复制以下命令，在 VPS 上粘贴执行：
 ```bash
