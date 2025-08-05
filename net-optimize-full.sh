@@ -60,6 +60,7 @@ mss=$((mtu - 40))
 [ "$mss" -lt 1000 ] && mss=1360
 for chain in OUTPUT INPUT FORWARD; do
     iptables -t mangle -D $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss 2>/dev/null || true
+    iptables -t mangle -C $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss 2>/dev/null || \
     iptables -t mangle -A $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss
 done
 
@@ -117,10 +118,22 @@ net.ipv6.conf.default.accept_ra = 2
 EOF2
 sysctl -p
 
-# === 10. 禁用 nginx.org noble 源 ===
-echo "🔒 禁用 nginx.org noble 源..."
-grep -E 'nginx.org.*noble' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null | grep -v '^#' && \
-sed -i '/nginx.org.*noble/ s/^/#/' /etc/apt/sources.list /etc/apt/sources.list.d/*.list || true
+# === 10. 修复 nginx.org 源 & 安装新版 Nginx ===
+echo "🔧 修复 nginx.org 源并安装新版 Nginx..."
+nginx_source_fix=0
+grep -E '^[^#].*nginx.org.*noble' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null && nginx_source_fix=1
+if [ "$nginx_source_fix" = "1" ]; then
+    sed -i '/^[^#].*nginx.org.*noble/ s/^/#/' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
+    echo "✅ 已禁用无效的 nginx.org 源"
+fi
+apt-get install -y software-properties-common gnupg2 ca-certificates lsb-release curl >/dev/null 2>&1
+if ! grep -qr "ondrej/nginx" /etc/apt/; then
+    add-apt-repository -y ppa:ondrej/nginx >/dev/null 2>&1
+fi
+apt-get update -y >/dev/null 2>&1
+apt-get install -y nginx >/dev/null 2>&1 && \
+    echo "✅ 已安装新版 Nginx（来自 ondrej/nginx）" || \
+    echo "⚠️ 安装 Nginx 失败（可忽略）"
 
 # === 11. 安装 conntrack 工具 ===
 echo "🔧 安装 conntrack 工具..."
@@ -138,6 +151,7 @@ mss=\$((mtu - 40))
 [ "\$mss" -lt 1000 ] && mss=1360
 for chain in OUTPUT INPUT FORWARD; do
     iptables -t mangle -D \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss 2>/dev/null || true
+    iptables -t mangle -C \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss 2>/dev/null || \
     iptables -t mangle -A \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss
 done
 sysctl -p
@@ -160,8 +174,8 @@ RemainAfterExit=true
 WantedBy=multi-user.target
 EOL
 
-systemctl daemon-reexec
 systemctl daemon-reload
+systemctl daemon-reexec
 systemctl enable net-optimize.service
 
 # === 13. 状态输出 ===
@@ -184,7 +198,7 @@ if [ "$interactive" = "1" ]; then
     read -p "🔁 是否立即重启以使优化生效？(y/N): " answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
         echo "🌀 正在重启..."
-        nohup reboot >/dev/null 2>&1 &
+        (sleep 1; reboot) &
     else
         echo "📌 请稍后手动重启以生效所有配置"
     fi
