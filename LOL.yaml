@@ -1,11 +1,32 @@
-# lol_game_accelerate.yaml
 payload:
-  - DOMAIN-SUFFIX,leagueoflegends.com
-  - DOMAIN-SUFFIX,lol.qq.com
+  # 手游专用关键域名
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,proximabeta.com
+
+  # 其他腾讯游戏及相关资源域名
+  - DOMAIN-SUFFIX,game.gtimg.cn
+  - DOMAIN-SUFFIX,wegame.com
   - DOMAIN-SUFFIX,pvp.qq.com
+  - DOMAIN-SUFFIX,lol.qq.com
+
+  # 腾讯大域名（qq.com），慎用，影响面大
   - DOMAIN-SUFFIX,qq.com
+
+  # 社交及支付域名（手游常用）
+  - DOMAIN-SUFFIX,wechat.com
+  - DOMAIN-SUFFIX,tenpay.com
+
+  # 国际服域名（可选，如果你也玩国际服）
+  - DOMAIN-SUFFIX,leagueoflegends.com
+
+  # 腾讯游戏IP段（手游常用）
   - IP-CIDR,101.226.0.0/16
   - IP-CIDR,101.227.0.0/16
   - IP-CIDR,183.60.0.0/16
   - IP-CIDR,183.61.0.0/16
-  
+  - IP-CIDR,113.108.0.0/16
+  - IP-CIDR,113.110.0.0/16
+  - IP-CIDR,182.254.0.0/16
+  - IP-CIDR,117.18.0.0/16
+  - IP-CIDR,121.14.0.0/16
+  - IP-CIDR,124.156.0.0/16
