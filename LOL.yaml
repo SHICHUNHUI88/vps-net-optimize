@@ -1,0 +1,11 @@
+# lol_game_accelerate.yaml
+payload:
+  - DOMAIN-SUFFIX,leagueoflegends.com
+  - DOMAIN-SUFFIX,lol.qq.com
+  - DOMAIN-SUFFIX,pvp.qq.com
+  - DOMAIN-SUFFIX,qq.com
+  - IP-CIDR,101.226.0.0/16
+  - IP-CIDR,101.227.0.0/16
+  - IP-CIDR,183.60.0.0/16
+  - IP-CIDR,183.61.0.0/16
+  
