@@ -106,4 +106,20 @@ payload:
   - "+.patcher.na.leagueoflegends.com"
   - "+.wildrift.tencentgames.com"
 
+  # ==== TikTok 核心访问域名 ====
+  - "+.tiktok.com"
+  - "+.tiktokcdn.com"
+  - "+.tiktokcdn-us.com"
+  - "+.tiktokv.com"
+  - "+.tiktokv-us.com"
+  - "+.tiktokapi.com"
+  - "+.tiktokapi.net"
+  - "+.tiktokd.net"
+  - "+.muscdn.com"
+  - "+.musical.ly"
+  - "+.ibyteimg.com"
+  - "+.bytefcdn-tt.com"
+  - "+.snssdk.com"
+  - "+.pstatp.com"
+
   
