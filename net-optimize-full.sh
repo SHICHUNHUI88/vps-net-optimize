@@ -14,9 +14,6 @@ rm -f /etc/rc.local 2>/dev/null
 sed -i '/^\* soft nofile/d;/^\* hard nofile/d' /etc/security/limits.conf
 sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/system.conf /etc/systemd/user.conf
 rm -f /etc/systemd/system.conf.d/99-nofile.conf /etc/systemd/system/ssh.service.d/override.conf 2>/dev/null
-sed -i '/nginx.org/ s/^/#/' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null
-apt update
-
 
 # === 2. 设置 TCP 拥塞控制算法和队列算法 ===
 echo "📶 设置 TCP 拥塞算法和队列算法..."
@@ -122,21 +119,28 @@ EOF2
 sysctl -p
 
 # === 10. 修复 nginx.org 源 & 安装新版 Nginx ===
-echo "🔧 修复 nginx.org 源并安装新版 Nginx..."
+echo "🔧 修复并替换 nginx.org 源为 ondrej/nginx..."
+codename=$(lsb_release -sc)
 nginx_source_fix=0
-grep -E '^[^#].*nginx.org.*noble' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null && nginx_source_fix=1
+shopt -s nullglob
+if grep -E "^[^#].*nginx.org.*$codename" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null; then
+    nginx_source_fix=1
+fi
 if [ "$nginx_source_fix" = "1" ]; then
-    sed -i '/^[^#].*nginx.org.*noble/ s/^/#/' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
+    sed -i "/^[^#].*nginx.org.*$codename/ s/^/#/" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
     echo "✅ 已禁用无效的 nginx.org 源"
 fi
-apt-get install -y software-properties-common gnupg2 ca-certificates lsb-release curl >/dev/null 2>&1
-if ! grep -qr "ondrej/nginx" /etc/apt/; then
+apt-get install -y software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl >/dev/null 2>&1
+if ! grep -R "ppa.launchpadcontent.net/ondrej/nginx" /etc/apt/sources.list* >/dev/null 2>&1; then
+    echo "➕ 正在添加 ondrej/nginx PPA..."
     add-apt-repository -y ppa:ondrej/nginx >/dev/null 2>&1
 fi
 apt-get update -y >/dev/null 2>&1
-apt-get install -y nginx >/dev/null 2>&1 && \
+apt-get install -y --no-install-recommends nginx >/dev/null 2>&1 && \
     echo "✅ 已安装新版 Nginx（来自 ondrej/nginx）" || \
     echo "⚠️ 安装 Nginx 失败（可忽略）"
+nginx -v
+apt-cache policy nginx | head -n 10
 
 # === 11. 安装 conntrack 工具 ===
 echo "🔧 安装 conntrack 工具..."
