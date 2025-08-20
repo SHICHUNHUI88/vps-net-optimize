@@ -14,10 +14,8 @@ payload:
   - DOMAIN,dns.360.cn
   - DOMAIN,dns.cernet.cn
   - DOMAIN,dns.ctc.edu.cn
-  - DOMAIN,114.114.114.114
   - DOMAIN,223.5.5.5
   - DOMAIN,223.6.6.6
-  - DOMAIN,101.101.101.101
   - DOMAIN,117.50.22.22
   - DOMAIN,119.29.29.29
   - DOMAIN,119.29.107.85
@@ -27,6 +25,9 @@ payload:
   - DOMAIN,52.80.66.66
   - DOMAIN,220.248.179.9
   - DOMAIN,136.243.69.38
+  - DOMAIN,114.114.114.114
+  - DOMAIN,101.101.101.101
+
 
   # ==== 国内 CDN ====
   ## 阿里云
