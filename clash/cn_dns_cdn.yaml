@@ -1,0 +1,89 @@
+payload:
+  # ==== 国内 DNS ====
+  - DOMAIN,adblock.mydns.network
+  - DOMAIN,applied-privacy.net
+  - DOMAIN,dns.alidns.com
+  - DOMAIN,edns.233py.com
+  - DOMAIN,i.233py.com
+  - DOMAIN,sdns.233py.com
+  - DOMAIN,dns.baidu.com
+  - DOMAIN,dns.189.cn
+  - DOMAIN,dns.10010.com
+  - DOMAIN,dns.10086.cn
+  - DOMAIN,dns.knet.cn
+  - DOMAIN,dns.360.cn
+  - DOMAIN,dns.cernet.cn
+  - DOMAIN,dns.ctc.edu.cn
+  - DOMAIN,114.114.114.114
+  - DOMAIN,223.5.5.5
+  - DOMAIN,223.6.6.6
+  - DOMAIN,101.101.101.101
+  - DOMAIN,117.50.22.22
+  - DOMAIN,119.29.29.29
+  - DOMAIN,119.29.107.85
+  - DOMAIN,58.20.127.170
+  - DOMAIN,58.20.127.238
+  - DOMAIN,47.96.179.163
+  - DOMAIN,52.80.66.66
+  - DOMAIN,220.248.179.9
+  - DOMAIN,136.243.69.38
+
+  # ==== 国内 CDN ====
+  - DOMAIN-SUFFIX,alicdn.com
+  - DOMAIN-SUFFIX,aliyuncs.com
+  - DOMAIN-SUFFIX,aliyun.com
+  - DOMAIN-SUFFIX,tbcache.com
+  - DOMAIN-SUFFIX,cdn.aliyun.com
+  - DOMAIN-SUFFIX,qcloudcdn.com
+  - DOMAIN-SUFFIX,dnsv1.com
+  - DOMAIN-SUFFIX,myqcloud.com
+  - DOMAIN-SUFFIX,cdn.qcloud.com
+  - DOMAIN-SUFFIX,wangsu.com
+  - DOMAIN-SUFFIX,wsdvs.com
+  - DOMAIN-SUFFIX,cdn20.com
+  - DOMAIN-SUFFIX,cdn30.com
+  - DOMAIN-SUFFIX,qiniucdn.com
+  - DOMAIN-SUFFIX,qiniudn.com
+  - DOMAIN-SUFFIX,qiniuio.com
+  - DOMAIN-SUFFIX,cdn.clouddn.com
+  - DOMAIN-SUFFIX,bdydns.com
+  - DOMAIN-SUFFIX,baidupcs.com
+  - DOMAIN-SUFFIX,cdn.baidubce.com
+  - DOMAIN-SUFFIX,chinacache.net
+  - DOMAIN-SUFFIX,jdcloud.com
+  - DOMAIN-SUFFIX,hwcdn.net
+  - DOMAIN-SUFFIX,163yun.com
+  - DOMAIN-SUFFIX,sina.com
+  - DOMAIN-SUFFIX,sohu.com
+  - DOMAIN-SUFFIX,lxdns.com
+  - DOMAIN-SUFFIX,letvcdn.com
+  - DOMAIN-SUFFIX,ctyunapi.cn
+  - DOMAIN-SUFFIX,cndns.com.cn
+
+  # ==== 国内游戏 CDN ====
+  - DOMAIN-SUFFIX,blizzard.cn
+  - DOMAIN-SUFFIX,riotgames.cn
+  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
+
+  # ==== IP-CIDR ====
+  - IP-CIDR,101.101.101.101/32
+  - IP-CIDR,114.114.114.114/32
+  - IP-CIDR,117.50.22.22/32
+  - IP-CIDR,119.29.29.29/32
+  - IP-CIDR,119.29.107.85/32
+  - IP-CIDR,223.5.5.5/32
+  - IP-CIDR,223.6.6.6/32
+  - IP-CIDR,58.20.127.170/32
+  - IP-CIDR,58.20.127.238/32
+  - IP-CIDR,180.76.76.76/32
+  - IP-CIDR,202.96.134.133/32
+  - IP-CIDR,210.21.4.130/32
+  - IP-CIDR,211.136.17.107/32
+  - IP-CIDR,202.112.0.0/16
+  - IP-CIDR,123.125.81.6/32
+  - IP-CIDR,123.58.0.0/16
+  - IP-CIDR,47.96.179.163/32
+  - IP-CIDR,52.80.66.66/32
+  - IP-CIDR,220.248.179.9/32
+  - IP-CIDR,136.243.69.38/32
