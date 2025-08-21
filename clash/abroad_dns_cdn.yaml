@@ -162,11 +162,6 @@ payload:
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
 
-  # 腾讯云 CDN
-  - DOMAIN-SUFFIX,qcloudcdn.com
-  - DOMAIN-SUFFIX,myqcloud.com
-  - DOMAIN-SUFFIX,cdn.qcloud.com
-
   # ==== 字节跳动系 App ====
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
@@ -214,13 +209,13 @@ payload:
   - DOMAIN-SUFFIX,obs.*.riotgames.com,GLOBAL-ACC
 
   # ==== Riot Games 常见 IP 段 ====
-  - IP-CIDR,104.160.128.0/17,GLOBAL-ACC
-  - IP-CIDR,172.65.192.0/18,GLOBAL-ACC
-  - IP-CIDR,13.32.0.0/15,GLOBAL-ACC   # Cloudfront（部分 CDN）
-  - IP-CIDR,52.222.128.0/17,GLOBAL-ACC
-  - IP-CIDR,13.225.0.0/16,GLOBAL-ACC
-  - IP-CIDR,34.195.0.0/16,GLOBAL-ACC
-  - IP-CIDR,3.5.140.0/22,GLOBAL-ACC
+  - IP-CIDR,104.160.128.0/17
+  - IP-CIDR,172.65.192.0/18
+  - IP-CIDR,52.222.128.0/17
+  - IP-CIDR,13.225.0.0/16
+  - IP-CIDR,34.195.0.0/16
+  - IP-CIDR,3.5.140.0/22
+  - IP-CIDR,13.32.0.0/15
 
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com,GLOBAL-ACC
