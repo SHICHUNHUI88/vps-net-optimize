@@ -162,6 +162,10 @@ payload:
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
 
+  # 腾讯云 CDN
+  - DOMAIN-SUFFIX,qcloudcdn.com
+  - DOMAIN-SUFFIX,myqcloud.com
+
   # ==== 字节跳动系 App ====
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
@@ -190,39 +194,39 @@ payload:
   - DOMAIN-SUFFIX,bytetos.com
 
   # ==== Wild Rift / Riot Games 游戏 CDN & API ====
-  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
-  - DOMAIN-SUFFIX,riotgames.com
-  - DOMAIN-SUFFIX,riotcdn.net
-  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
-  - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
-  - DOMAIN-SUFFIX,l3cdn.riotgames.com
-  - DOMAIN-SUFFIX,d3d2eu8al48urs.cloudfront.net
-  - DOMAIN-SUFFIX,api.riotgames.com
-  - DOMAIN-SUFFIX,account.riotgames.com
-  - DOMAIN-SUFFIX,auth.riotgames.com
-  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
-  - DOMAIN-SUFFIX,chat.riotgames.com
-  - DOMAIN-SUFFIX,glz*.riotgames.com
-  - DOMAIN-SUFFIX,pbe1.lol.riotgames.com
-  - DOMAIN-SUFFIX,spectator.*.riotgames.com
-  - DOMAIN-SUFFIX,mobile-api.riotgames.com
-  - DOMAIN-SUFFIX,obs.*.riotgames.com
+  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,riotcdn.net,GLOBAL-ACC
+  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net,GLOBAL-ACC
+  - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,l3cdn.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,d3d2eu8al48urs.cloudfront.net,GLOBAL-ACC
+  - DOMAIN-SUFFIX,api.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,account.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,auth.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,playerpreferences.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,chat.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,glz*.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,pbe1.lol.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,spectator.*.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,mobile-api.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,obs.*.riotgames.com,GLOBAL-ACC
 
   # ==== Riot Games 常见 IP 段 ====
-  - IP-CIDR,104.160.128.0/17
-  - IP-CIDR,172.65.192.0/18
-  - IP-CIDR,13.32.0.0/15   # Cloudfront（部分 CDN）
-  - IP-CIDR,52.222.128.0/17
-  - IP-CIDR,13.225.0.0/16
-  - IP-CIDR,34.195.0.0/16
-  - IP-CIDR,3.5.140.0/22
+  - IP-CIDR,104.160.128.0/17,GLOBAL-ACC
+  - IP-CIDR,172.65.192.0/18,GLOBAL-ACC
+  - IP-CIDR,13.32.0.0/15,GLOBAL-ACC   # Cloudfront（部分 CDN）
+  - IP-CIDR,52.222.128.0/17,GLOBAL-ACC
+  - IP-CIDR,13.225.0.0/16,GLOBAL-ACC
+  - IP-CIDR,34.195.0.0/16,GLOBAL-ACC
+  - IP-CIDR,3.5.140.0/22,GLOBAL-ACC
 
   # ==== 其他游戏相关 CDN 域名 ====
-  - DOMAIN-SUFFIX,steamcontent.com
-  - DOMAIN-SUFFIX,steamcdn.net
-  - DOMAIN-SUFFIX,blizzard.com
-  - DOMAIN-SUFFIX,epicgames.com
-  - DOMAIN-SUFFIX,ubisoft.com
+  - DOMAIN-SUFFIX,steamcontent.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,steamcdn.net,GLOBAL-ACC
+  - DOMAIN-SUFFIX,blizzard.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,epicgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,ubisoft.com,GLOBAL-ACC
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
