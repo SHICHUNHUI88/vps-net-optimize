@@ -76,17 +76,33 @@ payload:
   # ==== 国内游戏 CDN ====
   - DOMAIN-SUFFIX,blizzard.cn
 
-  # ==== 手游及腾讯游戏 ====
-  - DOMAIN-SUFFIX,wildrift.qq.com
-  - DOMAIN-SUFFIX,proximabeta.com
+  # LOL手游 登录与大厅
+  - DOMAIN-SUFFIX,lolm.qq.com
+  - DOMAIN-SUFFIX,img.lolm.qq.com
+  - DOMAIN-SUFFIX,gameguardian.qq.com
+
+  # LOL手游 游戏服务器
+  - DOMAIN-SUFFIX,lolmaclient.qq.com
+  - DOMAIN-SUFFIX,lolma.qq.com
+  - DOMAIN-SUFFIX,lolmconn1.qq.com
+  - DOMAIN-SUFFIX,lolmconn2.qq.com
+  - DOMAIN-SUFFIX,lolmconn3.qq.com
+  - DOMAIN-SUFFIX,lolmconn4.qq.com
+  - DOMAIN-SUFFIX,lolmconn5.qq.com
+  - DOMAIN-SUFFIX,lolmconn6.qq.com
+  - DOMAIN-SUFFIX,msdk.qq.com
+  - DOMAIN-SUFFIX,mta.qq.com
+
+  # 腾讯游戏及相关资源
   - DOMAIN-SUFFIX,game.gtimg.cn
   - DOMAIN-SUFFIX,wegame.com
   - DOMAIN-SUFFIX,pvp.qq.com
   - DOMAIN-SUFFIX,lol.qq.com
+
+  # 腾讯服务（社交/支付）
   - DOMAIN-SUFFIX,qq.com
   - DOMAIN-SUFFIX,wechat.com
   - DOMAIN-SUFFIX,tenpay.com
-  - DOMAIN-SUFFIX,leagueoflegends.com
 
   # ==== 淘宝 / 天猫 / 支付 ====
   - DOMAIN-SUFFIX,taobao.com
