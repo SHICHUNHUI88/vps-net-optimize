@@ -75,9 +75,6 @@ payload:
 
   # ==== 国内游戏 CDN ====
   - DOMAIN-SUFFIX,blizzard.cn
-  - DOMAIN-SUFFIX,riotgames.cn
-  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com
 
   # ==== 手游及腾讯游戏 ====
   - DOMAIN-SUFFIX,wildrift.qq.com
