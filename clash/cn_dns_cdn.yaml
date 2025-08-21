@@ -14,20 +14,6 @@ payload:
   - DOMAIN,dns.360.cn
   - DOMAIN,dns.cernet.cn
   - DOMAIN,dns.ctc.edu.cn
-  - DOMAIN,223.5.5.5
-  - DOMAIN,223.6.6.6
-  - DOMAIN,117.50.22.22
-  - DOMAIN,119.29.29.29
-  - DOMAIN,119.29.107.85
-  - DOMAIN,58.20.127.170
-  - DOMAIN,58.20.127.238
-  - DOMAIN,47.96.179.163
-  - DOMAIN,52.80.66.66
-  - DOMAIN,220.248.179.9
-  - DOMAIN,136.243.69.38
-  - DOMAIN,114.114.114.114
-  - DOMAIN,101.101.101.101
-
 
   # ==== 国内 CDN ====
   ## 阿里云
@@ -110,33 +96,6 @@ payload:
   - DOMAIN-SUFFIX,tmall.com
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
-
-  # ==== 字节跳动系 App ====
-  - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com
-  - DOMAIN-SUFFIX,amemv.com
-  - DOMAIN-SUFFIX,douyincdn.com
-  - DOMAIN-SUFFIX,douyinpic.com
-  - DOMAIN-SUFFIX,douyinstatic.com
-  - DOMAIN-SUFFIX,douyinvod.com
-  - DOMAIN-SUFFIX,idouyinvod.com
-  - DOMAIN-SUFFIX,ixigua.com
-  - DOMAIN-SUFFIX,ixiguavideo.com
-  - DOMAIN-SUFFIX,toutiao.com
-  - DOMAIN-SUFFIX,pstatp.com
-  - DOMAIN-SUFFIX,snssdk.com
-  - DOMAIN-SUFFIX,huoshan.com
-  - DOMAIN-SUFFIX,huoshanzhibo.com
-  - DOMAIN-SUFFIX,ppxvod.com
-  - DOMAIN-SUFFIX,ppxcdn.com
-  - DOMAIN-SUFFIX,ixgvideo.com
-  - DOMAIN-SUFFIX,bytedance.com
-  - DOMAIN-SUFFIX,bytedns.net
-  - DOMAIN-SUFFIX,bytednsdoc.com
-  - DOMAIN-SUFFIX,bytecdn.cn
-  - DOMAIN-SUFFIX,byteimg.com
-  - DOMAIN-SUFFIX,bytetcc.com
-  - DOMAIN-SUFFIX,bytetos.com
 
   # ==== IP-CIDR ====
   - IP-CIDR,101.101.101.101/32
