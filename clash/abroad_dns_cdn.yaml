@@ -165,6 +165,7 @@ payload:
   # 腾讯云 CDN
   - DOMAIN-SUFFIX,qcloudcdn.com
   - DOMAIN-SUFFIX,myqcloud.com
+  - DOMAIN-SUFFIX,cdn.qcloud.com
 
   # ==== 字节跳动系 App ====
   - DOMAIN,lf3-static.bytednsdoc.com
