@@ -162,6 +162,33 @@ payload:
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
 
+  # ==== 字节跳动系 App ====
+  - DOMAIN,lf3-static.bytednsdoc.com
+  - DOMAIN,v5-dy-o-abtest.zjcdn.com
+  - DOMAIN-SUFFIX,amemv.com
+  - DOMAIN-SUFFIX,douyincdn.com
+  - DOMAIN-SUFFIX,douyinpic.com
+  - DOMAIN-SUFFIX,douyinstatic.com
+  - DOMAIN-SUFFIX,douyinvod.com
+  - DOMAIN-SUFFIX,idouyinvod.com
+  - DOMAIN-SUFFIX,ixigua.com
+  - DOMAIN-SUFFIX,ixiguavideo.com
+  - DOMAIN-SUFFIX,toutiao.com
+  - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN-SUFFIX,huoshan.com
+  - DOMAIN-SUFFIX,huoshanzhibo.com
+  - DOMAIN-SUFFIX,ppxvod.com
+  - DOMAIN-SUFFIX,ppxcdn.com
+  - DOMAIN-SUFFIX,ixgvideo.com
+  - DOMAIN-SUFFIX,bytedance.com
+  - DOMAIN-SUFFIX,bytedns.net
+  - DOMAIN-SUFFIX,bytednsdoc.com
+  - DOMAIN-SUFFIX,bytecdn.cn
+  - DOMAIN-SUFFIX,byteimg.com
+  - DOMAIN-SUFFIX,bytetcc.com
+  - DOMAIN-SUFFIX,bytetos.com
+
   # ==== 游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
   - DOMAIN-SUFFIX,steamcdn.net
