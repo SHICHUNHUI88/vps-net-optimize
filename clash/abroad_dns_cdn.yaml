@@ -189,17 +189,40 @@ payload:
   - DOMAIN-SUFFIX,bytetcc.com
   - DOMAIN-SUFFIX,bytetos.com
 
-  # ==== 游戏相关 CDN 域名 ====
+  # ==== Wild Rift / Riot Games 游戏 CDN & API ====
+  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
+  - DOMAIN-SUFFIX,riotgames.com
+  - DOMAIN-SUFFIX,riotcdn.net
+  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
+  - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
+  - DOMAIN-SUFFIX,l3cdn.riotgames.com
+  - DOMAIN-SUFFIX,d3d2eu8al48urs.cloudfront.net
+  - DOMAIN-SUFFIX,api.riotgames.com
+  - DOMAIN-SUFFIX,account.riotgames.com
+  - DOMAIN-SUFFIX,auth.riotgames.com
+  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
+  - DOMAIN-SUFFIX,chat.riotgames.com
+  - DOMAIN-SUFFIX,glz*.riotgames.com
+  - DOMAIN-SUFFIX,pbe1.lol.riotgames.com
+  - DOMAIN-SUFFIX,spectator.*.riotgames.com
+  - DOMAIN-SUFFIX,mobile-api.riotgames.com
+  - DOMAIN-SUFFIX,obs.*.riotgames.com
+
+  # ==== Riot Games 常见 IP 段 ====
+  - IP-CIDR,104.160.128.0/17
+  - IP-CIDR,172.65.192.0/18
+  - IP-CIDR,13.32.0.0/15   # Cloudfront（部分 CDN）
+  - IP-CIDR,52.222.128.0/17
+  - IP-CIDR,13.225.0.0/16
+  - IP-CIDR,34.195.0.0/16
+  - IP-CIDR,3.5.140.0/22
+
+  # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
   - DOMAIN-SUFFIX,steamcdn.net
   - DOMAIN-SUFFIX,blizzard.com
-  - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,epicgames.com
   - DOMAIN-SUFFIX,ubisoft.com
-  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
-  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
-  - DOMAIN-SUFFIX,riotcdn.net
-  - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
