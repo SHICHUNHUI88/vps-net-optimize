@@ -75,6 +75,7 @@ payload:
 
   # ==== 国内游戏 CDN ====
   - DOMAIN-SUFFIX,blizzard.cn
+  - DOMAIN-SUFFIX,riotgames.cn
 
   # LOL手游 登录与大厅
   - DOMAIN-SUFFIX,lolm.qq.com
