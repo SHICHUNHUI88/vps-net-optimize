@@ -28,6 +28,11 @@ payload:
   - DOMAIN-SUFFIX,cdn.qq.com
   - DOMAIN-SUFFIX,gtimg.com
   - DOMAIN-SUFFIX,tencent.com
+  # 腾讯云游戏服务
+  - DOMAIN-SUFFIX,cdn-go.cn
+  - DOMAIN-SUFFIX,qcloudcdn.com
+  - DOMAIN-SUFFIX,myqcloud.com
+  - DOMAIN-SUFFIX,cdn.qcloud.com
   ## 网宿
   - DOMAIN-SUFFIX,wangsu.com
   - DOMAIN-SUFFIX,wsdvs.com
