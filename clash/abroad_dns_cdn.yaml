@@ -162,12 +162,6 @@ payload:
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
 
-  # 腾讯云游戏服务
-  - DOMAIN-SUFFIX,cdn-go.cn
-  - DOMAIN-SUFFIX,qcloudcdn.com
-  - DOMAIN-SUFFIX,myqcloud.com
-  - DOMAIN-SUFFIX,cdn.qcloud.com
-
   # ==== 阿里 / 淘宝 / 支付宝 国际服务 ====
   ## 阿里巴巴国际站 & 速卖通
   - DOMAIN-SUFFIX,alibaba.com
