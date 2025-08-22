@@ -207,6 +207,15 @@ payload:
   - DOMAIN-SUFFIX,spectator.*.riotgames.com,GLOBAL-ACC
   - DOMAIN-SUFFIX,mobile-api.riotgames.com,GLOBAL-ACC
   - DOMAIN-SUFFIX,obs.*.riotgames.com,GLOBAL-ACC
+  - DOMAIN-SUFFIX,ttvnw.net
+
+  # LOL国际服 / Wild Rift
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,proximabeta.com,
+  - DOMAIN-SUFFIX,leagueoflegends.com
+
+  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
 
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17
