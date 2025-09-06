@@ -14,8 +14,6 @@ rm -f /etc/rc.local 2>/dev/null
 sed -i '/^\* soft nofile/d;/^\* hard nofile/d' /etc/security/limits.conf
 sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/system.conf /etc/systemd/user.conf
 rm -f /etc/systemd/system.conf.d/99-nofile.conf /etc/systemd/system/ssh.service.d/override.conf 2>/dev/null
-sed -i '/nginx.org/ s/^/#/' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null
-apt update
 
 # === 2. 设置 TCP 拥塞控制算法和队列算法 ===
 echo "📶 设置 TCP 拥塞算法和队列算法..."
