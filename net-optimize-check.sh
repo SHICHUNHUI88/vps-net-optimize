@@ -69,37 +69,26 @@ echo -e "${GREEN}🎉 网络优化检测完成。${NC}"
 echo
 
 ############################
-# Nginx 检测
-############################
-echo -e "${GREEN}🕹️ [2] Nginx 安装与源状态检测${NC}"
-echo "------------------------------------------------------------"
-
-codename=$(lsb_release -sc)
-
-# 检查 nginx.org 源
-if grep -E "^[^#].*nginx.org.*$codename" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null | grep -q .; then
-    echo -e "${RED}❌ nginx.org 源未禁用${NC}"
+# 检查 Nginx 源
+if apt-cache policy nginx 2>/dev/null | grep -q "nginx.org"; then
+    echo "✅ Nginx 源：已指向 nginx.org"
 else
-    echo -e "${GREEN}✅ nginx.org 源已禁用${NC}"
+    echo "❌ Nginx 源未指向官方源"
 fi
 
-# 检查 ondrej/nginx PPA
-if grep -R "ppa.launchpadcontent.net/ondrej/nginx" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | grep -q .; then
-    echo -e "${GREEN}✅ ondrej/nginx PPA 已添加${NC}"
+# 检查 Nginx 服务状态
+if systemctl is-active --quiet nginx; then
+    nginx_ver=$(nginx -v 2>&1)
+    echo "✅ Nginx 服务：运行中 ($nginx_ver)"
 else
-    echo -e "${RED}❌ ondrej/nginx PPA 未添加${NC}"
+    echo "❌ Nginx 服务未运行"
 fi
 
-# Nginx 版本
-installed_ver=$(nginx -v 2>&1 | awk -F/ '{print $2}')
-echo -e "🔹 当前 nginx 版本: ${GREEN}$installed_ver${NC}"
-
-# 确认安装源
-ppa_source=$(apt-cache policy nginx | grep -E "http.*ondrej/nginx" | head -n1)
-if [ -n "$ppa_source" ]; then
-    echo -e "${GREEN}✅ Nginx 来自 ondrej/nginx PPA: $ppa_source${NC}"
+# 检查 Nginx 定时更新任务
+if crontab -l 2>/dev/null | grep -q "apt-get -y install nginx"; then
+    echo "✅ 定时任务：存在 (Nginx 自动更新)"
 else
-    echo -e "${YELLOW}⚠️ Nginx 可能不是 PPA 源安装的${NC}"
+    echo "❌ 定时任务缺失 (未配置 Nginx 自动更新)"
 fi
 
 echo "------------------------------------------------------------"
