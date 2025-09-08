@@ -74,6 +74,17 @@ payload:
   - DOMAIN-SUFFIX,ctyunapi.cn
   - DOMAIN-SUFFIX,cndns.com.cn
 
+  # ==== 抖音客服直连 ====
+  - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN,kf.snssdk.com
+  - DOMAIN,support.snssdk.com
+  - DOMAIN,passport.snssdk.com
+  - DOMAIN,security.snssdk.com
+  - DOMAIN,im.snssdk.com
+  - DOMAIN,push.snssdk.com
+  - DOMAIN,appeal.snssdk.com
+  - DOMAIN,feedback.snssdk.com
+
   # ==== 国内游戏 CDN ====
   - DOMAIN-SUFFIX,blizzard.cn
   - DOMAIN-SUFFIX,riotgames.cn
