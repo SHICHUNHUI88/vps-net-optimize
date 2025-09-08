@@ -225,6 +225,16 @@ payload:
   - DOMAIN-SUFFIX,byteimg.com
   - DOMAIN-SUFFIX,bytetcc.com
   - DOMAIN-SUFFIX,bytetos.com
+  # ==== 抖音客服 ====
+  - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN,kf.snssdk.com
+  - DOMAIN,support.snssdk.com
+  - DOMAIN,passport.snssdk.com
+  - DOMAIN,security.snssdk.com
+  - DOMAIN,im.snssdk.com
+  - DOMAIN,push.snssdk.com
+  - DOMAIN,appeal.snssdk.com
+  - DOMAIN,feedback.snssdk.com
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
