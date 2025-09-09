@@ -178,6 +178,26 @@ payload:
   - DOMAIN-SUFFIX,cainiao-global.com
   - DOMAIN-SUFFIX,global.cainiao.com
 
+  # ==== TikTok （海外业务总表） ====
+  - DOMAIN-SUFFIX,tiktok.com
+  - DOMAIN-SUFFIX,tiktokv.com
+  - DOMAIN-SUFFIX,tiktokcdn.com
+  - DOMAIN-SUFFIX,tiktokcdn-us.com
+  - DOMAIN-SUFFIX,tiktoklive.com
+  - DOMAIN-SUFFIX,tiktok-browser.com
+  - DOMAIN-SUFFIX,ttlive.com
+  - DOMAIN-SUFFIX,ttwstatic.com
+  - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,muscdn.com
+  - DOMAIN-SUFFIX,ibyteimg.com
+  - DOMAIN-SUFFIX,ipstatp.com
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,ibytedtos.com
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,bytedance.map.fastly.net
+  - DOMAIN-SUFFIX,gettr.com  
+ 
   # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyincdn.com
