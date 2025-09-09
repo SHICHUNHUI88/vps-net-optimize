@@ -90,6 +90,7 @@ if crontab -l 2>/dev/null | grep -q "apt-get -y install nginx"; then
 else
     echo "❌ 定时任务缺失 (未配置 Nginx 自动更新)"
 fi
+apt-cache policy nginx
 
 echo "------------------------------------------------------------"
 echo -e "${GREEN}🎉 全部检测完成，请确认输出结果。${NC}"
