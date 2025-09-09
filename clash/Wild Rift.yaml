@@ -1,53 +1,67 @@
 payload:
+  # ==== Riot Games 核心域名 ====
+  - DOMAIN-SUFFIX,riotgames.com
+  - DOMAIN-SUFFIX,riot.com
+  - DOMAIN-SUFFIX,leagueoflegends.com
+  - DOMAIN-SUFFIX,pvp.net
+  - DOMAIN-SUFFIX,wr.pvp.net
+  - DOMAIN-SUFFIX,lol.pvp.net
+  - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
+
+  # ==== 登录 / API / 游戏服务 ====
+  - DOMAIN-SUFFIX,api.riotgames.com
+  - DOMAIN-SUFFIX,account.riotgames.com
+  - DOMAIN-SUFFIX,auth.riotgames.com
+  - DOMAIN-SUFFIX,entitlements.auth.riotgames.com
+  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
+  - DOMAIN-SUFFIX,rpg.riotgames.com
+  - DOMAIN-SUFFIX,riot-client.riotgames.com
+  - DOMAIN-SUFFIX,clientconfig.rpg.riotgames.com
+  - DOMAIN-SUFFIX,chat.riotgames.com
+  - DOMAIN-SUFFIX,chat.*.riotgames.com # 通配符覆盖所有区域聊天
+  - DOMAIN-SUFFIX,glz*.riotgames.com # 地平线服务器
+  - DOMAIN-SUFFIX,mobile-api.riotgames.com
+  - DOMAIN-SUFFIX,telemetry.riotgames.com
+  - DOMAIN-SUFFIX,data.riotgames.com
+
   # ==== Riot 官方 CDN & 资源 ====
   - DOMAIN-SUFFIX,riotcdn.net
   - DOMAIN-SUFFIX,wr-assets.riotcdn.net
+  - DOMAIN-SUFFIX,lol.secure.dyn.riotcdn.net
   - DOMAIN-SUFFIX,l3cdn.riotgames.com
   - DOMAIN-SUFFIX,patcher-data.riotgames.com
   - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
+
   # ==== 常见第三方 CDN (Riot 用到的) ====
   - DOMAIN-SUFFIX,akamaized.net
   - DOMAIN-SUFFIX,cloudfront.net
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,edgecastcdn.net
   - DOMAIN-SUFFIX,llnw.net
-  # ==== Riot Games 核心域名 ====
-  - DOMAIN-SUFFIX,riotgames.com
-  - DOMAIN-SUFFIX,leagueoflegends.com
-  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
-  - DOMAIN-SUFFIX,pvp.net
-  - DOMAIN-SUFFIX,wr.pvp.net
-  - DOMAIN-SUFFIX,lol.pvp.net
-  # ==== 登录 / API / 游戏服务 ====
-  - DOMAIN-SUFFIX,api.riotgames.com
-  - DOMAIN-SUFFIX,account.riotgames.com
-  - DOMAIN-SUFFIX,auth.riotgames.com
-  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
-  - DOMAIN-SUFFIX,chat.riotgames.com
-  - DOMAIN-SUFFIX,glz*.riotgames.com
-  - DOMAIN-SUFFIX,mobile-api.riotgames.com
-  - DOMAIN-SUFFIX,obs.*.riotgames.com
-  - DOMAIN-SUFFIX,spectator.*.riotgames.com
-  - DOMAIN-SUFFIX,pbe1.lol.riotgames.com
+
   # ==== 直播 / 视频 (相关依赖) ====
   - DOMAIN-SUFFIX,ttvnw.net
 
-  # LOL国际服 / Wild Rift
-  - DOMAIN-SUFFIX,wildrift.qq.com
-  - DOMAIN-SUFFIX,proximabeta.com
-  - DOMAIN-SUFFIX,leagueoflegends.com
-  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com
-
-  # ==== Riot Games 常见 IP 段 ====
+  # ==== Riot Games 常见 IP 段 (策略建议设置为 DIRECT) ====
   - IP-CIDR,104.160.128.0/17
   - IP-CIDR,172.65.192.0/18
   - IP-CIDR,52.222.128.0/17
   - IP-CIDR,13.225.0.0/16
   - IP-CIDR,34.195.0.0/16
   - IP-CIDR,3.5.140.0/22
-  - IP-CIDR,13.32.0.0/15   # Cloudfront（部分 CDN）
+  - IP-CIDR,13.32.0.0/15
+  # 补充更多 AWS 全球加速IP段 (可选，但能优化连接)
+  - IP-CIDR,99.86.0.0/17
+  - IP-CIDR,130.176.0.0/18
+  - IP-CIDR,15.177.0.0/18
+
+  # LOL国际服 / Wild Rift
+    - DOMAIN-SUFFIX,wildrift.qq.com
+    - DOMAIN-SUFFIX,proximabeta.com
+    - DOMAIN-SUFFIX,leagueoflegends.com
+    - DOMAIN-SUFFIX,wildrift.lol.garena.cn
+    - DOMAIN-SUFFIX,wildrift.tencentgames.com
 
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
