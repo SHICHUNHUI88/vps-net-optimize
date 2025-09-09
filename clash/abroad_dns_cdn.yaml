@@ -200,19 +200,24 @@ payload:
   - DOMAIN-SUFFIX,worldfirst.com    # 蚂蚁金服旗下国际支付
   - DOMAIN-SUFFIX,global.alipay.com
 
-  # ==== 字节跳动系 App ====
-  - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com
+  # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyincdn.com
+  - DOMAIN-SUFFIX,douyinfe.com
+  - DOMAIN-SUFFIX,douyinlive.com
   - DOMAIN-SUFFIX,douyinpic.com
   - DOMAIN-SUFFIX,douyinstatic.com
   - DOMAIN-SUFFIX,douyinvod.com
   - DOMAIN-SUFFIX,idouyinvod.com
+  - DOMAIN-SUFFIX,iesdouyin.com
+  - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,ipstatp.com
   - DOMAIN-SUFFIX,ixigua.com
   - DOMAIN-SUFFIX,ixiguavideo.com
   - DOMAIN-SUFFIX,toutiao.com
-  - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,toutiaocdn.com
+  - DOMAIN-SUFFIX,toutiaocloud.com
+  - DOMAIN-SUFFIX,toutiaovod.com
   - DOMAIN-SUFFIX,huoshan.com
   - DOMAIN-SUFFIX,huoshanzhibo.com
   - DOMAIN-SUFFIX,ppxvod.com
@@ -225,6 +230,16 @@ payload:
   - DOMAIN-SUFFIX,byteimg.com
   - DOMAIN-SUFFIX,bytetcc.com
   - DOMAIN-SUFFIX,bytetos.com
+  - DOMAIN-SUFFIX,capcut.com
+  - DOMAIN-SUFFIX,volccdn.com
+  - DOMAIN-SUFFIX,feiliao.com
+  - DOMAIN-SUFFIX,fanqienovel.com
+  - DOMAIN-SUFFIX,acomic.com
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,goofish.com
+  - DOMAIN,lf3-static.bytednsdoc.com
+  - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # ==== 抖音客服 ====
   - DOMAIN-SUFFIX,snssdk.com
   - DOMAIN,kf.snssdk.com
