@@ -56,13 +56,6 @@ payload:
   - IP-CIDR,130.176.0.0/18
   - IP-CIDR,15.177.0.0/18
 
-  # LOL国际服 / Wild Rift
-    - DOMAIN-SUFFIX,wildrift.qq.com
-    - DOMAIN-SUFFIX,proximabeta.com
-    - DOMAIN-SUFFIX,leagueoflegends.com
-    - DOMAIN-SUFFIX,wildrift.lol.garena.cn
-    - DOMAIN-SUFFIX,wildrift.tencentgames.com
-
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
   - DOMAIN-SUFFIX,steamcdn.net
