@@ -137,25 +137,37 @@ fix_nginx_repo() {
     echo "🔧 修复 nginx.org 官方源并安装最新版本..."
     codename=$(lsb_release -sc)
     apt-get install -y software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl
+
     rm -f /etc/apt/sources.list.d/nginx.list
     cat > /etc/apt/sources.list.d/nginx.list <<EOF
 deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
 deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
 EOF
+
     curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg
+
     cat > /etc/apt/preferences.d/99nginx <<EOF
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
+
     apt-get update -y
     apt-get remove -y nginx-core nginx-common || true
     DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
+
     systemctl restart nginx
     nginx -v
     systemctl status nginx | grep Active
-    cron_job="0 3 1 * * DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install nginx"
-    ( crontab -l 2>/dev/null | grep -F "$cron_job" ) || (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+
+    # 设置定时任务
+    cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
+    tmpfile=$(mktemp)
+    crontab -l 2>/dev/null > "$tmpfile"
+    grep -Fq "$cron_job" "$tmpfile" || echo "$cron_job" >> "$tmpfile"
+    crontab "$tmpfile"
+    rm -f "$tmpfile"
+
     echo "✅ 已启用 nginx.org 官方源并优先使用"
     echo "🗓️ 已设置定时任务：每月 1 号凌晨 3 点自动更新 Nginx"
 }
