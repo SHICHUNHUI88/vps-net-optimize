@@ -48,6 +48,19 @@ payload:
   - DOMAIN-SUFFIX,wildrift.lol.garena.cn    # Garena 代理的东南亚部分地区域名
   - DOMAIN-SUFFIX,proximabeta.com           # 这也是早期国服/测试服相关域名
 
+  # ==== Riot Games 常见 IP 段 (策略建议设置为 DIRECT) ====
+  - IP-CIDR,104.160.128.0/17
+  - IP-CIDR,172.65.192.0/18
+  - IP-CIDR,52.222.128.0/17
+  - IP-CIDR,13.225.0.0/16
+  - IP-CIDR,34.195.0.0/16
+  - IP-CIDR,3.5.140.0/22
+  - IP-CIDR,13.32.0.0/15
+  # 补充更多 AWS 全球加速IP段 (可选，但能优化连接)
+  - IP-CIDR,99.86.0.0/17
+  - IP-CIDR,130.176.0.0/18
+  - IP-CIDR,15.177.0.0/18
+
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
   - DOMAIN-SUFFIX,steamcdn.net
