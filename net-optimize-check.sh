@@ -84,12 +84,16 @@ else
     echo "❌ Nginx 服务未运行"
 fi
 
-# 检查 Nginx 定时更新任务
-if crontab -l 2>/dev/null | grep -q "apt-get -y install nginx"; then
-    echo "✅ 定时任务：存在 (Nginx 自动更新)"
+# 检查 root 用户的 Nginx 定时更新任务
+cron_job_pattern="apt-get install -y nginx"
+if sudo crontab -l -u root 2>/dev/null | grep -q "$cron_job_pattern"; then
+    echo "✅ 定时任务：存在 (Nginx 自动更新，root 用户)"
+    echo "🔹 Cron 列表："
+    sudo crontab -l -u root | grep "$cron_job_pattern"
 else
-    echo "❌ 定时任务缺失 (未配置 Nginx 自动更新)"
+    echo "❌ 定时任务缺失 (未配置 Nginx 自动更新，root 用户)"
 fi
+
 apt-cache policy nginx
 
 echo "------------------------------------------------------------"
