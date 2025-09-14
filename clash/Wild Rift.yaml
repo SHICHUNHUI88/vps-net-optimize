@@ -1,6 +1,9 @@
 payload:
-  # ==== Riot 官方 CDN & 资源 ====
+  # ==== Riot 官方 CDN ====
   - DOMAIN-SUFFIX,riotcdn.net
+  # 覆盖各种子域名
+  - DOMAIN-KEYWORD,riotcdn   
+  # ==== Riot 游戏补丁 / 资源 CDN ====
   - DOMAIN-SUFFIX,wr-assets.riotcdn.net
   - DOMAIN-SUFFIX,lol.secure.dyn.riotcdn.net
   - DOMAIN-SUFFIX,l3cdn.riotgames.com
@@ -8,12 +11,18 @@ payload:
   - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
 
-  # ==== 常见第三方 CDN (Riot 用到的) ====
+  # ==== Riot 使用的第三方 CDN (仅限游戏资源) ====
   - DOMAIN-SUFFIX,akamaized.net
   - DOMAIN-SUFFIX,cloudfront.net
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,edgecastcdn.net
   - DOMAIN-SUFFIX,llnw.net
+
+  # 🔹第三方 CDN 精准关键词 (仅针对 Riot 游戏)
+  - DOMAIN-KEYWORD,riotgamespatcher
+  - DOMAIN-KEYWORD,l3cdn
+  - DOMAIN-KEYWORD,lolcdn
+  - DOMAIN-KEYWORD,wildriftcdn
 
   # ==== Riot Games 核心域名 ====
   - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
@@ -24,6 +33,12 @@ payload:
   - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,lol.pvp.net
   - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
+  # 🔹 Riot 游戏兜底关键词
+  - DOMAIN-KEYWORD,riot
+  - DOMAIN-KEYWORD,lol
+  - DOMAIN-KEYWORD,wildrift
+  - DOMAIN-KEYWORD,pvp
+  # 可能误伤
   - DOMAIN-KEYWORD,game
 
   # ==== 登录 / API / 游戏服务 ====
@@ -45,12 +60,13 @@ payload:
   # ==== 直播 / 视频 (相关依赖) ====
   - DOMAIN-SUFFIX,ttvnw.net
 
-  - DOMAIN-SUFFIX,wildrift.qq.com           # 腾讯国服域名
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com # 腾讯国服域名
-  - DOMAIN-SUFFIX,wildrift.lol.garena.cn    # Garena 代理的东南亚部分地区域名
-  - DOMAIN-SUFFIX,proximabeta.com           # 这也是早期国服/测试服相关域名
+  # ==== Riot 国服 / 其他地区相关 ====
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
+  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
+  - DOMAIN-SUFFIX,proximabeta.com
 
-  # ==== Riot Games 常见 IP 段 (策略建议设置为 DIRECT) ====
+  # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17
   - IP-CIDR,172.65.192.0/18
   - IP-CIDR,52.222.128.0/17
@@ -58,7 +74,6 @@ payload:
   - IP-CIDR,34.195.0.0/16
   - IP-CIDR,3.5.140.0/22
   - IP-CIDR,13.32.0.0/15
-  # 补充更多 AWS 全球加速IP段 (可选，但能优化连接)
   - IP-CIDR,99.86.0.0/17
   - IP-CIDR,130.176.0.0/18
   - IP-CIDR,15.177.0.0/18
