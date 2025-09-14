@@ -274,6 +274,89 @@ payload:
   - DOMAIN-KEYWORD,chatgpt
   - DOMAIN-KEYWORD,api
   - DOMAIN-KEYWORD,ai
+ 
+  # ==== Telegram / 电报 全面规则 ====
+  # ✈️ 核心域名（官网、注册、登录）
+  - DOMAIN-SUFFIX,telegram.org
+  - DOMAIN-SUFFIX,t.me
+  - DOMAIN-SUFFIX,telegram.com
+  # ✈️ API / 聊天服务
+  - DOMAIN-SUFFIX,api.telegram.org
+  - DOMAIN-SUFFIX,core.telegram.org
+  - DOMAIN-SUFFIX,mtproto.org
+  - DOMAIN-SUFFIX,telegram.me
+  - DOMAIN-SUFFIX,telegram.plus
+  # ✈️ 静态资源 / CDN / 下载文件 / 视频节点
+  - DOMAIN-SUFFIX,telegramcdn.com
+  - DOMAIN-SUFFIX,telegram-cdn.org
+  - DOMAIN-SUFFIX,cdn-telegram.org
+  - DOMAIN-SUFFIX,tlgrm.ru
+  - DOMAIN-SUFFIX,media.telegram.org
+  - DOMAIN-SUFFIX,telegram.video
+  - DOMAIN-SUFFIX,telegram-store.org
+  # ✈️ 关键词兜底（防止新域名漏网）
+  - DOMAIN-KEYWORD,telegram
+  - DOMAIN-KEYWORD,tg
+  - DOMAIN-KEYWORD,telegramcdn
+  - DOMAIN-KEYWORD,telegram-cdn
+  - DOMAIN-KEYWORD,cdn-telegram
+  - DOMAIN-KEYWORD,mtproto
+  - DOMAIN-KEYWORD,t.me
+
+  # ==== Google / 谷歌全面规则 ====
+  # 🌐 核心域名（搜索、账号、Gmail）
+  - DOMAIN-SUFFIX,google.com
+  - DOMAIN-SUFFIX,googlemail.com
+  - DOMAIN-SUFFIX,gmail.com
+  - DOMAIN-SUFFIX,accounts.google.com
+  - DOMAIN-SUFFIX,googleusercontent.com
+  - DOMAIN-SUFFIX,ggpht.com
+  - DOMAIN-SUFFIX,googleapis.com
+  # 🌐 YouTube / 视频服务
+  - DOMAIN-SUFFIX,youtube.com
+  - DOMAIN-SUFFIX,youtu.be
+  - DOMAIN-SUFFIX,youtube-nocookie.com
+  - DOMAIN-SUFFIX,ytimg.com
+  - DOMAIN-SUFFIX,googlevideo.com
+  - DOMAIN-SUFFIX,ytapi.com
+  # 🌐 Google Drive / 文档 / 云盘
+  - DOMAIN-SUFFIX,drive.google.com
+  - DOMAIN-SUFFIX,docs.google.com
+  - DOMAIN-SUFFIX,sheets.google.com
+  - DOMAIN-SUFFIX,slides.google.com
+  - DOMAIN-SUFFIX,forms.google.com
+  - DOMAIN-SUFFIX,script.google.com
+  # 🌐 Google Maps / 地图服务
+  - DOMAIN-SUFFIX,maps.google.com
+  - DOMAIN-SUFFIX,google.com/maps
+  - DOMAIN-SUFFIX,googleapis.com/maps
+  - DOMAIN-SUFFIX,ggpht.com/maps
+  # 🌐 Google Cloud / API / CDN
+  - DOMAIN-SUFFIX,cloud.google.com
+  - DOMAIN-SUFFIX,storage.googleapis.com
+  - DOMAIN-SUFFIX,dl.google.com
+  - DOMAIN-SUFFIX,clientservices.googleapis.com
+  - DOMAIN-SUFFIX,ssl.gstatic.com
+  - DOMAIN-SUFFIX,www.gstatic.com
+  - DOMAIN-SUFFIX,play.google.com
+  - DOMAIN-SUFFIX,play.googleapis.com
+  - DOMAIN-SUFFIX,android.googleapis.com
+  # 🌐 其他常用 Google 服务
+  - DOMAIN-SUFFIX,adservices.google.com
+  - DOMAIN-SUFFIX,adwords.google.com
+  - DOMAIN-SUFFIX,analytics.google.com
+  - DOMAIN-SUFFIX,fonts.googleapis.com
+  - DOMAIN-SUFFIX,googlesyndication.com
+  - DOMAIN-SUFFIX,googleadservices.com
+  # 🌐 关键词兜底（防止未来新域名漏网）
+  - DOMAIN-KEYWORD,google
+  - DOMAIN-KEYWORD,gmail
+  - DOMAIN-KEYWORD,youtube
+  - DOMAIN-KEYWORD,ytimg
+  - DOMAIN-KEYWORD,googlesyndication
+  - DOMAIN-KEYWORD,googlevideo
+  - DOMAIN-KEYWORD,googleapis
+  - DOMAIN-KEYWORD,gstatic
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
