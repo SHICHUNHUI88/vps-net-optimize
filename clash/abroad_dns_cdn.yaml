@@ -196,7 +196,11 @@ payload:
   - DOMAIN-SUFFIX,ibytedapm.com
   - DOMAIN-SUFFIX,tiktokshop.com
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
-  - DOMAIN-SUFFIX,gettr.com  
+  - DOMAIN-SUFFIX,gettr.com
+  # tiktok兜底关键词
+  - DOMAIN-KEYWORD,tiktokcdn
+  - DOMAIN-KEYWORD,ibyteimg
+  - DOMAIN-KEYWORD,ibytedtos  
  
   # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,amemv.com
@@ -248,6 +252,9 @@ payload:
   - DOMAIN,push.snssdk.com
   - DOMAIN,appeal.snssdk.com
   - DOMAIN,feedback.snssdk.com
+  # 🔑 抖音关键词（兜底防漏网）
+  - DOMAIN-KEYWORD,douyin
+  - DOMAIN-KEYWORD,douyincdn
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
