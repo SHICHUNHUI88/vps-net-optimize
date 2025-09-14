@@ -198,6 +198,7 @@ payload:
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
   - DOMAIN-SUFFIX,gettr.com
   # tiktok兜底关键词
+  - DOMAIN-KEYWORD,tiktok
   - DOMAIN-KEYWORD,tiktokcdn
   - DOMAIN-KEYWORD,ibyteimg
   - DOMAIN-KEYWORD,ibytedtos  
@@ -252,9 +253,21 @@ payload:
   - DOMAIN,push.snssdk.com
   - DOMAIN,appeal.snssdk.com
   - DOMAIN,feedback.snssdk.com
-  # 🔑 抖音关键词（兜底防漏网）
+  # 🔑 关键词（兜底防漏网）
   - DOMAIN-KEYWORD,douyin
   - DOMAIN-KEYWORD,douyincdn
+  - DOMAIN-KEYWORD,toutiao
+  - DOMAIN-KEYWORD,bytedance
+  - DOMAIN-KEYWORD,bytedns
+  - DOMAIN-KEYWORD,bytecdn
+  - DOMAIN-KEYWORD,byteimg
+  - DOMAIN-KEYWORD,bytetos
+  - DOMAIN-KEYWORD,volc
+  - DOMAIN-KEYWORD,ppx
+  - DOMAIN-KEYWORD,ixigua
+  - DOMAIN-KEYWORD,huoshan
+  - DOMAIN-KEYWORD,snssdk
+
 
   # ==== OpenAI / GPT 系列 ====
   # 🧠 核心域名（精准匹配）
