@@ -16,6 +16,7 @@ payload:
   - DOMAIN-SUFFIX,llnw.net
 
   # ==== Riot Games 核心域名 ====
+  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
   - DOMAIN-SUFFIX,leagueoflegends.com
@@ -23,6 +24,7 @@ payload:
   - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,lol.pvp.net
   - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
+  - DOMAIN-KEYWORD,game
 
   # ==== 登录 / API / 游戏服务 ====
   - DOMAIN-SUFFIX,api.riotgames.com
