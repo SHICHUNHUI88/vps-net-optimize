@@ -51,8 +51,8 @@ payload:
   - DOMAIN-SUFFIX,riot-client.riotgames.com
   - DOMAIN-SUFFIX,clientconfig.rpg.riotgames.com
   - DOMAIN-SUFFIX,chat.riotgames.com
-  - DOMAIN-SUFFIX,chat.*.riotgames.com # 通配符覆盖所有区域聊天
-  - DOMAIN-SUFFIX,glz*.riotgames.com # 地平线服务器
+  - DOMAIN-SUFFIX,chat.*.riotgames.com 
+  - DOMAIN-SUFFIX,glz*.riotgames.com 
   - DOMAIN-SUFFIX,mobile-api.riotgames.com
   - DOMAIN-SUFFIX,telemetry.riotgames.com
   - DOMAIN-SUFFIX,data.riotgames.com
