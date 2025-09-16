@@ -69,14 +69,14 @@ payload:
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17
   - IP-CIDR,172.65.192.0/18
-  - IP-CIDR,52.222.128.0/17
-  - IP-CIDR,13.225.0.0/16
-  - IP-CIDR,34.195.0.0/16
   - IP-CIDR,3.5.140.0/22
   - IP-CIDR,13.32.0.0/15
+  - IP-CIDR,13.225.0.0/16
+  - IP-CIDR,52.222.128.0/17
   - IP-CIDR,99.86.0.0/17
   - IP-CIDR,130.176.0.0/18
   - IP-CIDR,15.177.0.0/18
+  - IP-CIDR,34.195.0.0/16
 
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
