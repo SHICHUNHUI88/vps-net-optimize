@@ -60,12 +60,6 @@ payload:
   # ==== 直播 / 视频 (相关依赖) ====
   - DOMAIN-SUFFIX,ttvnw.net
 
-  # ==== Riot 国服 / 其他地区相关 ====
-  - DOMAIN-SUFFIX,wildrift.qq.com
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com
-  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
-  - DOMAIN-SUFFIX,proximabeta.com
-
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17
   - IP-CIDR,172.65.192.0/18
@@ -77,6 +71,12 @@ payload:
   - IP-CIDR,130.176.0.0/18
   - IP-CIDR,15.177.0.0/18
   - IP-CIDR,34.195.0.0/16
+
+  # ==== Riot 国服 / 其他地区相关 ====
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
+  - DOMAIN-SUFFIX,wildrift.lol.garena.cn
+  - DOMAIN-SUFFIX,proximabeta.com
 
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
