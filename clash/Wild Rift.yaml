@@ -47,18 +47,18 @@ payload:
   # ==== 直播 / 视频 (相关依赖) ====
   - DOMAIN-SUFFIX,ttvnw.net
 
+  # 🔹第三方 CDN 精准关键词 (仅针对 Riot 游戏)
+  - DOMAIN-KEYWORD,riotgamespatcher
+  - DOMAIN-KEYWORD,l3cdn
+  - DOMAIN-KEYWORD,lolcdn
+  - DOMAIN-KEYWORD,wildriftcdn
+
   # ==== Riot 使用的第三方 CDN (仅限游戏资源) ====
   - DOMAIN-SUFFIX,akamaized.net
   - DOMAIN-SUFFIX,cloudfront.net
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,edgecastcdn.net
   - DOMAIN-SUFFIX,llnw.net
-
-  # 🔹第三方 CDN 精准关键词 (仅针对 Riot 游戏)
-  - DOMAIN-KEYWORD,riotgamespatcher
-  - DOMAIN-KEYWORD,l3cdn
-  - DOMAIN-KEYWORD,lolcdn
-  - DOMAIN-KEYWORD,wildriftcdn
 
   # ==== Riot 国服 / 其他地区相关 ====
   - DOMAIN-SUFFIX,wildrift.tencentgames.com
