@@ -106,21 +106,6 @@ payload:
   - DOMAIN-SUFFIX,wechat.com
   - DOMAIN-SUFFIX,tenpay.com
 
-  # ==== Riot 游戏常见 IP 段 ====
-  - IP-CIDR,104.160.128.0/17,no-resolve
-  - IP-CIDR,172.65.192.0/18,no-resolve
-  # ==== Riot / 游戏相关 CDN（直连） ====
-  - DOMAIN-SUFFIX,riotcdn.net
-  - DOMAIN-SUFFIX,wr-assets.riotcdn.net
-  - DOMAIN-SUFFIX,l3cdn.riotgames.com
-  - DOMAIN-SUFFIX,patcher-data.riotgames.com
-  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
-  - DOMAIN-SUFFIX,akamaized.net
-  - DOMAIN-SUFFIX,cloudfront.net
-  - DOMAIN-SUFFIX,fastly.net
-  - DOMAIN-SUFFIX,edgecastcdn.net
-  - DOMAIN-SUFFIX,llnw.net
-
   # ==== 淘宝 / 天猫 / 支付 ====
   - DOMAIN-SUFFIX,taobao.com
   - DOMAIN-SUFFIX,tmall.com
