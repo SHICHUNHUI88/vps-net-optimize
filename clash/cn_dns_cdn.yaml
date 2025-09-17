@@ -106,6 +106,14 @@ payload:
   - DOMAIN-SUFFIX,wechat.com
   - DOMAIN-SUFFIX,tenpay.com
 
+  # ==== 战斗服（对战数据） ====
+  - DOMAIN-SUFFIX,pvp.net
+  - DOMAIN-SUFFIX,a.pvp.net
+  - DOMAIN-SUFFIX,wr.pvp.net
+  - DOMAIN-SUFFIX,lol.pvp.net
+  # ==== Riot 游戏常见 IP 段 ====
+  - IP-CIDR,104.160.128.0/17,no-resolve
+  - IP-CIDR,172.65.192.0/18,no-resolve
   # ==== Riot / 游戏相关 CDN（直连） ====
   - DOMAIN-SUFFIX,riotcdn.net
   - DOMAIN-SUFFIX,wr-assets.riotcdn.net
