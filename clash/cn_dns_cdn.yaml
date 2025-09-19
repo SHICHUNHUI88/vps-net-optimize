@@ -112,27 +112,27 @@ payload:
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
 
-  # ==== IP-CIDR ====
-  - IP-CIDR,101.101.101.101/32
-  - IP-CIDR,114.114.114.114/32
-  - IP-CIDR,117.50.22.22/32
-  - IP-CIDR,119.29.29.29/32
-  - IP-CIDR,119.29.107.85/32
-  - IP-CIDR,223.5.5.5/32
-  - IP-CIDR,223.6.6.6/32
-  - IP-CIDR,58.20.127.170/32
-  - IP-CIDR,58.20.127.238/32
-  - IP-CIDR,180.76.76.76/32
-  - IP-CIDR,202.96.134.133/32
-  - IP-CIDR,210.21.4.130/32
-  - IP-CIDR,211.136.17.107/32
-  - IP-CIDR,202.112.0.0/16
-  - IP-CIDR,123.125.81.6/32
-  - IP-CIDR,123.58.0.0/16
-  - IP-CIDR,47.96.179.163/32
-  - IP-CIDR,52.80.66.66/32
-  - IP-CIDR,220.248.179.9/32
-  - IP-CIDR,136.243.69.38/32
+  # ==== IP-CIDR (直连, 显式 no-resolve) ====
+  - IP-CIDR,101.101.101.101/32,no-resolve
+  - IP-CIDR,114.114.114.114/32,no-resolve
+  - IP-CIDR,117.50.22.22/32,no-resolve
+  - IP-CIDR,119.29.29.29/32,no-resolve
+  - IP-CIDR,119.29.107.85/32,no-resolve
+  - IP-CIDR,223.5.5.5/32,no-resolve
+  - IP-CIDR,223.6.6.6/32,no-resolve
+  - IP-CIDR,58.20.127.170/32,no-resolve
+  - IP-CIDR,58.20.127.238/32,no-resolve
+  - IP-CIDR,180.76.76.76/32,no-resolve
+  - IP-CIDR,202.96.134.133/32,no-resolve
+  - IP-CIDR,210.21.4.130/32,no-resolve
+  - IP-CIDR,211.136.17.107/32,no-resolve
+  - IP-CIDR,202.112.0.0/16,no-resolve
+  - IP-CIDR,123.125.81.6/32,no-resolve
+  - IP-CIDR,123.58.0.0/16,no-resolve
+  - IP-CIDR,47.96.179.163/32,no-resolve
+  - IP-CIDR,52.80.66.66/32,no-resolve
+  - IP-CIDR,220.248.179.9/32,no-resolve
+  - IP-CIDR,136.243.69.38/32,no-resolve
 
   # ==== 阿里 / 淘宝 IP 段（保留 no-resolve）====
   - IP-CIDR,39.97.204.0/22,no-resolve
