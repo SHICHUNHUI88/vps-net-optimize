@@ -72,15 +72,11 @@ payload:
   - IP-CIDR,15.177.0.0/18,no-resolve
   - IP-CIDR,34.195.0.0/16,no-resolve
 
-  # ==== 腾讯海外发行 / 国际服代理 ====
-  - DOMAIN-SUFFIX,proximabeta.com
+  # ==== Riot 国服 / 其他地区相关 ====
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
   - DOMAIN-SUFFIX,wildrift.lol.garena.cn
-  - DOMAIN-SUFFIX,garena.cn
-  # ==== 腾讯海外常见 IP 段 ====
-  - IP-CIDR,43.156.0.0/16,no-resolve      # 香港/新加坡 腾讯云
-  - IP-CIDR,13.228.0.0/16,no-resolve      # 新加坡 AWS
-  - IP-CIDR,52.74.0.0/16,no-resolve       # 新加坡 AWS
-  - IP-CIDR,104.16.0.0/12,no-resolve      # Cloudflare (部分 proximate 服务)
+  - DOMAIN-SUFFIX,proximabeta.com
+  - DOMAIN-SUFFIX,wildrift.qq.com
 
   # ==== 亚洲 (日本 / 韩国) ====
   # 日本
