@@ -99,6 +99,7 @@ payload:
   - DOMAIN-SUFFIX,wegame.com
   - DOMAIN-SUFFIX,pvp.qq.com
   - DOMAIN-SUFFIX,lol.qq.com
+  - DOMAIN-SUFFIX,game.qq.com
   # ==== 腾讯国服常用 IP 段 ====
   - IP-CIDR,43.130.0.0/16,no-resolve      
   - IP-CIDR,119.28.0.0/16,no-resolve      
