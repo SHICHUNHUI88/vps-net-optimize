@@ -148,6 +148,9 @@ payload:
   - DOMAIN-SUFFIX,cdninstagram.com
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
+  # 三方CDN
+  - DOMAIN-SUFFIX,edgecastcdn.net
+  - DOMAIN-SUFFIX,llnw.net
 
   # ==== 阿里 / 淘宝 / 支付宝 国际服务 ====
   - DOMAIN-SUFFIX,alibaba.com
