@@ -80,8 +80,6 @@ payload:
   # ==== 其他 (国际服 / Wild Rift 移动端) ====
   - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
   - DOMAIN-SUFFIX,wr.pvp.net
-  - DOMAIN-KEYWORD,riot
-  - DOMAIN-KEYWORD,lol
   # Wild Rift 常见 IP
   - IP-CIDR,172.65.192.0/18,no-resolve
   - IP-CIDR,104.160.128.0/17,no-resolve
