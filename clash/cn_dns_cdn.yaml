@@ -77,6 +77,49 @@ payload:
   - DOMAIN-SUFFIX,blizzard.cn
   - DOMAIN-SUFFIX,riotgames.cn
 
+  # 💬 微信 登录 / 认证
+  - DOMAIN-SUFFIX,open.weixin.qq.com   
+  - DOMAIN-SUFFIX,weixin.qq.com
+  - DOMAIN-SUFFIX,wechat.com
+  - DOMAIN-SUFFIX,wx.qq.com
+  - DOMAIN-SUFFIX,login.wx.qq.com
+  - DOMAIN-SUFFIX,res.wx.qq.com
+  # 💬 微信 核心通讯
+  - DOMAIN-SUFFIX,qq.com
+  - DOMAIN-SUFFIX,weixin.com
+  - DOMAIN-SUFFIX,wx2.qq.com
+  - DOMAIN-SUFFIX,wx8.qq.com
+  - DOMAIN-SUFFIX,wx.qq.com
+  - DOMAIN-SUFFIX,wx-cdn.qq.com
+  # 🖼️ 微信 图片 / 视频 / 朋友圈
+  - DOMAIN-SUFFIX,wximg.qq.com
+  - DOMAIN-SUFFIX,qpic.cn
+  - DOMAIN-SUFFIX,gtimg.cn
+  - DOMAIN-SUFFIX,gtimg.com
+  # 💰 微信支付 (WeChat Pay)
+  - DOMAIN-SUFFIX,tenpay.com
+  - DOMAIN-SUFFIX,wx.tenpay.com
+  - DOMAIN-SUFFIX,mch.weixin.qq.com
+  - DOMAIN-SUFFIX,unipay.qq.com
+  # 📱 微信 小程序 / 公众号 / CDN
+  - DOMAIN-SUFFIX,servicewechat.com
+  - DOMAIN-SUFFIX,mp.weixin.qq.com
+  - DOMAIN-SUFFIX,miniprogram.qq.com
+  - DOMAIN-SUFFIX,wxapp.tc.qq.com
+  - DOMAIN-SUFFIX,qlogo.cn
+  # 🎙️ 微信 多媒体 (语音 / 文件 / 视频)
+  - DOMAIN-SUFFIX,wechatfile.com
+  - DOMAIN-SUFFIX,wechatapp.com
+  - DOMAIN-SUFFIX,vweixinf.tc.qq.com
+  - DOMAIN-SUFFIX,voice.weixin.qq.com
+  - DOMAIN-SUFFIX,file.wx2.qq.com
+  # 🎮 英雄联盟手游 国服 (腾讯代理)
+  - DOMAIN-SUFFIX,wildrift.qq.com              # 国服手游核心域名
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com    # 腾讯系手游域名
+  - DOMAIN-SUFFIX,proximabeta.com              # 腾讯海外/国服都会依赖
+  # 登录账号体系
+  - DOMAIN-SUFFIX,openmobile.qq.com            # QQ 移动端登录
+
   # LOL手游 登录与大厅
   - DOMAIN-SUFFIX,lolm.qq.com
   - DOMAIN-SUFFIX,img.lolm.qq.com
