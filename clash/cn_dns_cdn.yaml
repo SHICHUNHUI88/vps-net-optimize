@@ -113,18 +113,24 @@ payload:
   - DOMAIN-SUFFIX,vweixinf.tc.qq.com
   - DOMAIN-SUFFIX,voice.weixin.qq.com
   - DOMAIN-SUFFIX,file.wx2.qq.com
-  # 🎮 英雄联盟手游 国服 (腾讯代理)
-  - DOMAIN-SUFFIX,wildrift.qq.com              # 国服手游核心域名
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com    # 腾讯系手游域名
-  - DOMAIN-SUFFIX,proximabeta.com              # 腾讯海外/国服都会依赖
-  # 登录账号体系
-  - DOMAIN-SUFFIX,openmobile.qq.com            # QQ 移动端登录
+  # 腾讯服务（社交/支付）
+  - DOMAIN-SUFFIX,qq.com
+  - DOMAIN-SUFFIX,wechat.com
+  - DOMAIN-SUFFIX,tenpay.com
+  # QQ 移动端登录
+  - DOMAIN-SUFFIX,qq.com
+  - DOMAIN-SUFFIX,openmobile.qq.com          
 
-  # LOL手游 登录与大厅
+  # 🎮 英雄联盟手游 国服 (腾讯代理)
+  # ==== 国服手游核心域名 ====
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
+  - DOMAIN-SUFFIX,proximabeta.com
+  # ==== LOL手游 登录与大厅 ====
   - DOMAIN-SUFFIX,lolm.qq.com
   - DOMAIN-SUFFIX,img.lolm.qq.com
   - DOMAIN-SUFFIX,gameguardian.qq.com
-  # LOL手游 游戏服务器
+  # ==== LOL手游 游戏服务器 ====
   - DOMAIN-SUFFIX,lolmaclient.qq.com
   - DOMAIN-SUFFIX,lolma.qq.com
   - DOMAIN-SUFFIX,lolmconn1.qq.com
@@ -135,16 +141,23 @@ payload:
   - DOMAIN-SUFFIX,lolmconn6.qq.com
   - DOMAIN-SUFFIX,msdk.qq.com
   - DOMAIN-SUFFIX,mta.qq.com
-  # 腾讯游戏及相关资源
+  # ==== 腾讯游戏及相关资源 ====
   - DOMAIN-SUFFIX,game.gtimg.cn
   - DOMAIN-SUFFIX,wegame.com
   - DOMAIN-SUFFIX,pvp.qq.com
   - DOMAIN-SUFFIX,lol.qq.com
-
-  # 腾讯服务（社交/支付）
-  - DOMAIN-SUFFIX,qq.com
-  - DOMAIN-SUFFIX,wechat.com
-  - DOMAIN-SUFFIX,tenpay.com
+  # ==== 光子工作室网络/Photon ====
+  - DOMAIN-SUFFIX,qqgamecdn.com
+  - DOMAIN-SUFFIX,photonengine.com
+  - DOMAIN-SUFFIX,gamesdk.qq.com
+  - DOMAIN-SUFFIX,mqtt.tencent.com
+  # 后补
+  - DOMAIN-SUFFIX,tcdn.qq.com
+  - DOMAIN-SUFFIX,qpic.cn 
+  - DOMAIN-SUFFIX,qzone.com  
+  # ==== 安全与反作弊 ====
+  - DOMAIN-SUFFIX,tpstech.com 
+  - DOMAIN-SUFFIX,tps.mby.tencent.com 
 
   # ==== 淘宝 / 天猫 / 支付 ====
   - DOMAIN-SUFFIX,taobao.com
