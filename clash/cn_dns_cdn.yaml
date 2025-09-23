@@ -166,11 +166,7 @@ payload:
   # 后补
   - DOMAIN-SUFFIX,tcdn.qq.com
   - DOMAIN-SUFFIX,qpic.cn 
-  - DOMAIN-SUFFIX,qzone.com 
-  - DOMAIN-SUFFIX,pvp.net
-  - DOMAIN-SUFFIX,wr.pvp.net
-  - IP-CIDR,104.160.128.0/17,no-resolve
-  - IP-CIDR,172.65.192.0/18,no-resolve 
+  - DOMAIN-SUFFIX,qzone.com  
   # ==== 安全与反作弊 ====
   - DOMAIN-SUFFIX,tpstech.com 
   - DOMAIN-SUFFIX,tps.mby.tencent.com 
