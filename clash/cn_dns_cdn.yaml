@@ -127,14 +127,6 @@ payload:
   - DOMAIN-KEYWORD,qq          
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
-  # ==== 国服手游核心域名 ====
-  - DOMAIN-SUFFIX,wildrift.qq.com
-  - DOMAIN-SUFFIX,wildrift.tencentgames.com
-  - DOMAIN-SUFFIX,proximabeta.com
-  # ==== LOL手游 登录与大厅 ====
-  - DOMAIN-SUFFIX,lolm.qq.com
-  - DOMAIN-SUFFIX,img.lolm.qq.com
-  - DOMAIN-SUFFIX,gameguardian.qq.com
   # ==== LOL手游 游戏服务器 ====
   - DOMAIN-SUFFIX,lolmaclient.qq.com
   - DOMAIN-SUFFIX,lolma.qq.com
@@ -156,6 +148,14 @@ payload:
   - DOMAIN-SUFFIX,photonengine.com
   - DOMAIN-SUFFIX,gamesdk.qq.com
   - DOMAIN-SUFFIX,mqtt.tencent.com
+  # ==== 国服手游核心域名 ====
+  - DOMAIN-SUFFIX,wildrift.qq.com
+  - DOMAIN-SUFFIX,wildrift.tencentgames.com
+  - DOMAIN-SUFFIX,proximabeta.com
+  # ==== LOL手游 登录与大厅 ====
+  - DOMAIN-SUFFIX,lolm.qq.com
+  - DOMAIN-SUFFIX,img.lolm.qq.com
+  - DOMAIN-SUFFIX,gameguardian.qq.com
   # 后补
   - DOMAIN-SUFFIX,tcdn.qq.com
   - DOMAIN-SUFFIX,qpic.cn 
