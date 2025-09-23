@@ -3,8 +3,6 @@ payload:
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
   - DOMAIN-SUFFIX,leagueoflegends.com
-  - DOMAIN-SUFFIX,pvp.net
-  - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,lol.pvp.net
   - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
   # ==== 登录 / API / 游戏服务 ====
@@ -75,14 +73,7 @@ payload:
   # 俄罗斯
   - DOMAIN-SUFFIX,ru.leagueoflegends.com
   - DOMAIN-SUFFIX,ru.riotgames.com
-  # 中东 (部分走 EU 服)
-
-  # ==== 其他 (国际服 / Wild Rift 移动端) ====
-  - DOMAIN-SUFFIX,wildrift.leagueoflegends.com
-  - DOMAIN-SUFFIX,wr.pvp.net
-  # Wild Rift 常见 IP
-  - IP-CIDR,172.65.192.0/18,no-resolve
-  - IP-CIDR,104.160.128.0/17,no-resolve
+  
   # ==== 欧洲 EUW / EUNE ====
   - DOMAIN-SUFFIX,euw.leagueoflegends.com
   - DOMAIN-SUFFIX,eune.leagueoflegends.com
