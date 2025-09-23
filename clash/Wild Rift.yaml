@@ -97,8 +97,6 @@ payload:
   - IP-CIDR,104.160.137.0/24,no-resolve
 
   # ==== Riot Games 常见 IP 段 ====
-  - IP-CIDR,104.160.128.0/17,no-resolve
-  - IP-CIDR,172.65.192.0/18,no-resolve
   - IP-CIDR,3.5.140.0/22,no-resolve
   - IP-CIDR,13.32.0.0/15,no-resolve
   - IP-CIDR,13.225.0.0/16,no-resolve
