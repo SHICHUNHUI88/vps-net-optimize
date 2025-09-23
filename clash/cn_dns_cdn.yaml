@@ -138,6 +138,13 @@ payload:
   - DOMAIN-SUFFIX,lolmconn6.qq.com
   - DOMAIN-SUFFIX,msdk.qq.com
   - DOMAIN-SUFFIX,mta.qq.com
+  - DOMAIN-KEYWORD,lolm
+  # 腾讯云 LOLM 常见机房
+  - IP-CIDR,43.132.0.0/16,no-resolve
+  - IP-CIDR,129.226.0.0/16,no-resolve
+  - IP-CIDR,36.155.0.0/16,no-resolve
+  - IP-CIDR,183.3.0.0/16,no-resolve
+  - IP-CIDR,119.28.0.0/16,no-resolve
   # ==== 腾讯游戏及相关资源 ====
   - DOMAIN-SUFFIX,game.gtimg.cn
   - DOMAIN-SUFFIX,wegame.com
