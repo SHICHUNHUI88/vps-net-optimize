@@ -119,7 +119,12 @@ payload:
   - DOMAIN-SUFFIX,tenpay.com
   # QQ 移动端登录
   - DOMAIN-SUFFIX,qq.com
-  - DOMAIN-SUFFIX,openmobile.qq.com          
+  - DOMAIN-SUFFIX,openmobile.qq.com 
+  # 关键词
+  - DOMAIN-KEYWORD,wechat
+  - DOMAIN-KEYWORD,weixin
+  - DOMAIN-KEYWORD,wxapp
+  - DOMAIN-KEYWORD,qq          
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== 国服手游核心域名 ====
