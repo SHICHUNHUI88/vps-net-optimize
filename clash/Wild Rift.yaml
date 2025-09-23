@@ -5,6 +5,8 @@ payload:
   - DOMAIN-SUFFIX,leagueoflegends.com
   - DOMAIN-SUFFIX,lol.pvp.net
   - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
+  - DOMAIN-SUFFIX,pvp.net
+  - DOMAIN-SUFFIX,wr.pvp.net
   # ==== 登录 / API / 游戏服务 ====
   - DOMAIN-SUFFIX,api.riotgames.com
   - DOMAIN-SUFFIX,account.riotgames.com
@@ -30,6 +32,18 @@ payload:
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
   # ==== 直播 / 视频 (相关依赖) ====
   - DOMAIN-SUFFIX,ttvnw.net
+  
+  # ==== Riot Games 常见 IP 段 ====
+  - IP-CIDR,104.160.128.0/17,no-resolve
+  - IP-CIDR,172.65.192.0/18,no-resolve
+  - IP-CIDR,3.5.140.0/22,no-resolve
+  - IP-CIDR,13.32.0.0/15,no-resolve
+  - IP-CIDR,13.225.0.0/16,no-resolve
+  - IP-CIDR,52.222.128.0/17,no-resolve
+  - IP-CIDR,99.86.0.0/17,no-resolve
+  - IP-CIDR,130.176.0.0/18,no-resolve
+  - IP-CIDR,15.177.0.0/18,no-resolve
+  - IP-CIDR,34.195.0.0/16,no-resolve
 
   # ==== 亚洲 (日本 / 韩国) ====
   # 日本
@@ -95,16 +109,6 @@ payload:
   # 游戏服 IP
   - IP-CIDR,104.160.136.0/23,no-resolve
   - IP-CIDR,104.160.137.0/24,no-resolve
-
-  # ==== Riot Games 常见 IP 段 ====
-  - IP-CIDR,3.5.140.0/22,no-resolve
-  - IP-CIDR,13.32.0.0/15,no-resolve
-  - IP-CIDR,13.225.0.0/16,no-resolve
-  - IP-CIDR,52.222.128.0/17,no-resolve
-  - IP-CIDR,99.86.0.0/17,no-resolve
-  - IP-CIDR,130.176.0.0/18,no-resolve
-  - IP-CIDR,15.177.0.0/18,no-resolve
-  - IP-CIDR,34.195.0.0/16,no-resolve
 
   # ==== 其他游戏相关 CDN 域名 ====
   - DOMAIN-SUFFIX,steamcontent.com
