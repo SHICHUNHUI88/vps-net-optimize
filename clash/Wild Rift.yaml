@@ -3,7 +3,6 @@ payload:
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
   - DOMAIN-SUFFIX,leagueoflegends.com
-  # 非常重要！
   - DOMAIN-SUFFIX,a.pvp.net 
   - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,sgp.pvp.net    
@@ -33,9 +32,43 @@ payload:
   - DOMAIN-SUFFIX,patcher-data.riotgames.com
   - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
-  # ==== 直播 / 视频 (相关依赖) ====
+  # ==== 直播 / 视频 ====
   - DOMAIN-SUFFIX,ttvnw.net
-  
+  # ==== 亚洲 (日本 / 韩国) ====
+  - DOMAIN-SUFFIX,jp.leagueoflegends.com
+  - DOMAIN-SUFFIX,jp.riotgames.com
+  - DOMAIN-SUFFIX,kr.leagueoflegends.com
+  - DOMAIN-SUFFIX,kr.riotgames.com
+  # ==== 东南亚 SEA / APAC ====
+  - DOMAIN-SUFFIX,sea.leagueoflegends.com
+  - DOMAIN-SUFFIX,sg.leagueoflegends.com
+  - DOMAIN-SUFFIX,sg.riotgames.com
+  - DOMAIN-SUFFIX,ph.leagueoflegends.com
+  - DOMAIN-SUFFIX,ph.riotgames.com
+  - DOMAIN-SUFFIX,th.leagueoflegends.com
+  - DOMAIN-SUFFIX,th.riotgames.com
+  - DOMAIN-SUFFIX,tw.leagueoflegends.com
+  - DOMAIN-SUFFIX,tw.riotgames.com
+  - DOMAIN-SUFFIX,vn.leagueoflegends.com
+  - DOMAIN-SUFFIX,vn.riotgames.com
+  # ==== 大洋洲 (OCE) ====
+  - DOMAIN-SUFFIX,oce.leagueoflegends.com
+  # ==== 中东 / 土耳其 / 俄罗斯 ====
+  - DOMAIN-SUFFIX,tr.leagueoflegends.com
+  - DOMAIN-SUFFIX,tr.riotgames.com
+  - DOMAIN-SUFFIX,ru.leagueoflegends.com
+  - DOMAIN-SUFFIX,ru.riotgames.com
+  # ==== 欧洲 EUW / EUNE ====
+  - DOMAIN-SUFFIX,euw.leagueoflegends.com
+  - DOMAIN-SUFFIX,eune.leagueoflegends.com
+  - DOMAIN-SUFFIX,eu.lol.riotgames.com
+  # ==== 北美 NA ====
+  - DOMAIN-SUFFIX,na.leagueoflegends.com
+  - DOMAIN-SUFFIX,riotcdn.net
+  # ==== 南美 (BR / LAN / LAS) ====
+  - DOMAIN-SUFFIX,br.leagueoflegends.com
+  - DOMAIN-SUFFIX,lan.leagueoflegends.com
+  - DOMAIN-SUFFIX,las.leagueoflegends.com
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17,no-resolve
   - IP-CIDR,172.65.192.0/18,no-resolve
@@ -47,72 +80,14 @@ payload:
   - IP-CIDR,130.176.0.0/18,no-resolve
   - IP-CIDR,15.177.0.0/18,no-resolve
   - IP-CIDR,34.195.0.0/16,no-resolve
-
-  # ==== 亚洲 (日本 / 韩国) ====
-  # 日本
-  - DOMAIN-SUFFIX,jp.leagueoflegends.com
-  - DOMAIN-SUFFIX,jp.riotgames.com
   - IP-CIDR,104.160.154.0/23,no-resolve
-  # 韩国
-  - DOMAIN-SUFFIX,kr.leagueoflegends.com
-  - DOMAIN-SUFFIX,kr.riotgames.com
   - IP-CIDR,104.160.156.0/23,no-resolve
-  # ==== 东南亚 SEA / APAC ====
-  # Garena 曾经代理，现在 Riot 接管
-  - DOMAIN-SUFFIX,sea.leagueoflegends.com
-  - DOMAIN-SUFFIX,sg.leagueoflegends.com      # 新加坡
-  - DOMAIN-SUFFIX,sg.riotgames.com
-  - DOMAIN-SUFFIX,ph.leagueoflegends.com      # 菲律宾
-  - DOMAIN-SUFFIX,ph.riotgames.com
-  - DOMAIN-SUFFIX,th.leagueoflegends.com      # 泰国
-  - DOMAIN-SUFFIX,th.riotgames.com
-  - DOMAIN-SUFFIX,tw.leagueoflegends.com      # 台湾
-  - DOMAIN-SUFFIX,tw.riotgames.com
-  - DOMAIN-SUFFIX,vn.leagueoflegends.com      # 越南
-  - DOMAIN-SUFFIX,vn.riotgames.com
-
-  # ==== SEA 常用 IP 段 ====
-  - IP-CIDR,104.160.140.0/24,no-resolve   # 新加坡
-  - IP-CIDR,104.160.145.0/24,no-resolve   # 台湾
-  - IP-CIDR,104.160.146.0/23,no-resolve   # 越南
-  # ==== 大洋洲 (OCE) ====
-  - DOMAIN-SUFFIX,oce.leagueoflegends.com
-  # 游戏服 IP
+  - IP-CIDR,104.160.140.0/24,no-resolve
+  - IP-CIDR,104.160.145.0/24,no-resolve
+  - IP-CIDR,104.160.146.0/23,no-resolve
   - IP-CIDR,104.160.138.0/23,no-resolve
-  # ==== 中东 / 土耳其 / 俄罗斯 ====
-  # 土耳其
-  - DOMAIN-SUFFIX,tr.leagueoflegends.com
-  - DOMAIN-SUFFIX,tr.riotgames.com
-  # 俄罗斯
-  - DOMAIN-SUFFIX,ru.leagueoflegends.com
-  - DOMAIN-SUFFIX,ru.riotgames.com
-  
-  # ==== 欧洲 EUW / EUNE ====
-  - DOMAIN-SUFFIX,euw.leagueoflegends.com
-  - DOMAIN-SUFFIX,eune.leagueoflegends.com
-  - DOMAIN-SUFFIX,eu.lol.riotgames.com
-  # 游戏服 IP (欧洲西 & 北欧)
   - IP-CIDR,104.160.141.0/24,no-resolve
   - IP-CIDR,104.160.142.0/23,no-resolve
-  # Riot 北美核心域名
-  - DOMAIN-SUFFIX,na.leagueoflegends.com
-  - DOMAIN-SUFFIX,riotgames.com
-  - DOMAIN-SUFFIX,riotcdn.net
-  # 游戏服 IP (北美)
   - IP-CIDR,104.160.131.0/24,no-resolve
   - IP-CIDR,104.160.136.0/23,no-resolve
-  # ==== 南美 (BR / LAN / LAS) ====
-  - DOMAIN-SUFFIX,br.leagueoflegends.com
-  - DOMAIN-SUFFIX,lan.leagueoflegends.com
-  - DOMAIN-SUFFIX,las.leagueoflegends.com
-  # 游戏服 IP
-  - IP-CIDR,104.160.136.0/23,no-resolve
   - IP-CIDR,104.160.137.0/24,no-resolve
-
-  # ==== 其他游戏相关 CDN 域名 ====
-  - DOMAIN-SUFFIX,steamcontent.com
-  - DOMAIN-SUFFIX,steamcdn.net
-  - DOMAIN-SUFFIX,blizzard.com
-  - DOMAIN-SUFFIX,epicgames.com
-  - DOMAIN-SUFFIX,ubisoft.com
-
