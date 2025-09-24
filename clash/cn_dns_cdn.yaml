@@ -176,6 +176,15 @@ payload:
   - DOMAIN-SUFFIX,tmall.com
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
+ 
+  # ==== 抖音国内 CDN / 加速 IP ====
+  - IP-CIDR,101.227.0.0/16,no-resolve
+  - IP-CIDR,101.32.0.0/16,no-resolve
+  - IP-CIDR,183.60.0.0/16,no-resolve
+  - IP-CIDR,106.75.0.0/16,no-resolve
+  - IP-CIDR,123.125.0.0/16,no-resolve
+  - IP-CIDR,140.205.0.0/16,no-resolve
+  - IP-CIDR,182.140.0.0/16,no-resolve
 
   # ==== IP-CIDR (直连, 显式 no-resolve) ====
   - IP-CIDR,101.101.101.101/32,no-resolve
