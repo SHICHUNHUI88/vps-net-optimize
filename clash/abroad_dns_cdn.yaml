@@ -205,6 +205,11 @@ payload:
   - DOMAIN-KEYWORD,ibyteimg
   - DOMAIN-KEYWORD,ibytedtos  
   - DOMAIN-KEYWORD,tiktok
+  - IP-CIDR,170.176.0.0/12,no-resolve
+  - IP-CIDR,161.117.0.0/16,no-resolve
+  - IP-CIDR,47.246.0.0/16,no-resolve
+  - IP-CIDR,52.74.0.0/16,no-resolve
+  - IP-CIDR,52.220.0.0/15,no-resolve
 
   # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,amemv.com
