@@ -3,11 +3,12 @@ payload:
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
   - DOMAIN-SUFFIX,leagueoflegends.com
-  - DOMAIN-SUFFIX,lol.pvp.net
-  - DOMAIN-SUFFIX,a.pvp.net # 非常重要！
+  # 非常重要！
+  - DOMAIN-SUFFIX,a.pvp.net 
   - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,sgp.pvp.net    
   - DOMAIN-SUFFIX,sea.pvp.net
+  - DOMAIN-SUFFIX,lol.pvp.net
   - DOMAIN-SUFFIX,pvp.net
   # ==== 登录 / API / 游戏服务 ====
   - DOMAIN-SUFFIX,api.riotgames.com
