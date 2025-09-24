@@ -71,10 +71,6 @@ payload:
   - DOMAIN-SUFFIX,vn.leagueoflegends.com      # 越南
   - DOMAIN-SUFFIX,vn.riotgames.com
 
-  # Wild Rift SEA 相关
-  - DOMAIN-SUFFIX,wildrift.riotgames.com
-  - DOMAIN-SUFFIX,sgp.pvp.net
-  - DOMAIN-SUFFIX,sea.pvp.net
   # ==== SEA 常用 IP 段 ====
   - IP-CIDR,104.160.140.0/24,no-resolve   # 新加坡
   - IP-CIDR,104.160.145.0/24,no-resolve   # 台湾
