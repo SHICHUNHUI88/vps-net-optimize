@@ -87,9 +87,6 @@ payload:
   - DOMAIN,sm2.doh.pub
   - DOMAIN,unfiltered.adguard-dns.com
   - DOMAIN,dns.securedns.eu
-  - DOMAIN,8.8.8.8
-  - DOMAIN,8.8.4.4
-  - DOMAIN,9.9.9.9
 
   # ==== 国外 CDN ====
   # Cloudflare
