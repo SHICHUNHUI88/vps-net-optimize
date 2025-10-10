@@ -222,24 +222,24 @@ payload:
   - DOMAIN-SUFFIX,ipstatp.com
   - DOMAIN-SUFFIX,ixigua.*
   - DOMAIN-SUFFIX,ixiguavideo.com
-  - DOMAIN-SUFFIX,toutiao.com
+  - DOMAIN-SUFFIX,toutiao.*
   - DOMAIN-SUFFIX,toutiaocdn.com
   - DOMAIN-SUFFIX,toutiaocloud.com
   - DOMAIN-SUFFIX,toutiaovod.com
-  - DOMAIN-SUFFIX,huoshan.com
+  - DOMAIN-SUFFIX,huoshan.*
   - DOMAIN-SUFFIX,huoshanzhibo.com
   - DOMAIN-SUFFIX,ppxvod.com
-  - DOMAIN-SUFFIX,ppxcdn.com
+  - DOMAIN-SUFFIX,ppxcdn.*
   - DOMAIN-SUFFIX,ixgvideo.com
-  - DOMAIN-SUFFIX,bytedance.com
-  - DOMAIN-SUFFIX,bytedns.net
+  - DOMAIN-SUFFIX,bytedance.*
+  - DOMAIN-SUFFIX,bytedns.*
   - DOMAIN-SUFFIX,bytednsdoc.com
-  - DOMAIN-SUFFIX,bytecdn.cn
-  - DOMAIN-SUFFIX,byteimg.com
+  - DOMAIN-SUFFIX,bytecdn.*
+  - DOMAIN-SUFFIX,byteimg.*
   - DOMAIN-SUFFIX,bytetcc.com
-  - DOMAIN-SUFFIX,bytetos.com
+  - DOMAIN-SUFFIX,bytetos.*
   - DOMAIN-SUFFIX,capcut.com
-  - DOMAIN-SUFFIX,volccdn.com
+  - DOMAIN-SUFFIX,volccdn.*
   - DOMAIN-SUFFIX,feiliao.com
   - DOMAIN-SUFFIX,fanqienovel.com
   - DOMAIN-SUFFIX,acomic.com
