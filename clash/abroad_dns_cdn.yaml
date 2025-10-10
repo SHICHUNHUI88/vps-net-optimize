@@ -212,6 +212,7 @@ payload:
 
   # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,amemv.com
+  - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
   - DOMAIN-SUFFIX,douyinfe.com
   - DOMAIN-SUFFIX,douyinlive.com
