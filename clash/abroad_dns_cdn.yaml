@@ -90,17 +90,20 @@ payload:
 
   # ==== 国外 CDN ====
   # Cloudflare
-  - DOMAIN-SUFFIX,cloudflare.*
-  - DOMAIN-SUFFIX,cfcdn.*
-  - DOMAIN-SUFFIX,cf-ipfs.*
+  - DOMAIN-SUFFIX,cloudflare.com
+  - DOMAIN-SUFFIX,cloudflare.net
+  - DOMAIN-SUFFIX,cloudflare.org
+  - DOMAIN-SUFFIX,cfcdn.com
+  - DOMAIN-SUFFIX,cf-ipfs.com
   - DOMAIN-SUFFIX,workers.dev
+  - DOMAIN-KEYWORD,cloudflare
   # Akamai
-  - DOMAIN-SUFFIX,akamai.*
+  - DOMAIN-SUFFIX,akamai.net
   - DOMAIN-SUFFIX,akamaiedge.net
   - DOMAIN-SUFFIX,akamaitechnologies.com
   - DOMAIN-SUFFIX,akamaized.net
   # Fastly
-  - DOMAIN-SUFFIX,fastly.*
+  - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,fastlylb.net
   - DOMAIN-SUFFIX,map.fastly.net
   # AWS CloudFront
@@ -178,22 +181,22 @@ payload:
   - DOMAIN-SUFFIX,global.cainiao.com
 
   # ==== TikTok （海外业务总表） ====
-  - DOMAIN-SUFFIX,tiktok.*
-  - DOMAIN-SUFFIX,tiktokv.*
-  - DOMAIN-SUFFIX,tiktokcdn.*
-  - DOMAIN-SUFFIX,tiktokcdn-us.*
-  - DOMAIN-SUFFIX,tiktoklive.*
-  - DOMAIN-SUFFIX,tiktok-browser.*
-  - DOMAIN-SUFFIX,ttlive.*
-  - DOMAIN-SUFFIX,ttwstatic.*
+  - DOMAIN-SUFFIX,tiktok.com
+  - DOMAIN-SUFFIX,tiktokv.com
+  - DOMAIN-SUFFIX,tiktokcdn.com
+  - DOMAIN-SUFFIX,tiktokcdn-us.com
+  - DOMAIN-SUFFIX,tiktoklive.com
+  - DOMAIN-SUFFIX,tiktok-browser.com
+  - DOMAIN-SUFFIX,ttlive.com
+  - DOMAIN-SUFFIX,ttwstatic.com
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,muscdn.com
-  - DOMAIN-SUFFIX,ibyteimg.*
-  - DOMAIN-SUFFIX,ipstatp.*
-  - DOMAIN-SUFFIX,byteoversea.*
-  - DOMAIN-SUFFIX,ibytedtos.*
-  - DOMAIN-SUFFIX,ibytedapm.*
-  - DOMAIN-SUFFIX,tiktokshop.*
+  - DOMAIN-SUFFIX,ibyteimg.com
+  - DOMAIN-SUFFIX,ipstatp.com
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,ibytedtos.com
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,tiktokshop.com
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
   - DOMAIN-SUFFIX,gettr.com
   # tiktok兜底关键词
@@ -208,45 +211,44 @@ payload:
   - IP-CIDR,52.220.0.0/15,no-resolve
 
   # ==== 字节跳动系 应用 & 服务 ====
-  - DOMAIN-SUFFIX,amemv.*
-  - DOMAIN-SUFFIX,douyin.*
-  - DOMAIN-SUFFIX,douyincdn.*
+  - DOMAIN-SUFFIX,amemv.com
+  - DOMAIN-SUFFIX,douyincdn.com
   - DOMAIN-SUFFIX,douyinfe.com
-  - DOMAIN-SUFFIX,douyinlive.*
+  - DOMAIN-SUFFIX,douyinlive.com
   - DOMAIN-SUFFIX,douyinpic.com
   - DOMAIN-SUFFIX,douyinstatic.com
   - DOMAIN-SUFFIX,douyinvod.com
   - DOMAIN-SUFFIX,idouyinvod.com
   - DOMAIN-SUFFIX,iesdouyin.com
-  - DOMAIN-SUFFIX,pstatp.*
+  - DOMAIN-SUFFIX,pstatp.com
   - DOMAIN-SUFFIX,ipstatp.com
-  - DOMAIN-SUFFIX,ixigua.*
+  - DOMAIN-SUFFIX,ixigua.com
   - DOMAIN-SUFFIX,ixiguavideo.com
-  - DOMAIN-SUFFIX,toutiao.*
+  - DOMAIN-SUFFIX,toutiao.com
   - DOMAIN-SUFFIX,toutiaocdn.com
   - DOMAIN-SUFFIX,toutiaocloud.com
   - DOMAIN-SUFFIX,toutiaovod.com
-  - DOMAIN-SUFFIX,huoshan.*
+  - DOMAIN-SUFFIX,huoshan.com
   - DOMAIN-SUFFIX,huoshanzhibo.com
   - DOMAIN-SUFFIX,ppxvod.com
-  - DOMAIN-SUFFIX,ppxcdn.*
+  - DOMAIN-SUFFIX,ppxcdn.com
   - DOMAIN-SUFFIX,ixgvideo.com
-  - DOMAIN-SUFFIX,bytedance.*
-  - DOMAIN-SUFFIX,bytedns.*
+  - DOMAIN-SUFFIX,bytedance.com
+  - DOMAIN-SUFFIX,bytedns.net
   - DOMAIN-SUFFIX,bytednsdoc.com
-  - DOMAIN-SUFFIX,bytecdn.*
-  - DOMAIN-SUFFIX,byteimg.*
+  - DOMAIN-SUFFIX,bytecdn.cn
+  - DOMAIN-SUFFIX,byteimg.com
   - DOMAIN-SUFFIX,bytetcc.com
-  - DOMAIN-SUFFIX,bytetos.*
+  - DOMAIN-SUFFIX,bytetos.com
   - DOMAIN-SUFFIX,capcut.com
-  - DOMAIN-SUFFIX,volccdn.*
+  - DOMAIN-SUFFIX,volccdn.com
   - DOMAIN-SUFFIX,feiliao.com
   - DOMAIN-SUFFIX,fanqienovel.com
   - DOMAIN-SUFFIX,acomic.com
   - DOMAIN-SUFFIX,byteoversea.com
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
-  - DOMAIN-SUFFIX,snssdk.*
+  - DOMAIN-SUFFIX,snssdk.com
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # 🔑 关键词（兜底防漏网）
@@ -285,19 +287,20 @@ payload:
  
   # ==== Telegram / 电报 全面规则 ====
   # ✈️ 核心域名（官网、注册、登录）
-  - DOMAIN-SUFFIX,telegram.*
+  - DOMAIN-SUFFIX,telegram.org
   - DOMAIN-SUFFIX,t.me
+  - DOMAIN-SUFFIX,telegram.com
   # ✈️ API / 聊天服务
   - DOMAIN-SUFFIX,api.telegram.org
   - DOMAIN-SUFFIX,core.telegram.org
-  - DOMAIN-SUFFIX,mtproto.*
+  - DOMAIN-SUFFIX,mtproto.org
   - DOMAIN-SUFFIX,telegram.me
   - DOMAIN-SUFFIX,telegram.plus
   # ✈️ 静态资源 / CDN / 下载文件 / 视频节点
-  - DOMAIN-SUFFIX,telegramcdn.*
-  - DOMAIN-SUFFIX,telegram-cdn.*
-  - DOMAIN-SUFFIX,cdn-telegram.*
-  - DOMAIN-SUFFIX,tlgrm.*
+  - DOMAIN-SUFFIX,telegramcdn.com
+  - DOMAIN-SUFFIX,telegram-cdn.org
+  - DOMAIN-SUFFIX,cdn-telegram.org
+  - DOMAIN-SUFFIX,tlgrm.ru
   - DOMAIN-SUFFIX,media.telegram.org
   - DOMAIN-SUFFIX,telegram.video
   - DOMAIN-SUFFIX,telegram-store.org
@@ -310,21 +313,21 @@ payload:
   - DOMAIN-KEYWORD,mtproto
   - DOMAIN-KEYWORD,t.me
 
-  # ==== Google / 谷歌全面规则（整合版） ====
+  # ==== Google / 谷歌全面规则 ====
   # 🌐 核心域名（搜索、账号、Gmail）
-  - DOMAIN-SUFFIX,google.*
-  - DOMAIN-SUFFIX,googlemail.*
-  - DOMAIN-SUFFIX,gmail.*
+  - DOMAIN-SUFFIX,google.com
+  - DOMAIN-SUFFIX,googlemail.com
+  - DOMAIN-SUFFIX,gmail.com
   - DOMAIN-SUFFIX,accounts.google.com
-  - DOMAIN-SUFFIX,googleusercontent.*
-  - DOMAIN-SUFFIX,ggpht.*
-  - DOMAIN-SUFFIX,googleapis.*
+  - DOMAIN-SUFFIX,googleusercontent.com
+  - DOMAIN-SUFFIX,ggpht.com
+  - DOMAIN-SUFFIX,googleapis.com
   # 🌐 YouTube / 视频服务
-  - DOMAIN-SUFFIX,youtube.*
+  - DOMAIN-SUFFIX,youtube.com
   - DOMAIN-SUFFIX,youtu.be
   - DOMAIN-SUFFIX,youtube-nocookie.com
-  - DOMAIN-SUFFIX,ytimg.*
-  - DOMAIN-SUFFIX,googlevideo.*
+  - DOMAIN-SUFFIX,ytimg.com
+  - DOMAIN-SUFFIX,googlevideo.com
   - DOMAIN-SUFFIX,ytapi.com
   # 🌐 Google Drive / 文档 / 云盘
   - DOMAIN-SUFFIX,drive.google.com
@@ -353,14 +356,8 @@ payload:
   - DOMAIN-SUFFIX,adwords.google.com
   - DOMAIN-SUFFIX,analytics.google.com
   - DOMAIN-SUFFIX,fonts.googleapis.com
-  - DOMAIN-SUFFIX,googlesyndication.*
+  - DOMAIN-SUFFIX,googlesyndication.com
   - DOMAIN-SUFFIX,googleadservices.com
-  # 🌐 其他泛域名 / 工具类（原第一组保留）
-  - DOMAIN-SUFFIX,withgoogle.*
-  - DOMAIN-SUFFIX,chromium.*
-  - DOMAIN-SUFFIX,chrome.*
-  - DOMAIN-SUFFIX,android.*
-  - DOMAIN-SUFFIX,blogger.*
   # 🌐 关键词兜底（防止未来新域名漏网）
   - DOMAIN-KEYWORD,google
   - DOMAIN-KEYWORD,gmail
@@ -462,3 +459,4 @@ payload:
   - IP-CIDR,185.228.168.10/32
   - IP-CIDR,94.140.14.14/32
   - IP-CIDR,94.140.15.15/32
+
