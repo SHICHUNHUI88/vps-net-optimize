@@ -124,7 +124,16 @@ payload:
   - DOMAIN-KEYWORD,wechat
   - DOMAIN-KEYWORD,weixin
   - DOMAIN-KEYWORD,wxapp
-  - DOMAIN-KEYWORD,qq          
+  - DOMAIN-KEYWORD,qq   
+
+  # 同花顺    
+  - DOMAIN-SUFFIX,10jqka.*
+  - DOMAIN-SUFFIX,ihexin.*
+  - DOMAIN-SUFFIX,hexin.*
+  - DOMAIN-SUFFIX,51ifind.*
+  - DOMAIN-SUFFIX,aicubes.*
+  - DOMAIN-SUFFIX,ths123.*
+  - DOMAIN-SUFFIX,hexun.*   
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== LOL手游 游戏服务器 ====
