@@ -124,16 +124,7 @@ payload:
   - DOMAIN-KEYWORD,wechat
   - DOMAIN-KEYWORD,weixin
   - DOMAIN-KEYWORD,wxapp
-  - DOMAIN-KEYWORD,qq   
-
-  # 同花顺    
-  - DOMAIN-SUFFIX,10jqka.*
-  - DOMAIN-SUFFIX,ihexin.*
-  - DOMAIN-SUFFIX,hexin.*
-  - DOMAIN-SUFFIX,51ifind.*
-  - DOMAIN-SUFFIX,aicubes.*
-  - DOMAIN-SUFFIX,ths123.*
-  - DOMAIN-SUFFIX,hexun.*   
+  - DOMAIN-KEYWORD,qq      
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== LOL手游 游戏服务器 ====
@@ -185,6 +176,15 @@ payload:
   - DOMAIN-SUFFIX,tmall.com
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
+
+  # === 同花顺域名 ===
+  - DOMAIN-SUFFIX,10jqka.com.cn
+  - DOMAIN-SUFFIX,ihexin.com
+  - DOMAIN-SUFFIX,hexin.cn
+  - DOMAIN-SUFFIX,51ifind.com
+  - DOMAIN-SUFFIX,aicubes.cn
+  - DOMAIN-SUFFIX,ths123.com
+  - DOMAIN-SUFFIX,hexun.com
  
   # ==== 抖音国内 CDN / 加速 IP ====
   - IP-CIDR,101.227.0.0/16,no-resolve
