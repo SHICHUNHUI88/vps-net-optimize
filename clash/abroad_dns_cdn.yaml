@@ -90,10 +90,9 @@ payload:
 
   # ==== 国外 CDN ====
   # Cloudflare
-  - DOMAIN-SUFFIX,cloudflare.com
-  - DOMAIN-SUFFIX,cloudflare.net
-  - DOMAIN-SUFFIX,cfcdn.com
-  - DOMAIN-SUFFIX,cf-ipfs.com
+  - DOMAIN-SUFFIX,cloudflare.*
+  - DOMAIN-SUFFIX,cfcdn.*
+  - DOMAIN-SUFFIX,cf-ipfs.*
   - DOMAIN-SUFFIX,workers.dev
   # Akamai
   - DOMAIN-SUFFIX,akamai.net
@@ -179,22 +178,22 @@ payload:
   - DOMAIN-SUFFIX,global.cainiao.com
 
   # ==== TikTok （海外业务总表） ====
-  - DOMAIN-SUFFIX,tiktok.com
-  - DOMAIN-SUFFIX,tiktokv.com
-  - DOMAIN-SUFFIX,tiktokcdn.com
-  - DOMAIN-SUFFIX,tiktokcdn-us.com
-  - DOMAIN-SUFFIX,tiktoklive.com
-  - DOMAIN-SUFFIX,tiktok-browser.com
-  - DOMAIN-SUFFIX,ttlive.com
-  - DOMAIN-SUFFIX,ttwstatic.com
+  - DOMAIN-SUFFIX,tiktok.*
+  - DOMAIN-SUFFIX,tiktokv.*
+  - DOMAIN-SUFFIX,tiktokcdn.*
+  - DOMAIN-SUFFIX,tiktokcdn-us.*
+  - DOMAIN-SUFFIX,tiktoklive.*
+  - DOMAIN-SUFFIX,tiktok-browser.*
+  - DOMAIN-SUFFIX,ttlive.*
+  - DOMAIN-SUFFIX,ttwstatic.*
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,muscdn.com
-  - DOMAIN-SUFFIX,ibyteimg.com
-  - DOMAIN-SUFFIX,ipstatp.com
-  - DOMAIN-SUFFIX,byteoversea.com
-  - DOMAIN-SUFFIX,ibytedtos.com
-  - DOMAIN-SUFFIX,ibytedapm.com
-  - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,ibyteimg.*
+  - DOMAIN-SUFFIX,ipstatp.*
+  - DOMAIN-SUFFIX,byteoversea.*
+  - DOMAIN-SUFFIX,ibytedtos.*
+  - DOMAIN-SUFFIX,ibytedapm.*
+  - DOMAIN-SUFFIX,tiktokshop.*
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
   - DOMAIN-SUFFIX,gettr.com
   # tiktok兜底关键词
@@ -209,18 +208,19 @@ payload:
   - IP-CIDR,52.220.0.0/15,no-resolve
 
   # ==== 字节跳动系 应用 & 服务 ====
-  - DOMAIN-SUFFIX,amemv.com
-  - DOMAIN-SUFFIX,douyincdn.com
+  - DOMAIN-SUFFIX,amemv.*
+  - DOMAIN-SUFFIX,douyin.*
+  - DOMAIN-SUFFIX,douyincdn.*
   - DOMAIN-SUFFIX,douyinfe.com
-  - DOMAIN-SUFFIX,douyinlive.com
+  - DOMAIN-SUFFIX,douyinlive.*
   - DOMAIN-SUFFIX,douyinpic.com
   - DOMAIN-SUFFIX,douyinstatic.com
   - DOMAIN-SUFFIX,douyinvod.com
   - DOMAIN-SUFFIX,idouyinvod.com
   - DOMAIN-SUFFIX,iesdouyin.com
-  - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,pstatp.*
   - DOMAIN-SUFFIX,ipstatp.com
-  - DOMAIN-SUFFIX,ixigua.com
+  - DOMAIN-SUFFIX,ixigua.*
   - DOMAIN-SUFFIX,ixiguavideo.com
   - DOMAIN-SUFFIX,toutiao.com
   - DOMAIN-SUFFIX,toutiaocdn.com
@@ -246,7 +246,7 @@ payload:
   - DOMAIN-SUFFIX,byteoversea.com
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
-  - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN-SUFFIX,snssdk.*
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # 🔑 关键词（兜底防漏网）
@@ -285,20 +285,19 @@ payload:
  
   # ==== Telegram / 电报 全面规则 ====
   # ✈️ 核心域名（官网、注册、登录）
-  - DOMAIN-SUFFIX,telegram.org
+  - DOMAIN-SUFFIX,telegram.*
   - DOMAIN-SUFFIX,t.me
-  - DOMAIN-SUFFIX,telegram.com
   # ✈️ API / 聊天服务
   - DOMAIN-SUFFIX,api.telegram.org
   - DOMAIN-SUFFIX,core.telegram.org
-  - DOMAIN-SUFFIX,mtproto.org
+  - DOMAIN-SUFFIX,mtproto.*
   - DOMAIN-SUFFIX,telegram.me
   - DOMAIN-SUFFIX,telegram.plus
   # ✈️ 静态资源 / CDN / 下载文件 / 视频节点
-  - DOMAIN-SUFFIX,telegramcdn.com
-  - DOMAIN-SUFFIX,telegram-cdn.org
-  - DOMAIN-SUFFIX,cdn-telegram.org
-  - DOMAIN-SUFFIX,tlgrm.ru
+  - DOMAIN-SUFFIX,telegramcdn.*
+  - DOMAIN-SUFFIX,telegram-cdn.*
+  - DOMAIN-SUFFIX,cdn-telegram.*
+  - DOMAIN-SUFFIX,tlgrm.*
   - DOMAIN-SUFFIX,media.telegram.org
   - DOMAIN-SUFFIX,telegram.video
   - DOMAIN-SUFFIX,telegram-store.org
@@ -365,6 +364,47 @@ payload:
   - DOMAIN-KEYWORD,googlevideo
   - DOMAIN-KEYWORD,googleapis
   - DOMAIN-KEYWORD,gstatic
+
+  # ==== 🐙 GitHub 主站与账户服务 ====
+  - DOMAIN-SUFFIX,github.com
+  - DOMAIN-SUFFIX,github.io
+  - DOMAIN-SUFFIX,githubapp.com
+  - DOMAIN-SUFFIX,githubassets.com
+  - DOMAIN-SUFFIX,githubusercontent.com
+  - DOMAIN-SUFFIX,githubstatus.com
+  - DOMAIN-SUFFIX,ghstatic.net
+  - DOMAIN-SUFFIX,github.community
+  - DOMAIN-SUFFIX,github.blog
+  # ==== API 与接口 ====
+  - DOMAIN-SUFFIX,api.github.com
+  - DOMAIN-SUFFIX,uploads.github.com
+  - DOMAIN-SUFFIX,objects.githubusercontent.com
+  - DOMAIN-SUFFIX,codeload.github.com
+  - DOMAIN-SUFFIX,raw.githubusercontent.com
+  # ==== Actions / Packages / CI-CD ====
+  - DOMAIN-SUFFIX,actions.githubusercontent.com
+  - DOMAIN-SUFFIX,ghcr.io
+  - DOMAIN-SUFFIX,github.dev
+  - DOMAIN-SUFFIX,githubnext.com
+  # ==== 静态资源与镜像 ====
+  - DOMAIN-SUFFIX,avatars.githubusercontent.com
+  - DOMAIN-SUFFIX,favicons.githubusercontent.com
+  - DOMAIN-SUFFIX,user-images.githubusercontent.com
+  - DOMAIN-SUFFIX,cloud.githubusercontent.com
+  # ==== GitHub Copilot / AI / Codespaces ====
+  - DOMAIN-SUFFIX,githubcopilot.com
+  - DOMAIN-SUFFIX,copilot-proxy.githubusercontent.com
+  - DOMAIN-SUFFIX,codespaces.githubusercontent.com
+  - DOMAIN-SUFFIX,visualstudio.com
+  - DOMAIN-SUFFIX,vsassets.io
+  # ==== 其他 GitHub 相关服务 ====
+  - DOMAIN-SUFFIX,npmjs.com
+  - DOMAIN-SUFFIX,dependabot.com
+  - DOMAIN-SUFFIX,git.io
+  - DOMAIN-SUFFIX,myoctocat.com
+  - DOMAIN-SUFFIX,graphql.github.com
+  - DOMAIN-SUFFIX,education.github.com
+  - DOMAIN-SUFFIX,enterprise.github.com
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
