@@ -95,12 +95,12 @@ payload:
   - DOMAIN-SUFFIX,cf-ipfs.*
   - DOMAIN-SUFFIX,workers.dev
   # Akamai
-  - DOMAIN-SUFFIX,akamai.net
+  - DOMAIN-SUFFIX,akamai.*
   - DOMAIN-SUFFIX,akamaiedge.net
   - DOMAIN-SUFFIX,akamaitechnologies.com
   - DOMAIN-SUFFIX,akamaized.net
   # Fastly
-  - DOMAIN-SUFFIX,fastly.net
+  - DOMAIN-SUFFIX,fastly.*
   - DOMAIN-SUFFIX,fastlylb.net
   - DOMAIN-SUFFIX,map.fastly.net
   # AWS CloudFront
@@ -310,21 +310,21 @@ payload:
   - DOMAIN-KEYWORD,mtproto
   - DOMAIN-KEYWORD,t.me
 
-  # ==== Google / 谷歌全面规则 ====
+  # ==== Google / 谷歌全面规则（整合版） ====
   # 🌐 核心域名（搜索、账号、Gmail）
-  - DOMAIN-SUFFIX,google.com
-  - DOMAIN-SUFFIX,googlemail.com
-  - DOMAIN-SUFFIX,gmail.com
+  - DOMAIN-SUFFIX,google.*
+  - DOMAIN-SUFFIX,googlemail.*
+  - DOMAIN-SUFFIX,gmail.*
   - DOMAIN-SUFFIX,accounts.google.com
-  - DOMAIN-SUFFIX,googleusercontent.com
-  - DOMAIN-SUFFIX,ggpht.com
-  - DOMAIN-SUFFIX,googleapis.com
+  - DOMAIN-SUFFIX,googleusercontent.*
+  - DOMAIN-SUFFIX,ggpht.*
+  - DOMAIN-SUFFIX,googleapis.*
   # 🌐 YouTube / 视频服务
-  - DOMAIN-SUFFIX,youtube.com
+  - DOMAIN-SUFFIX,youtube.*
   - DOMAIN-SUFFIX,youtu.be
   - DOMAIN-SUFFIX,youtube-nocookie.com
-  - DOMAIN-SUFFIX,ytimg.com
-  - DOMAIN-SUFFIX,googlevideo.com
+  - DOMAIN-SUFFIX,ytimg.*
+  - DOMAIN-SUFFIX,googlevideo.*
   - DOMAIN-SUFFIX,ytapi.com
   # 🌐 Google Drive / 文档 / 云盘
   - DOMAIN-SUFFIX,drive.google.com
@@ -353,8 +353,14 @@ payload:
   - DOMAIN-SUFFIX,adwords.google.com
   - DOMAIN-SUFFIX,analytics.google.com
   - DOMAIN-SUFFIX,fonts.googleapis.com
-  - DOMAIN-SUFFIX,googlesyndication.com
+  - DOMAIN-SUFFIX,googlesyndication.*
   - DOMAIN-SUFFIX,googleadservices.com
+  # 🌐 其他泛域名 / 工具类（原第一组保留）
+  - DOMAIN-SUFFIX,withgoogle.*
+  - DOMAIN-SUFFIX,chromium.*
+  - DOMAIN-SUFFIX,chrome.*
+  - DOMAIN-SUFFIX,android.*
+  - DOMAIN-SUFFIX,blogger.*
   # 🌐 关键词兜底（防止未来新域名漏网）
   - DOMAIN-KEYWORD,google
   - DOMAIN-KEYWORD,gmail
