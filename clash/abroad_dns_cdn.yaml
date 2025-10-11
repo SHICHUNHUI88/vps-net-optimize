@@ -88,74 +88,100 @@ payload:
   - DOMAIN,unfiltered.adguard-dns.com
   - DOMAIN,dns.securedns.eu
 
-  # ==== 国外 CDN ====
-  # Cloudflare
+  # ==== 国外 CDN + 公共云 ====
+  ## ☁️ Cloudflare
   - DOMAIN-SUFFIX,cloudflare.com
   - DOMAIN-SUFFIX,cloudflare.net
   - DOMAIN-SUFFIX,cloudflare.org
   - DOMAIN-SUFFIX,cfcdn.com
   - DOMAIN-SUFFIX,cf-ipfs.com
   - DOMAIN-SUFFIX,workers.dev
-  # Akamai
+  ## 🔵 Akamai
   - DOMAIN-SUFFIX,akamai.net
   - DOMAIN-SUFFIX,akamaiedge.net
   - DOMAIN-SUFFIX,akamaitechnologies.com
   - DOMAIN-SUFFIX,akamaized.net
-  # Fastly
+  - DOMAIN-SUFFIX,edgekey.net
+  - DOMAIN-SUFFIX,edgesuite.net
+  ## 🟣 Fastly
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,fastlylb.net
   - DOMAIN-SUFFIX,map.fastly.net
-  # AWS CloudFront
+  ## 🟠 Amazon Web Services (AWS)
+  - DOMAIN-SUFFIX,amazonaws.com
   - DOMAIN-SUFFIX,cloudfront.net
-  # Google CDN
+  - DOMAIN-SUFFIX,awsstatic.com
+  - DOMAIN-SUFFIX,awstrack.me
+  ## 🟢 Google Cloud / CDN
+  - DOMAIN-SUFFIX,googleapis.com
   - DOMAIN-SUFFIX,googlecdn.com
   - DOMAIN-SUFFIX,gstatic.com
   - DOMAIN-SUFFIX,googlesyndication.com
   - DOMAIN-SUFFIX,googleusercontent.com
-  # Microsoft CDN
+  ## 🔵 Microsoft Azure CDN
   - DOMAIN-SUFFIX,azureedge.net
   - DOMAIN-SUFFIX,azurefd.net
-  - DOMAIN-SUFFIX,msn.com
   - DOMAIN-SUFFIX,msecnd.net
   - DOMAIN-SUFFIX,microsoft.com
-  # jsDelivr
+  - DOMAIN-SUFFIX,msn.com
+  ## 🟣 jsDelivr
   - DOMAIN-SUFFIX,jsdelivr.net
-  # BunnyCDN
+  ## 🟠 BunnyCDN
   - DOMAIN-SUFFIX,b-cdn.net
-  - DOMAIN-SUFFIX,bunnycdn.ru
   - DOMAIN-SUFFIX,bunnycdn.net
-  # CDN77
+  - DOMAIN-SUFFIX,bunnycdn.ru
+  ## 🟡 CDN77 / StackPath
   - DOMAIN-SUFFIX,cdn77.com
   - DOMAIN-SUFFIX,cdn77.org
   - DOMAIN-SUFFIX,stackpathdns.com
   - DOMAIN-SUFFIX,kxcdn.com
-  # Cloudinary
+  ## 🟢 Cloudinary
   - DOMAIN-SUFFIX,cloudinary.com
-  # Netlify CDN
+  ## 🟣 Netlify CDN
   - DOMAIN-SUFFIX,netlify.app
   - DOMAIN-SUFFIX,netlifycdn.com
-  # GitHub Pages CDN
+  ## 🟠 GitHub / Pages CDN
   - DOMAIN-SUFFIX,github.io
   - DOMAIN-SUFFIX,githubusercontent.com
-  # Vercel CDN
+  ## 🟡 Vercel CDN
   - DOMAIN-SUFFIX,vercel.app
   - DOMAIN-SUFFIX,vercel-dns.com
-  # Misc 常用 CDN 域名
-  - DOMAIN-SUFFIX,edgekey.net
-  - DOMAIN-SUFFIX,edgesuite.net
-  - DOMAIN-SUFFIX,cdninstagram.com
+  ## ⚪ Apple / Mozilla / Instagram CDN
   - DOMAIN-SUFFIX,cdn-apple.com
   - DOMAIN-SUFFIX,cdn.mozilla.net
-  # 三方CDN
+  - DOMAIN-SUFFIX,cdninstagram.com
+  ## 🟣 Edgecast / Limelight Networks
   - DOMAIN-SUFFIX,edgecastcdn.net
   - DOMAIN-SUFFIX,llnw.net
-  # ==== 🔑 CDN关键词 ====
+  ## 🔵 Oracle Cloud (OCI)
+  - DOMAIN-SUFFIX,oraclecloud.com
+  - DOMAIN-SUFFIX,ocir.io
+  - DOMAIN-SUFFIX,oracledns.net
+  ## 🟢 DigitalOcean
+  - DOMAIN-SUFFIX,digitaloceanspaces.com
+  - DOMAIN-SUFFIX,digitalocean.com
+  ## 🟣 Hetzner Cloud
+  - DOMAIN-SUFFIX,hetzner.cloud
+  - DOMAIN-SUFFIX,hetzner.de
+  - DOMAIN-SUFFIX,static.hetzner.com
+  ## 🟠 Vultr / Linode
+  - DOMAIN-SUFFIX,vultr.com
+  - DOMAIN-SUFFIX,linode.com
+  - DOMAIN-SUFFIX,linodeusercontent.com
+  ## ⚪ Backblaze / Wasabi / Cloud Storage
+  - DOMAIN-SUFFIX,backblazeb2.com
+  - DOMAIN-SUFFIX,wasabisys.com
+  - DOMAIN-SUFFIX,storj.io
+  ## 🔑 常见关键词匹配
   - DOMAIN-KEYWORD,cloudflare
   - DOMAIN-KEYWORD,akamai
   - DOMAIN-KEYWORD,fastly
   - DOMAIN-KEYWORD,cloudfront
   - DOMAIN-KEYWORD,googlecdn
   - DOMAIN-KEYWORD,azureedge
+  - DOMAIN-KEYWORD,bunnycdn
+  - DOMAIN-KEYWORD,cdn77
+  - DOMAIN-KEYWORD,vercel
 
   # ==== 阿里 / 淘宝 / 支付宝 国际服务 ====
   - DOMAIN-SUFFIX,alibaba.com
