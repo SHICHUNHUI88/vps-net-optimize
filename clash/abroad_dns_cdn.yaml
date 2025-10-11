@@ -96,7 +96,6 @@ payload:
   - DOMAIN-SUFFIX,cfcdn.com
   - DOMAIN-SUFFIX,cf-ipfs.com
   - DOMAIN-SUFFIX,workers.dev
-  - DOMAIN-KEYWORD,cloudflare
   # Akamai
   - DOMAIN-SUFFIX,akamai.net
   - DOMAIN-SUFFIX,akamaiedge.net
