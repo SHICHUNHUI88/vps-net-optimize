@@ -150,6 +150,13 @@ payload:
   # 三方CDN
   - DOMAIN-SUFFIX,edgecastcdn.net
   - DOMAIN-SUFFIX,llnw.net
+  # ==== 🔑 CDN关键词 ====
+  - DOMAIN-KEYWORD,cloudflare
+  - DOMAIN-KEYWORD,akamai
+  - DOMAIN-KEYWORD,fastly
+  - DOMAIN-KEYWORD,cloudfront
+  - DOMAIN-KEYWORD,googlecdn
+  - DOMAIN-KEYWORD,azureedge
 
   # ==== 阿里 / 淘宝 / 支付宝 国际服务 ====
   - DOMAIN-SUFFIX,alibaba.com
