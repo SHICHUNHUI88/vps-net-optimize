@@ -15,65 +15,72 @@ payload:
   - DOMAIN,dns.cernet.cn
   - DOMAIN,dns.ctc.edu.cn
 
-  # ==== 国内 CDN ====
-  ## 阿里云
+  # ==== 国内 CDN + 公共云 ====
+  ## 🟢 阿里云（Alibaba Cloud）
   - DOMAIN-SUFFIX,alicdn.com
+  - DOMAIN-SUFFIX,taobaocdn.com
   - DOMAIN-SUFFIX,aliyuncs.com
   - DOMAIN-SUFFIX,aliyun.com
   - DOMAIN-SUFFIX,tbcache.com
   - DOMAIN-SUFFIX,cdn.aliyun.com
-  ## 腾讯云
-  - DOMAIN-SUFFIX,dnsv1.com
+  ## 🔵 腾讯云（Tencent Cloud）
+  - DOMAIN-SUFFIX,tencent.com
   - DOMAIN-SUFFIX,tencent-cloud.net
+  - DOMAIN-SUFFIX,myqcloud.com
+  - DOMAIN-SUFFIX,qcloudcdn.com
+  - DOMAIN-SUFFIX,cdn.qcloud.com
+  - DOMAIN-SUFFIX,cdn-go.cn
   - DOMAIN-SUFFIX,cdn.qq.com
   - DOMAIN-SUFFIX,gtimg.com
-  - DOMAIN-SUFFIX,tencent.com
-  # 腾讯云游戏服务
-  - DOMAIN-SUFFIX,cdn-go.cn
-  - DOMAIN-SUFFIX,qcloudcdn.com
-  - DOMAIN-SUFFIX,myqcloud.com
-  - DOMAIN-SUFFIX,cdn.qcloud.com
-  ## 网宿
-  - DOMAIN-SUFFIX,wangsu.com
-  - DOMAIN-SUFFIX,wsdvs.com
-  - DOMAIN-SUFFIX,wscdns.com
-  - DOMAIN-SUFFIX,wscloudcdn.com
-  - DOMAIN-SUFFIX,ourwebpic.com
-  - DOMAIN-SUFFIX,cdn20.com
-  - DOMAIN-SUFFIX,cdn30.com
-  ## 七牛云
-  - DOMAIN-SUFFIX,qiniucdn.com
-  - DOMAIN-SUFFIX,qiniudn.com
-  - DOMAIN-SUFFIX,qiniuio.com
-  - DOMAIN-SUFFIX,cdn.clouddn.com
-  ## 百度云
+  - DOMAIN-SUFFIX,qpic.cn
+  - DOMAIN-SUFFIX,dnsv1.com
+  ## 🟣 百度云（Baidu Cloud）
+  - DOMAIN-SUFFIX,baidubce.com
+  - DOMAIN-SUFFIX,bdstatic.com
   - DOMAIN-SUFFIX,bdydns.com
   - DOMAIN-SUFFIX,baidupcs.com
   - DOMAIN-SUFFIX,cdn.baidubce.com
   - DOMAIN-SUFFIX,cdn.bcebos.com
-  ## 蓝汛
+  ## 🟠 华为云（Huawei Cloud）
+  - DOMAIN-SUFFIX,hwcdn.net
+  - DOMAIN-SUFFIX,huaweicloud.com
+  - DOMAIN-SUFFIX,myhuaweicloud.com
+  - DOMAIN-SUFFIX,hwclouds.com
+  - DOMAIN-SUFFIX,myhwcdn.cn
+  ## ⚪ 网宿科技（Wangsu）
+  - DOMAIN-SUFFIX,wangsu.com
+  - DOMAIN-SUFFIX,wscdns.com
+  - DOMAIN-SUFFIX,wsdvs.com
+  - DOMAIN-SUFFIX,wscloudcdn.com
+  - DOMAIN-SUFFIX,ourwebpic.com
+  - DOMAIN-SUFFIX,cdn20.com
+  - DOMAIN-SUFFIX,cdn30.com
+  ## 🟤 七牛云（Qiniu）
+  - DOMAIN-SUFFIX,qiniucdn.com
+  - DOMAIN-SUFFIX,qiniudn.com
+  - DOMAIN-SUFFIX,qiniuio.com
+  - DOMAIN-SUFFIX,cdn.clouddn.com
+  - DOMAIN-SUFFIX,qnssl.com
+  - DOMAIN-SUFFIX,qiniudns.com
+  ## 🟢 蓝汛（ChinaCache）
   - DOMAIN-SUFFIX,chinacache.net
   - DOMAIN-SUFFIX,lxdns.com
-  ## 京东云
+  ## 🔵 白山云（BaishanCloud）
+  - DOMAIN-SUFFIX,bsclink.cn
+  - DOMAIN-SUFFIX,bsccdn.net
+  - DOMAIN-SUFFIX,bsgslb.com
+  ## 🟣 京东云（JD Cloud）
   - DOMAIN-SUFFIX,jdcloud.com
   - DOMAIN-SUFFIX,jcloud-cdn.com
   - DOMAIN-SUFFIX,360buyimg.com
-  ## 华为云
-  - DOMAIN-SUFFIX,hwcdn.net
-  - DOMAIN-SUFFIX,huaweicloud.com
-  - DOMAIN-SUFFIX,hwclouds.com
-  - DOMAIN-SUFFIX,myhwcdn.cn
-  ## 白山云
-  - DOMAIN-SUFFIX,bsclink.cn
-  - DOMAIN-SUFFIX,bsccdn.net
-  ## 其他
-  - DOMAIN-SUFFIX,163yun.com
+  ## 🟠 其他国内 CDN / 公共云
+  - DOMAIN-SUFFIX,163yun.com       
+  - DOMAIN-SUFFIX,ctyunapi.cn      
+  - DOMAIN-SUFFIX,cndns.com.cn
+  - DOMAIN-SUFFIX,letvcdn.com
   - DOMAIN-SUFFIX,sina.com
   - DOMAIN-SUFFIX,sohu.com
-  - DOMAIN-SUFFIX,letvcdn.com
-  - DOMAIN-SUFFIX,ctyunapi.cn
-  - DOMAIN-SUFFIX,cndns.com.cn
-  # ==== 国内游戏 CDN ====
+  ## 🎮 国内游戏 CDN
   - DOMAIN-SUFFIX,blizzard.cn
   - DOMAIN-SUFFIX,riotgames.cn
 
