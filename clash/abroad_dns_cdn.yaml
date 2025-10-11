@@ -179,9 +179,6 @@ payload:
   - DOMAIN-KEYWORD,cloudfront
   - DOMAIN-KEYWORD,googlecdn
   - DOMAIN-KEYWORD,azureedge
-  - DOMAIN-KEYWORD,bunnycdn
-  - DOMAIN-KEYWORD,cdn77
-  - DOMAIN-KEYWORD,vercel
 
   # ==== 阿里 / 淘宝 / 支付宝 国际服务 ====
   - DOMAIN-SUFFIX,alibaba.com
