@@ -184,15 +184,103 @@ payload:
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
 
-  # === 同花顺域名 ===
+  # ==== 同花顺 / iFinD / HEXIN ====
+  # 主域名
   - DOMAIN-SUFFIX,10jqka.com.cn
+  - DOMAIN-SUFFIX,10jqka.com
   - DOMAIN-SUFFIX,ihexin.com
   - DOMAIN-SUFFIX,hexin.cn
-  - DOMAIN-SUFFIX,51ifind.com
-  - DOMAIN-SUFFIX,aicubes.cn
+  - DOMAIN-SUFFIX,hexin.com.cn
   - DOMAIN-SUFFIX,ths123.com
-  - DOMAIN-SUFFIX,hexun.com
+  - DOMAIN-SUFFIX,aicubes.cn
+  - DOMAIN-SUFFIX,aicubes.com.cn
+  - DOMAIN-SUFFIX,51ifind.com
+  - DOMAIN-SUFFIX,ifind.com.cn
+  - DOMAIN-SUFFIX,thsimg.com
+  - DOMAIN-SUFFIX,thsdata.com
+  - DOMAIN-SUFFIX,ithinker.com.cn
+  - DOMAIN-SUFFIX,hexun.com        
+  # API / 数据接口域名
+  - DOMAIN-KEYWORD,10jqka
+  - DOMAIN-KEYWORD,hexin
+  - DOMAIN-KEYWORD,ihexin
+  - DOMAIN-KEYWORD,ths
+  - DOMAIN-KEYWORD,ifind
+  - DOMAIN-KEYWORD,ithinker
+  - DOMAIN-KEYWORD,aicubes
+  # CDN 与静态资源
+  - DOMAIN-SUFFIX,js.10jqka.com.cn
+  - DOMAIN-SUFFIX,img.10jqka.com.cn
+  - DOMAIN-SUFFIX,static.10jqka.com.cn
+  - DOMAIN-SUFFIX,res.10jqka.com.cn
+  - DOMAIN-SUFFIX,data.10jqka.com.cn
+  - DOMAIN-SUFFIX,cdn.10jqka.com.cn
+  - DOMAIN-SUFFIX,gw.10jqka.com.cn
+  # 更新与推送服务
+  - DOMAIN-SUFFIX,push.10jqka.com.cn
+  - DOMAIN-SUFFIX,update.10jqka.com.cn
+  - DOMAIN-SUFFIX,appupgrade.10jqka.com.cn
+  # 分析与统计
+  - DOMAIN-SUFFIX,stat.10jqka.com.cn
+  - DOMAIN-SUFFIX,log.10jqka.com.cn
+  - DOMAIN-SUFFIX,report.10jqka.com.cn
+  - DOMAIN-SUFFIX,analytics.10jqka.com.cn
+  # 金融数据相关 API
+  - DOMAIN-SUFFIX,ifind.com
+  - DOMAIN-SUFFIX,ifind.cn
+  - DOMAIN-SUFFIX,ifinddata.com
+  - DOMAIN-SUFFIX,fintech.10jqka.com.cn
+  - DOMAIN-SUFFIX,f10.10jqka.com.cn
+  # 其他子域常见
+  - DOMAIN-SUFFIX,fund.10jqka.com.cn
+  - DOMAIN-SUFFIX,news.10jqka.com.cn
+  - DOMAIN-SUFFIX,quote.10jqka.com.cn
+  - DOMAIN-SUFFIX,trade.10jqka.com.cn
+  - DOMAIN-SUFFIX,stock.10jqka.com.cn
+  - DOMAIN-SUFFIX,bond.10jqka.com.cn
+  - DOMAIN-SUFFIX,app.10jqka.com.cn
+  # ==== CDN 和 云服务 ====
+  - DOMAIN-SUFFIX,alicdn.com
+  - DOMAIN-SUFFIX,aliyuncs.com
+  - DOMAIN-SUFFIX,cdn.aliyun.com
+  - DOMAIN-SUFFIX,qcloudcdn.com
+  # ==== IP 段（国内使用建议加 no-resolve） ====
+  - IP-CIDR,36.155.0.0/16,no-resolve
+  - IP-CIDR,101.227.0.0/16,no-resolve
+  - IP-CIDR,123.58.0.0/16,no-resolve
  
+  # ==== 酷我音乐 Kuwo Music ====
+  # 官方域名
+  - DOMAIN-SUFFIX,kuwo.cn
+  - DOMAIN-SUFFIX,kuwo.com
+  - DOMAIN-SUFFIX,kugou-kuwo.com   # 酷狗系共享CDN
+  - DOMAIN-SUFFIX,koowo.com        # 旧域名仍在使用
+  - DOMAIN-SUFFIX,kuwomusic.cn
+  # 静态资源与CDN
+  - DOMAIN-SUFFIX,kwcdn.kuwo.cn
+  - DOMAIN-SUFFIX,kwstatic.kuwo.cn
+  - DOMAIN-SUFFIX,kwapi.kuwo.cn
+  - DOMAIN-SUFFIX,img.kuwo.cn
+  - DOMAIN-SUFFIX,js.kuwo.cn
+  - DOMAIN-SUFFIX,ar.i.kuwo.cn
+  - DOMAIN-SUFFIX,ar.video.kuwo.cn
+  - DOMAIN-SUFFIX,antiserver.kuwo.cn
+  # 音乐API与播放链接
+  - DOMAIN-KEYWORD,kuwo
+  - DOMAIN-KEYWORD,kwmusic
+  # 应用日志与统计
+  - DOMAIN-SUFFIX,stat.kuwo.cn
+  - DOMAIN-SUFFIX,tracker.kuwo.cn
+  - DOMAIN-SUFFIX,ad.kuwo.cn
+  # ==== 酷我在酷狗系共享的节点 ====
+  - DOMAIN-SUFFIX,kugou.com
+  - DOMAIN-SUFFIX,kugou.cn
+  - DOMAIN-SUFFIX,kugou.net
+  # ==== 酷我使用的云服务 ====
+  - DOMAIN-SUFFIX,alicdn.com
+  - DOMAIN-SUFFIX,aliyuncs.com
+  - DOMAIN-SUFFIX,qcloudcdn.com
+
   # ==== 抖音国内 CDN / 加速 IP ====
   - IP-CIDR,101.227.0.0/16,no-resolve
   - IP-CIDR,101.32.0.0/16,no-resolve
