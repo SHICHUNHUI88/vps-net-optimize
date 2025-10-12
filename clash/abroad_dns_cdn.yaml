@@ -172,6 +172,9 @@ payload:
   - DOMAIN-SUFFIX,backblazeb2.com
   - DOMAIN-SUFFIX,wasabisys.com
   - DOMAIN-SUFFIX,storj.io
+  ## 🎮 游戏CDN
+  - DOMAIN-SUFFIX,edgecastcdn.net
+  - DOMAIN-SUFFIX,llnw.net
   ## 🔑 常见关键词匹配
   - DOMAIN-KEYWORD,cloudflare
   - DOMAIN-KEYWORD,akamai
