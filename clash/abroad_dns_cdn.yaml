@@ -101,6 +101,7 @@ payload:
   - DOMAIN-SUFFIX,akamaiedge.net
   - DOMAIN-SUFFIX,akamaitechnologies.com
   - DOMAIN-SUFFIX,akamaized.net
+  - DOMAIN-SUFFIX,akamaihd.net
   - DOMAIN-SUFFIX,edgekey.net
   - DOMAIN-SUFFIX,edgesuite.net
   ## 🟣 Fastly
@@ -152,6 +153,7 @@ payload:
   - DOMAIN-SUFFIX,cdninstagram.com
   ## 🟣 Edgecast / Limelight Networks
   - DOMAIN-SUFFIX,edgecastcdn.net
+  - DOMAIN-SUFFIX,edgio.net
   - DOMAIN-SUFFIX,llnw.net
   ## 🔵 Oracle Cloud (OCI)
   - DOMAIN-SUFFIX,oraclecloud.com
@@ -172,9 +174,6 @@ payload:
   - DOMAIN-SUFFIX,backblazeb2.com
   - DOMAIN-SUFFIX,wasabisys.com
   - DOMAIN-SUFFIX,storj.io
-  ## 🎮 游戏CDN
-  - DOMAIN-SUFFIX,edgecastcdn.net
-  - DOMAIN-SUFFIX,llnw.net
   ## 🔑 常见关键词匹配
   - DOMAIN-KEYWORD,cloudflare
   - DOMAIN-KEYWORD,akamai
