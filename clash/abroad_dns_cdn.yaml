@@ -176,6 +176,7 @@ payload:
   - DOMAIN-SUFFIX,storj.io
   ## 🎮 IIJ 日本游戏CDN 
   - DOMAIN-SUFFIX,iij.ad.jp
+  - DOMAIN-SUFFIX,iijcdn.ad.jp
   - DOMAIN-SUFFIX,iijgio.com
   - DOMAIN-KEYWORD,iijcdn
   - DOMAIN-SUFFIX,cdn.iij.ad.jp
