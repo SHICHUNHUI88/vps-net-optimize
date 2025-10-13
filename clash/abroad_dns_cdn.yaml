@@ -178,9 +178,16 @@ payload:
   - DOMAIN-SUFFIX,iij.ad.jp
   - DOMAIN-SUFFIX,iijgio.com
   - DOMAIN-KEYWORD,iijcdn
+  - DOMAIN-SUFFIX,cdn.iij.ad.jp
   - DOMAIN-SUFFIX,cdn.dmm.com
+  - DOMAIN-SUFFIX,dmm.com
   - DOMAIN-SUFFIX,cdn.gree.net
+  - DOMAIN-SUFFIX,gree.net
   - DOMAIN-SUFFIX,cdn.mobage.jp
+  - DOMAIN-SUFFIX,mobage.jp
+  - DOMAIN-SUFFIX,dena.com
+  - DOMAIN-SUFFIX,nicovideo.jp
+  - DOMAIN-SUFFIX,nimg.jp
   ## 🔑 常见关键词匹配
   - DOMAIN-KEYWORD,cloudflare
   - DOMAIN-KEYWORD,akamai
