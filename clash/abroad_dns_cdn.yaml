@@ -259,63 +259,6 @@ payload:
   - IP-CIDR,52.74.0.0/16,no-resolve
   - IP-CIDR,52.220.0.0/15,no-resolve
 
-  # ==== 字节跳动系 应用 & 服务 ====
-  - DOMAIN-SUFFIX,amemv.com
-  - DOMAIN-SUFFIX,douyin.com
-  - DOMAIN-SUFFIX,douyincdn.com
-  - DOMAIN-SUFFIX,douyinfe.com
-  - DOMAIN-SUFFIX,douyinlive.com
-  - DOMAIN-SUFFIX,douyinpic.com
-  - DOMAIN-SUFFIX,douyinstatic.com
-  - DOMAIN-SUFFIX,douyinvod.com
-  - DOMAIN-SUFFIX,idouyinvod.com
-  - DOMAIN-SUFFIX,iesdouyin.com
-  - DOMAIN-SUFFIX,pstatp.com
-  - DOMAIN-SUFFIX,ipstatp.com
-  - DOMAIN-SUFFIX,ixigua.com
-  - DOMAIN-SUFFIX,ixiguavideo.com
-  - DOMAIN-SUFFIX,toutiao.com
-  - DOMAIN-SUFFIX,toutiaocdn.com
-  - DOMAIN-SUFFIX,toutiaocloud.com
-  - DOMAIN-SUFFIX,toutiaovod.com
-  - DOMAIN-SUFFIX,huoshan.com
-  - DOMAIN-SUFFIX,huoshanzhibo.com
-  - DOMAIN-SUFFIX,ppxvod.com
-  - DOMAIN-SUFFIX,ppxcdn.com
-  - DOMAIN-SUFFIX,ixgvideo.com
-  - DOMAIN-SUFFIX,bytedance.com
-  - DOMAIN-SUFFIX,bytedns.net
-  - DOMAIN-SUFFIX,bytednsdoc.com
-  - DOMAIN-SUFFIX,bytecdn.cn
-  - DOMAIN-SUFFIX,byteimg.com
-  - DOMAIN-SUFFIX,bytetcc.com
-  - DOMAIN-SUFFIX,bytetos.com
-  - DOMAIN-SUFFIX,capcut.com
-  - DOMAIN-SUFFIX,volccdn.com
-  - DOMAIN-SUFFIX,feiliao.com
-  - DOMAIN-SUFFIX,fanqienovel.com
-  - DOMAIN-SUFFIX,acomic.com
-  - DOMAIN-SUFFIX,byteoversea.com
-  - DOMAIN-SUFFIX,musical.ly
-  - DOMAIN-SUFFIX,goofish.com
-  - DOMAIN-SUFFIX,snssdk.com
-  - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com
-  # 🔑 关键词（兜底防漏网）
-  - DOMAIN-KEYWORD,douyincdn
-  - DOMAIN-KEYWORD,douyin
-  - DOMAIN-KEYWORD,toutiao
-  - DOMAIN-KEYWORD,bytedance
-  - DOMAIN-KEYWORD,bytedns
-  - DOMAIN-KEYWORD,bytecdn
-  - DOMAIN-KEYWORD,byteimg
-  - DOMAIN-KEYWORD,bytetos
-  - DOMAIN-KEYWORD,volc
-  - DOMAIN-KEYWORD,ppx
-  - DOMAIN-KEYWORD,ixigua
-  - DOMAIN-KEYWORD,huoshan
-  - DOMAIN-KEYWORD,snssdk
-
   # ==== OpenAI / GPT 系列 ====
   # 🧠 核心域名（精准匹配）
   - DOMAIN-SUFFIX,openai.com
@@ -458,6 +401,43 @@ payload:
   - DOMAIN-SUFFIX,graphql.github.com
   - DOMAIN-SUFFIX,education.github.com
   - DOMAIN-SUFFIX,enterprise.github.com
+
+  # 📱 Meta 全家桶核心规则集（Instagram / 
+  # === Instagram ===
+  - DOMAIN-SUFFIX,instagram.com
+  - DOMAIN-SUFFIX,instagr.am
+  - DOMAIN-SUFFIX,cdninstagram.com
+  - DOMAIN-SUFFIX,graph.instagram.com
+  - DOMAIN-SUFFIX,i.instagram.com
+  - DOMAIN-SUFFIX,edge-mqtt.instagram.com
+  - DOMAIN-SUFFIX,scontent.cdninstagram.com
+  # === Facebook 核心服务 ===
+  - DOMAIN-SUFFIX,facebook.com
+  - DOMAIN-SUFFIX,facebook.net
+  - DOMAIN-SUFFIX,fbcdn.net
+  - DOMAIN-SUFFIX,fbcdn.com
+  - DOMAIN-SUFFIX,fbsbx.com
+  - DOMAIN-SUFFIX,b-graph.facebook.com
+  - DOMAIN-SUFFIX,edge-mqtt.facebook.com
+  - DOMAIN-SUFFIX,star.c10r.facebook.com
+  # === Messenger ===
+  - DOMAIN-SUFFIX,messenger.com
+  - DOMAIN-SUFFIX,msgr.io
+  - DOMAIN-SUFFIX,whatsapp.net
+  - DOMAIN-SUFFIX,whatsapp.com
+  - DOMAIN-SUFFIX,web.whatsapp.com
+  # === Threads / Instagram 社交扩展 ===
+  - DOMAIN-SUFFIX,threads.net
+  - DOMAIN-SUFFIX,threads.com
+  - DOMAIN-SUFFIX,threads.instagram.com
+  # === 必要的辅助 CDN / 域名 ===
+  - DOMAIN-SUFFIX,xx.fbcdn.net
+  - DOMAIN-SUFFIX,meta.com
+  - DOMAIN-SUFFIX,oculus.com
+  # === 核心关键词防漏 ===
+  - DOMAIN-KEYWORD,instagram
+  - DOMAIN-KEYWORD,fbcdn
+  - DOMAIN-KEYWORD,facebook
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
