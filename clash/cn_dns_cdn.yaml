@@ -249,8 +249,9 @@ payload:
   - IP-CIDR,101.227.0.0/16,no-resolve
   - IP-CIDR,123.58.0.0/16,no-resolve
 
-  # ==== 不知域名 ====
+  # ==== 抖音不知域名 ====
   - DOMAIN-SUFFIX,ndcpp.com
+  - DOMAIN-SUFFIX,xdrtc.com
 
   # ==== 抖音国内 CDN / 加速 IP ====
   - IP-CIDR,101.227.0.0/16,no-resolve
