@@ -43,11 +43,8 @@ payload:
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
-  - DOMAIN-SUFFIX,xdrtc.com
-  - DOMAIN-SUFFIX,hbiceapi.xdrtc.com
   # 🔑 关键词（兜底防漏网）
   - DOMAIN-KEYWORD,ndcpp
-  - DOMAIN-KEYWORD,xdrtc
   - DOMAIN-KEYWORD,amemv
   - DOMAIN-KEYWORD,douyincdn
   - DOMAIN-KEYWORD,douyin
