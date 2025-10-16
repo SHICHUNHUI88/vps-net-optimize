@@ -1,8 +1,6 @@
 payload:
   # ==== 字节跳动系 应用 & 服务 ====
   - DOMAIN-SUFFIX,ndcpp.com
-  - DOMAIN-SUFFIX,xdrtc.com
-  - DOMAIN-SUFFIX,hbiceapi.xdrtc.com
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
