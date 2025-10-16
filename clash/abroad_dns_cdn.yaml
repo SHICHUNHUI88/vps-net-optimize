@@ -248,12 +248,15 @@ payload:
   - DOMAIN-SUFFIX,tiktokshop.com
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
   - DOMAIN-SUFFIX,gettr.com
+  - DOMAIN-SUFFIX,xdrtc.com
+  - DOMAIN-SUFFIX,hbiceapi.xdrtc.com
   # tiktok兜底关键词
   - DOMAIN-KEYWORD,tiktokcdn
   - DOMAIN-KEYWORD,ibyteimg
   - DOMAIN-KEYWORD,ibytedtos  
   - DOMAIN-KEYWORD,tiktok
   - DOMAIN-KEYWORD,byteoversea
+  - DOMAIN-KEYWORD,xdrtc
   - IP-CIDR,170.176.0.0/12,no-resolve
   - IP-CIDR,161.117.0.0/16,no-resolve
   - IP-CIDR,47.246.0.0/16,no-resolve
