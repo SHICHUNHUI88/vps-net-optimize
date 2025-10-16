@@ -80,9 +80,17 @@ payload:
   - DOMAIN-SUFFIX,letvcdn.com
   - DOMAIN-SUFFIX,sina.com
   - DOMAIN-SUFFIX,sohu.com
-  ## 🎮 国内游戏 CDN
-  - DOMAIN-SUFFIX,blizzard.cn
-  - DOMAIN-SUFFIX,riotgames.cn
+
+  # 🔊 声网 Agora 全系列域名 
+  - DOMAIN-SUFFIX,agora.io
+  - DOMAIN-SUFFIX,xdrtc.com
+  - DOMAIN-SUFFIX,agoracn.com
+  - DOMAIN-SUFFIX,agoralab.co
+  - DOMAIN-SUFFIX,agoapp.biz
+  - DOMAIN-SUFFIX,agora-api.io
+  - DOMAIN-SUFFIX,amazonaws.com
+  - DOMAIN-KEYWORD,agora
+  - DOMAIN-KEYWORD,xdrtc
 
   # 💬 微信 登录 / 认证
   - DOMAIN-SUFFIX,open.weixin.qq.com   
