@@ -1,0 +1,56 @@
+# =========================================
+# 📡 声网 Agora.io 全域名规则集（整合版）
+# 用途：RTC 实时音视频 / RTM / 云录制 / 推流 / SDK 接口
+# 推荐策略：🎯 直连
+# 更新时间：2025-10-16
+# =========================================
+payload:
+  # --- 核心通信网络 ---
+  - DOMAIN-SUFFIX,agora.io
+  - DOMAIN-SUFFIX,edge.agora.io
+  - DOMAIN-SUFFIX,sd-rtn.com
+  - DOMAIN-SUFFIX,edge.sd-rtn.com
+  - DOMAIN-SUFFIX,xdrtc.com
+
+  # --- 扩展官方域名 / 企业域名 ---
+  - DOMAIN-SUFFIX,agoracn.com
+  - DOMAIN-SUFFIX,agoralab.co
+  - DOMAIN-SUFFIX,agoapp.biz
+  - DOMAIN-SUFFIX,agora-api.io
+  - DOMAIN-SUFFIX,agoramdn.com
+
+  # --- 信令与消息 RTM ---
+  - DOMAIN-SUFFIX,ap-web-1.agora.io
+  - DOMAIN-SUFFIX,ap-web-2.agora.io
+  - DOMAIN-SUFFIX,webcollector-rtm.agora.io
+  - DOMAIN-SUFFIX,logservice-rtm.agora.io
+  - DOMAIN-SUFFIX,rtm.statscollector.sd-rtn.com
+  - DOMAIN-SUFFIX,rtm.logservice.sd-rtn.com
+
+  # --- 控制接口 REST API ---
+  - DOMAIN-SUFFIX,api.agora.io
+  - DOMAIN-SUFFIX,api.sd-rtn.com
+  - DOMAIN-SUFFIX,service.agora.io
+  - DOMAIN-SUFFIX,stat.agora.io
+
+  # --- 媒体网关 / 云录制 ---
+  - DOMAIN-SUFFIX,recording.agora.io
+  - DOMAIN-SUFFIX,cloudrecording.agora.io
+  - DOMAIN-SUFFIX,media.agora.io
+  - DOMAIN-KEYWORD,ingress.agora
+
+  # --- 日志 / 调试 / 统计 ---
+  - DOMAIN-SUFFIX,statscollector.agora.io
+  - DOMAIN-SUFFIX,quality-logs.agora.io
+  - DOMAIN-SUFFIX,collector.agora.io
+
+  # --- ICE / 打洞接入域名 ---
+  - DOMAIN-SUFFIX,hbiceapi.xdrtc.com
+  - DOMAIN-KEYWORD,iceapi.xdrtc
+
+  # --- 通用匹配关键字 ---
+  - DOMAIN-KEYWORD,agora
+  - DOMAIN-KEYWORD,xdrtc
+
+  # --- 第三方云托管（声网部分服务托管在 AWS） ---
+  - DOMAIN-SUFFIX,amazonaws.com
