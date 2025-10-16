@@ -402,6 +402,7 @@ payload:
   - DOMAIN-SUFFIX,graphql.github.com
   - DOMAIN-SUFFIX,education.github.com
   - DOMAIN-SUFFIX,enterprise.github.com
+  - DOMAIN-KEYWORD,github
 
   # 📱 Meta 全家桶核心规则集（Instagram / 
   # === Instagram ===
