@@ -183,6 +183,7 @@ payload:
   - DOMAIN-SUFFIX,tmall.com
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
+  - DOMAIN-SUFFIX,xquic.com
 
   # ==== 同花顺 / iFinD / HEXIN ====
   # 主域名
