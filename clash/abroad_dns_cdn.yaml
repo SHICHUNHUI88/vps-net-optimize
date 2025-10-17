@@ -230,6 +230,7 @@ payload:
   - DOMAIN-SUFFIX,global.cainiao.com
 
   # ==== TikTok （海外业务总表） ====
+  - PROCESS-NAME,com.zhiliaoapp.musically
   - DOMAIN-SUFFIX,tiktok.com
   - DOMAIN-SUFFIX,tiktokv.com
   - DOMAIN-SUFFIX,tiktokv.us
