@@ -310,6 +310,10 @@ payload:
   - DOMAIN-KEYWORD,t.me
 
   # ==== Google / 谷歌全面规则 ====
+  - PROCESS-NAME,com.google.android.gms
+  - PROCESS-NAME,com.android.vending    
+  - PROCESS-NAME,com.google.android.youtube
+  - PROCESS-NAME,com.google.android.gm
   # 🌐 核心域名（搜索、账号、Gmail）
   - DOMAIN-SUFFIX,google.com
   - DOMAIN-SUFFIX,googlemail.com
