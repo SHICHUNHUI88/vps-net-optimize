@@ -386,6 +386,7 @@ payload:
   - DOMAIN-KEYWORD,gstatic
 
   # ==== 🐙 GitHub 主站与账户服务 ====
+  - PROCESS-NAME,com.github.android
   - DOMAIN-SUFFIX,github.com
   - DOMAIN-SUFFIX,github.io
   - DOMAIN-SUFFIX,githubapp.com
