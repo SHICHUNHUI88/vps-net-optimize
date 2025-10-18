@@ -291,6 +291,10 @@ payload:
   - DOMAIN-KEYWORD,ai
  
   # ==== Telegram / 电报 全面规则 ====
+  - PROCESS-NAME,org.telegram.messenger
+- PROCESS-NAME,org.thunderdog.challegram
+  - PROCESS-NAME,Telegram.exe
+- PROCESS-NAME,TelegramDesktop.exe
   # ✈️ 核心域名（官网、注册、登录）
   - DOMAIN-SUFFIX,telegram.org
   - DOMAIN-SUFFIX,t.me
