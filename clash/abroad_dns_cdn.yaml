@@ -327,14 +327,20 @@ payload:
   - DOMAIN-KEYWORD,t.me
 
   # ==== Google / 谷歌全面规则 ====
+  # 🧩 系统进程匹配（安卓）
   - PROCESS-NAME,com.google.android.gms
-  - PROCESS-NAME,com.android.vending    
+  - PROCESS-NAME,com.google.android.gsf
+  - PROCESS-NAME,com.google.android.gms.persistent
+  - PROCESS-NAME,com.android.vending
+  - PROCESS-NAME,com.android.chrome
   - PROCESS-NAME,com.google.android.youtube
   - PROCESS-NAME,com.google.android.gm
   - PROCESS-NAME,com.google.android.apps.translate
   - PROCESS-NAME,com.google.android.googlequicksearchbox
   - PROCESS-NAME,com.google.android.tts
   - PROCESS-NAME,com.google.android.inputmethod.latin
+  - PROCESS-NAME,com.google.android.apps.docs
+  - PROCESS-NAME,com.google.android.apps.photos
   # 🌐 核心域名（搜索、账号、Gmail）
   - DOMAIN-SUFFIX,google.com
   - DOMAIN-SUFFIX,googlemail.com
@@ -362,16 +368,18 @@ payload:
   - DOMAIN-SUFFIX,google.com/maps
   - DOMAIN-SUFFIX,googleapis.com/maps
   - DOMAIN-SUFFIX,ggpht.com/maps
-  # 🌐 Google Cloud / API / CDN
+  # 🌐 Google Cloud / API / CDN / 下载
   - DOMAIN-SUFFIX,cloud.google.com
   - DOMAIN-SUFFIX,storage.googleapis.com
   - DOMAIN-SUFFIX,dl.google.com
+  - DOMAIN-SUFFIX,dl.l.google.com
   - DOMAIN-SUFFIX,clientservices.googleapis.com
   - DOMAIN-SUFFIX,ssl.gstatic.com
   - DOMAIN-SUFFIX,www.gstatic.com
   - DOMAIN-SUFFIX,play.google.com
   - DOMAIN-SUFFIX,play.googleapis.com
   - DOMAIN-SUFFIX,android.googleapis.com
+  - DOMAIN-SUFFIX,gstatic.com
   # 🌐 其他常用 Google 服务
   - DOMAIN-SUFFIX,adservices.google.com
   - DOMAIN-SUFFIX,adwords.google.com
@@ -379,7 +387,7 @@ payload:
   - DOMAIN-SUFFIX,fonts.googleapis.com
   - DOMAIN-SUFFIX,googlesyndication.com
   - DOMAIN-SUFFIX,googleadservices.com
-  # 🌐 关键词兜底（防止未来新域名漏网）
+  # 🌐 关键词兜底（未来域名防漏）
   - DOMAIN-KEYWORD,google
   - DOMAIN-KEYWORD,gmail
   - DOMAIN-KEYWORD,youtube
