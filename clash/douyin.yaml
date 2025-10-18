@@ -1,5 +1,10 @@
 payload:
   # ==== 字节跳动系 应用 & 服务 ====
+  - PROCESS-NAME,com.ss.android.ugc.aweme
+  - PROCESS-NAME,com.ss.android.ugc.aweme.lite
+  - PROCESS-NAME,com.ss.android.ugc.live
+  - PROCESS-NAME,com.ss.android.ugc.aweme.beta
+  - PROCESS-NAME,com.ss.android.ugc.aweme.youth
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
