@@ -69,6 +69,20 @@ payload:
   - DOMAIN-SUFFIX,br.leagueoflegends.com
   - DOMAIN-SUFFIX,lan.leagueoflegends.com
   - DOMAIN-SUFFIX,las.leagueoflegends.com
+
+  # ==== 🧩 Riot Games 进程域名 ====
+  - PROCESS-NAME,com.riotgames.league.wildrift
+  - PROCESS-NAME,com.riotgames.league.wildrift.jp
+  - PROCESS-NAME,com.riotgames.league.wildrift.vn
+  - PROCESS-NAME,com.riotgames.league.wildrift.tw
+  - PROCESS-NAME,com.riotgames.league.wildrift.br
+  - PROCESS-NAME,com.riotgames.league.wildrift.eu
+  - PROCESS-NAME,com.riotgames.league.wildrift.beta
+  - PROCESS-NAME,com.garena.game.kgwd
+  - PROCESS-NAME,com.garena.game.kgth
+  - PROCESS-NAME,com.garena.game.kgsg
+  - PROCESS-NAME,com.garena.game.kgph
+
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17,no-resolve
   - IP-CIDR,172.65.192.0/18,no-resolve
