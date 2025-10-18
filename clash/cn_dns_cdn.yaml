@@ -179,6 +179,8 @@ payload:
   - DOMAIN-SUFFIX,tps.mby.tencent.com 
 
   # ==== 淘宝 / 天猫 / 支付 ====
+  - PROCESS-NAME,com.eg.android.AlipayGphone
+  - PROCESS-NAME,com.taobao.taobao
   - DOMAIN-SUFFIX,taobao.com
   - DOMAIN-SUFFIX,tmall.com
   - DOMAIN-SUFFIX,tmall.hk
