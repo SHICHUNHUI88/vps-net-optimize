@@ -269,6 +269,9 @@ payload:
   - IP-CIDR,52.220.0.0/15,no-resolve
 
   # ==== OpenAI / GPT 系列 ====
+  - PROCESS-NAME,com.openai.chatgpt
+  - PROCESS-NAME,com.openai.chatgpt.beta
+  - PROCESS-NAME,com.microsoft.bing
   # 🧠 核心域名（精准匹配）
   - DOMAIN-SUFFIX,openai.com
   - DOMAIN-SUFFIX,openai.azure.com
@@ -320,6 +323,10 @@ payload:
   - PROCESS-NAME,com.android.vending    
   - PROCESS-NAME,com.google.android.youtube
   - PROCESS-NAME,com.google.android.gm
+  - PROCESS-NAME,com.google.android.apps.translate
+  - PROCESS-NAME,com.google.android.googlequicksearchbox
+  - PROCESS-NAME,com.google.android.tts
+  - PROCESS-NAME,com.google.android.inputmethod.latin
   # 🌐 核心域名（搜索、账号、Gmail）
   - DOMAIN-SUFFIX,google.com
   - DOMAIN-SUFFIX,googlemail.com
