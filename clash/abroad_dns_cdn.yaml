@@ -311,6 +311,8 @@ payload:
   - DOMAIN-SUFFIX,telegramcdn.com
   - DOMAIN-SUFFIX,telegram-cdn.org
   - DOMAIN-SUFFIX,cdn-telegram.org
+  - DOMAIN-SUFFIX,telegra.ph
+  - DOMAIN-SUFFIX,telesco.pe
   - DOMAIN-SUFFIX,tlgrm.ru
   - DOMAIN-SUFFIX,media.telegram.org
   - DOMAIN-SUFFIX,telegram.video
