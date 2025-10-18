@@ -231,6 +231,11 @@ payload:
 
   # ==== TikTok （海外业务总表） ====
   - PROCESS-NAME,com.zhiliaoapp.musically
+  - PROCESS-NAME,com.ss.android.ugc.trill
+  - PROCESS-NAME,com.zhiliaoapp.musically.go
+  - PROCESS-NAME,com.tiktok.tv
+  - PROCESS-NAME,com.ss.android.ugc.aweme.now
+  - PROCESS-NAME,com.ss.android.ugc.aweme.shop
   - DOMAIN-SUFFIX,tiktok.com
   - DOMAIN-SUFFIX,tiktokv.com
   - DOMAIN-SUFFIX,tiktokv.us
