@@ -233,70 +233,134 @@ payload:
   - DOMAIN-KEYWORD,jingdong
   - DOMAIN-KEYWORD,jd
 
-  # ==== 同花顺 / iFinD / HEXIN ====
-  # 主域名
+  # 中国主要证券类 App 规则集 (ClashMeta)
+  # 📊 同花顺 iFinD / 10jqka
+  - PROCESS-NAME,com.hexin.plat.android
+  - PROCESS-NAME,com.hexin.android.stock
+  - PROCESS-NAME,com.hexin.passport
   - DOMAIN-SUFFIX,10jqka.com.cn
-  - DOMAIN-SUFFIX,10jqka.com
-  - DOMAIN-SUFFIX,ihexin.com
-  - DOMAIN-SUFFIX,hexin.cn
-  - DOMAIN-SUFFIX,hexin.com.cn
-  - DOMAIN-SUFFIX,ths123.com
-  - DOMAIN-SUFFIX,aicubes.cn
-  - DOMAIN-SUFFIX,aicubes.com.cn
-  - DOMAIN-SUFFIX,51ifind.com
   - DOMAIN-SUFFIX,ifind.com.cn
-  - DOMAIN-SUFFIX,thsimg.com
-  - DOMAIN-SUFFIX,thsdata.com
-  - DOMAIN-SUFFIX,ithinker.com.cn
-  - DOMAIN-SUFFIX,hexun.com        
-  # API / 数据接口域名
+  - DOMAIN-SUFFIX,ths123.com
+  - DOMAIN-SUFFIX,hexin.cn
+  - DOMAIN-FULL,api.10jqka.com.cn
+  - DOMAIN-FULL,login.10jqka.com.cn
+  - DOMAIN-FULL,upass.10jqka.com.cn
+  - DOMAIN-FULL,push2.eastmoney.com   
   - DOMAIN-KEYWORD,10jqka
-  - DOMAIN-KEYWORD,hexin
-  - DOMAIN-KEYWORD,ihexin
-  - DOMAIN-KEYWORD,ths
   - DOMAIN-KEYWORD,ifind
-  - DOMAIN-KEYWORD,ithinker
-  - DOMAIN-KEYWORD,aicubes
-  # CDN 与静态资源
-  - DOMAIN-SUFFIX,js.10jqka.com.cn
-  - DOMAIN-SUFFIX,img.10jqka.com.cn
-  - DOMAIN-SUFFIX,static.10jqka.com.cn
-  - DOMAIN-SUFFIX,res.10jqka.com.cn
-  - DOMAIN-SUFFIX,data.10jqka.com.cn
-  - DOMAIN-SUFFIX,cdn.10jqka.com.cn
-  - DOMAIN-SUFFIX,gw.10jqka.com.cn
-  # 更新与推送服务
-  - DOMAIN-SUFFIX,push.10jqka.com.cn
-  - DOMAIN-SUFFIX,update.10jqka.com.cn
-  - DOMAIN-SUFFIX,appupgrade.10jqka.com.cn
-  # 分析与统计
-  - DOMAIN-SUFFIX,stat.10jqka.com.cn
-  - DOMAIN-SUFFIX,log.10jqka.com.cn
-  - DOMAIN-SUFFIX,report.10jqka.com.cn
-  - DOMAIN-SUFFIX,analytics.10jqka.com.cn
-  # 金融数据相关 API
-  - DOMAIN-SUFFIX,ifind.com
-  - DOMAIN-SUFFIX,ifind.cn
-  - DOMAIN-SUFFIX,ifinddata.com
-  - DOMAIN-SUFFIX,fintech.10jqka.com.cn
-  - DOMAIN-SUFFIX,f10.10jqka.com.cn
-  # 其他子域常见
-  - DOMAIN-SUFFIX,fund.10jqka.com.cn
-  - DOMAIN-SUFFIX,news.10jqka.com.cn
-  - DOMAIN-SUFFIX,quote.10jqka.com.cn
-  - DOMAIN-SUFFIX,trade.10jqka.com.cn
-  - DOMAIN-SUFFIX,stock.10jqka.com.cn
-  - DOMAIN-SUFFIX,bond.10jqka.com.cn
-  - DOMAIN-SUFFIX,app.10jqka.com.cn
-  # ==== CDN 和 云服务 ====
-  - DOMAIN-SUFFIX,alicdn.com
-  - DOMAIN-SUFFIX,aliyuncs.com
-  - DOMAIN-SUFFIX,cdn.aliyun.com
-  - DOMAIN-SUFFIX,qcloudcdn.com
-  # ==== IP 段（国内使用建议加 no-resolve） ====
-  - IP-CIDR,36.155.0.0/16,no-resolve
-  - IP-CIDR,101.227.0.0/16,no-resolve
-  - IP-CIDR,123.58.0.0/16,no-resolve
+  - DOMAIN-KEYWORD,hexin
+  - DOMAIN-KEYWORD,ths
+
+  # 📈 平安证券 Ping An Securities
+  - PROCESS-NAME,com.pingan.securities
+  - PROCESS-NAME,com.pingan.mobile.stock
+  - DOMAIN-SUFFIX,pingan.com
+  - DOMAIN-SUFFIX,pingan.com.cn
+  - DOMAIN-SUFFIX,pingan.cn
+  - DOMAIN-SUFFIX,pingansec.com
+  - DOMAIN-SUFFIX,pingan.com.hk
+  - DOMAIN-FULL,trade.pingan.com
+  - DOMAIN-FULL,stock.pingan.com
+  - DOMAIN-FULL,m.pingan.com
+  - DOMAIN-FULL,passport.pingan.com
+  - DOMAIN-FULL,api.pingansec.com
+  - DOMAIN-KEYWORD,pingansec
+  - DOMAIN-KEYWORD,pinganstock
+  - DOMAIN-KEYWORD,pingan
+
+  # 💹 东方财富 Eastmoney
+  - PROCESS-NAME,com.eastmoney.android.berlin
+  - PROCESS-NAME,com.eastmoney.android.berlinlite
+  - PROCESS-NAME,com.eastmoney.android.fund
+  - DOMAIN-SUFFIX,eastmoney.com
+  - DOMAIN-SUFFIX,eastmoney.cn
+  - DOMAIN-SUFFIX,emdata.net
+  - DOMAIN-SUFFIX,emsec.net
+  - DOMAIN-SUFFIX,dfcfw.com
+  - DOMAIN-SUFFIX,dfcfd.com
+  - DOMAIN-FULL,api.eastmoney.com
+  - DOMAIN-FULL,push2.eastmoney.com
+  - DOMAIN-FULL,push2his.eastmoney.com
+  - DOMAIN-FULL,passport.eastmoney.com
+  - DOMAIN-FULL,trade.eastmoney.com
+  - DOMAIN-FULL,live.eastmoney.com
+  - DOMAIN-FULL,fund.eastmoney.com
+  - DOMAIN-FULL,stock.eastmoney.com
+  - DOMAIN-FULL,guba.eastmoney.com
+  - DOMAIN-KEYWORD,eastmoney
+  - DOMAIN-KEYWORD,dfcf
+  - DOMAIN-KEYWORD,dfcfw
+  - DOMAIN-KEYWORD,emdata
+
+  # 中国主要银行规则集 (ClashMeta)
+  # 🏦 中国建设银行 (CCB)
+  - PROCESS-NAME,com.china.ccb.mbank
+  - DOMAIN-SUFFIX,ccb.com
+  - DOMAIN-SUFFIX,ccb.cn
+  - DOMAIN-SUFFIX,ccbjf.com
+  - DOMAIN-SUFFIX,ccb-life.com.cn
+  - DOMAIN-SUFFIX,ccbfund.cn
+  - DOMAIN-FULL,ebank.ccb.com
+  - DOMAIN-FULL,m.ccb.com
+  - DOMAIN-FULL,wx.ccb.com
+  - DOMAIN-FULL,creditcard.ccb.com
+  - DOMAIN-FULL,ccblogin.ccb.com
+  - DOMAIN-KEYWORD,ccb
+
+  # 🏦 中国工商银行 (ICBC)
+  - PROCESS-NAME,com.icbc
+  - PROCESS-NAME,com.icbc.elife
+  - DOMAIN-SUFFIX,icbc.com.cn
+  - DOMAIN-SUFFIX,icbc-ltd.com
+  - DOMAIN-SUFFIX,icbcus.com
+  - DOMAIN-SUFFIX,icbcasia.com
+  - DOMAIN-SUFFIX,icbc.com.mo
+  - DOMAIN-FULL,mybank.icbc.com.cn
+  - DOMAIN-FULL,corporbank.icbc.com.cn
+  - DOMAIN-FULL,3g.icbc.com.cn
+  - DOMAIN-FULL,ebill.icbc.com.cn
+  - DOMAIN-FULL,epass.icbc.com.cn
+  - DOMAIN-FULL,creditcard.icbc.com.cn
+  - DOMAIN-KEYWORD,icbc
+
+  # 🏦 平安银行 (PINGAN)
+  - PROCESS-NAME,com.pingan.pabank
+  - PROCESS-NAME,com.pingan.creditcard
+  - DOMAIN-SUFFIX,pingan.com
+  - DOMAIN-SUFFIX,pingan.com.cn
+  - DOMAIN-SUFFIX,pingan.cn
+  - DOMAIN-SUFFIX,pinganbank.com
+  - DOMAIN-SUFFIX,pinganbank.com.cn
+  - DOMAIN-FULL,bank.pingan.com
+  - DOMAIN-FULL,creditcard.pingan.com
+  - DOMAIN-FULL,m.pingan.com
+  - DOMAIN-FULL,ebank.pingan.com
+  - DOMAIN-FULL,login.pingan.com
+  - DOMAIN-FULL,insurance.pingan.com
+  - DOMAIN-KEYWORD,pingan
+  - DOMAIN-KEYWORD,pabank
+
+  # 🏦 招商银行 (CMB)
+  - PROCESS-NAME,com.cmbchina.ccd.pluto.cmbActivity
+  - PROCESS-NAME,com.cmbchina.ccd.pluto
+  - PROCESS-NAME,com.cmbchina.ccd.pb
+  - DOMAIN-SUFFIX,cmbchina.com
+  - DOMAIN-SUFFIX,cmbchina.com.cn
+  - DOMAIN-SUFFIX,cmbimg.com
+  - DOMAIN-SUFFIX,cmburl.cn
+  - DOMAIN-SUFFIX,cmblife.com
+  - DOMAIN-FULL,m.cmbchina.com
+  - DOMAIN-FULL,openapi.cmbchina.com
+  - DOMAIN-FULL,ebank.cmbchina.com
+  - DOMAIN-FULL,creditcard.cmbchina.com
+  - DOMAIN-FULL,life.cmbchina.com
+  - DOMAIN-FULL,login.cmbchina.com
+  - DOMAIN-FULL,service.cmbchina.com
+  - DOMAIN-FULL,insurance.cmbchina.com
+  - DOMAIN-FULL,cmbapp.cmbchina.com
+  - DOMAIN-KEYWORD,cmbchina
+  - DOMAIN-KEYWORD,cmblife
+  - DOMAIN-KEYWORD,cmb
 
   # ==== 抖音国内 CDN / 加速 IP ====
   - IP-CIDR,101.227.0.0/16,no-resolve
