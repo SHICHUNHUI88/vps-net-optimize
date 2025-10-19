@@ -1,8 +1,4 @@
 payload:
-  # ==== 🧩 Riot Games 进程域名 ====
-  - PROCESS-NAME,com.riotgames.league.wildrift
-  - PROCESS-NAME,com.riotgames.league.wildrift.android
-
   # ==== Riot Games 核心域名 ====
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
@@ -38,11 +34,11 @@ payload:
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
   # ==== 直播 / 视频 ====
   - DOMAIN-SUFFIX,ttvnw.net
-  # ==== ❗ 推测域名 ====
-  - DOMAIN-SUFFIX,riotgames.net    
-  - DOMAIN-SUFFIX,riotgamesapi.com  
-  - DOMAIN-SUFFIX,riotclientservices.com  
-  - DOMAIN-SUFFIX,play.riotgames.com
+  
+  # ==== 🧩 Riot Games 进程域名 ====
+  - PROCESS-NAME,com.riotgames.league.wildrift
+  - PROCESS-NAME,com.riotgames.league.wildrift.android
+
   # ==== 亚洲 (日本 / 韩国) ====
   - DOMAIN-SUFFIX,jp.leagueoflegends.com
   - DOMAIN-SUFFIX,jp.riotgames.com
@@ -78,6 +74,12 @@ payload:
   - DOMAIN-SUFFIX,br.leagueoflegends.com
   - DOMAIN-SUFFIX,lan.leagueoflegends.com
   - DOMAIN-SUFFIX,las.leagueoflegends.com
+
+  # ==== ❗ 推测域名 ====
+  - DOMAIN-SUFFIX,riotgames.net    
+  - DOMAIN-SUFFIX,riotgamesapi.com  
+  - DOMAIN-SUFFIX,riotclientservices.com  
+  - DOMAIN-SUFFIX,play.riotgames.com
 
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17,no-resolve
