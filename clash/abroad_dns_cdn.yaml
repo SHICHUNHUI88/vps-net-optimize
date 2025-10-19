@@ -440,8 +440,7 @@ payload:
   - DOMAIN-SUFFIX,enterprise.github.com
   - DOMAIN-KEYWORD,github
 
-  # 📱 Meta 全家桶核心规则集 (ClashMeta)
-  # 📲 Android / iOS 进程名匹配
+  # 📲（Meta）Android / iOS 进程名匹配
   # === Instagram ===
   - PROCESS-NAME,com.instagram.android
   - PROCESS-NAME,com.instagram.barcelona     # Threads
@@ -466,7 +465,7 @@ payload:
   - PROCESS-NAME,com.oculus.ocms
   - PROCESS-NAME,com.meta.quest
   - PROCESS-NAME,com.meta.oculus
-  # 📲 域名规则
+  # 📲（Meta）域名规则
   # === Instagram ===
   - DOMAIN-SUFFIX,instagram.com
   - DOMAIN-SUFFIX,instagr.am
