@@ -187,6 +187,52 @@ payload:
   - DOMAIN-SUFFIX,alipay.com
   - DOMAIN-SUFFIX,xquic.com
 
+  # 京东中国 / 京东金融 规则集 (ClashMeta)
+  # ==== 进程 ====
+  - PROCESS-NAME,com.jd.app.mall
+  - PROCESS-NAME,com.jingdong.app.mall
+  - PROCESS-NAME,com.jd.jrapp
+  - PROCESS-NAME,com.jd.jrapp.pay
+  # ==== 主域名 ====
+  - DOMAIN-SUFFIX,jd.com
+  - DOMAIN-SUFFIX,360buy.com
+  - DOMAIN-SUFFIX,360buyimg.com
+  - DOMAIN-SUFFIX,jdstatic.com
+  - DOMAIN-SUFFIX,jdcdn.com
+  - DOMAIN-SUFFIX,jdedge.net
+  - DOMAIN-SUFFIX,jdwl.com
+  # ==== 京东金融 / 支付体系 ====
+  - DOMAIN-SUFFIX,jr.jd.com
+  - DOMAIN-SUFFIX,jdpay.com
+  - DOMAIN-SUFFIX,baitiao.com
+  - DOMAIN-SUFFIX,wangyin.com
+  - DOMAIN-SUFFIX,jdallianz.com
+  - DOMAIN-SUFFIX,chinabank.com.cn
+  - DOMAIN-SUFFIX,healthjd.com
+  - DOMAIN-SUFFIX,yiyaojd.com
+  # ==== API 与登录服务 ====
+  - DOMAIN-FULL,api.m.jd.com
+  - DOMAIN-FULL,m.jd.com
+  - DOMAIN-FULL,wq.jd.com
+  - DOMAIN-FULL,plogin.m.jd.com
+  - DOMAIN-FULL,passport.jd.com
+  - DOMAIN-FULL,mservice.jd.com
+  # ==== 静态资源 ====
+  - DOMAIN-KEYWORD,360buyimg
+  - DOMAIN-KEYWORD,img10
+  - DOMAIN-KEYWORD,img11
+  - DOMAIN-KEYWORD,jdstatic
+  - DOMAIN-KEYWORD,jdcdn
+  - DOMAIN-KEYWORD,scdn.jd
+  - DOMAIN-KEYWORD,jdedge
+  # ==== 关键词 ====
+  - DOMAIN-KEYWORD,jdpay
+  - DOMAIN-KEYWORD,baitiao
+  - DOMAIN-KEYWORD,finance
+  - DOMAIN-KEYWORD,credit
+  - DOMAIN-KEYWORD,jingdong
+  - DOMAIN-KEYWORD,jd
+
   # ==== 同花顺 / iFinD / HEXIN ====
   # 主域名
   - DOMAIN-SUFFIX,10jqka.com.cn
