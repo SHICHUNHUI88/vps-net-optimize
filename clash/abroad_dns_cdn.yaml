@@ -457,7 +457,6 @@ payload:
   # === WhatsApp ===
   - PROCESS-NAME,com.whatsapp
   - PROCESS-NAME,com.whatsapp.w4b             # WhatsApp Business
-
   # === Messenger Lite ===
   - PROCESS-NAME,com.facebook.mlite
   # === Meta VR / AR ===
