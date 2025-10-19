@@ -440,7 +440,33 @@ payload:
   - DOMAIN-SUFFIX,enterprise.github.com
   - DOMAIN-KEYWORD,github
 
-  # 📱 Meta 全家桶核心规则集（Instagram / 
+  # 📱 Meta 全家桶核心规则集 (ClashMeta)
+  # 📲 Android / iOS 进程名匹配
+  # === Instagram ===
+  - PROCESS-NAME,com.instagram.android
+  - PROCESS-NAME,com.instagram.barcelona     # Threads
+  - PROCESS-NAME,com.instagram.direct
+  - PROCESS-NAME,com.instagram.lite
+  # === Facebook ===
+  - PROCESS-NAME,com.facebook.katana          # Facebook 主应用
+  - PROCESS-NAME,com.facebook.lite
+  - PROCESS-NAME,com.facebook.orca            # Messenger 主进程
+  - PROCESS-NAME,com.facebook.mlite
+  - PROCESS-NAME,com.facebook.appmanager
+  - PROCESS-NAME,com.facebook.services
+  - PROCESS-NAME,com.facebook.system
+  # === WhatsApp ===
+  - PROCESS-NAME,com.whatsapp
+  - PROCESS-NAME,com.whatsapp.w4b             # WhatsApp Business
+
+  # === Messenger Lite ===
+  - PROCESS-NAME,com.facebook.mlite
+  # === Meta VR / AR ===
+  - PROCESS-NAME,com.oculus.vrshell
+  - PROCESS-NAME,com.oculus.ocms
+  - PROCESS-NAME,com.meta.quest
+  - PROCESS-NAME,com.meta.oculus
+  # 📲 域名规则
   # === Instagram ===
   - DOMAIN-SUFFIX,instagram.com
   - DOMAIN-SUFFIX,instagr.am
@@ -461,6 +487,7 @@ payload:
   # === Messenger ===
   - DOMAIN-SUFFIX,messenger.com
   - DOMAIN-SUFFIX,msgr.io
+  # === WhatsApp ===
   - DOMAIN-SUFFIX,whatsapp.net
   - DOMAIN-SUFFIX,whatsapp.com
   - DOMAIN-SUFFIX,web.whatsapp.com
@@ -472,10 +499,16 @@ payload:
   - DOMAIN-SUFFIX,xx.fbcdn.net
   - DOMAIN-SUFFIX,meta.com
   - DOMAIN-SUFFIX,oculus.com
+  - DOMAIN-SUFFIX,meta.ai
+  - DOMAIN-SUFFIX,metacdn.net
   # === 核心关键词防漏 ===
   - DOMAIN-KEYWORD,instagram
   - DOMAIN-KEYWORD,fbcdn
   - DOMAIN-KEYWORD,facebook
+  - DOMAIN-KEYWORD,whatsapp
+  - DOMAIN-KEYWORD,threads
+  - DOMAIN-KEYWORD,meta
+  - DOMAIN-KEYWORD,oculus
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
