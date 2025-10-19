@@ -211,12 +211,12 @@ payload:
   - DOMAIN-SUFFIX,healthjd.com
   - DOMAIN-SUFFIX,yiyaojd.com
   # ==== API 与登录服务 ====
-  - DOMAIN-FULL,api.m.jd.com
-  - DOMAIN-FULL,m.jd.com
-  - DOMAIN-FULL,wq.jd.com
-  - DOMAIN-FULL,plogin.m.jd.com
-  - DOMAIN-FULL,passport.jd.com
-  - DOMAIN-FULL,mservice.jd.com
+  - DOMAIN-SUFFIX,api.m.jd.com
+  - DOMAIN-SUFFIX,m.jd.com
+  - DOMAIN-SUFFIX,wq.jd.com
+  - DOMAIN-SUFFIX,plogin.m.jd.com
+  - DOMAIN-SUFFIX,passport.jd.com
+  - DOMAIN-SUFFIX,mservice.jd.com
   # ==== 静态资源 ====
   - DOMAIN-KEYWORD,360buyimg
   - DOMAIN-KEYWORD,img10
@@ -242,10 +242,10 @@ payload:
   - DOMAIN-SUFFIX,ifind.com.cn
   - DOMAIN-SUFFIX,ths123.com
   - DOMAIN-SUFFIX,hexin.cn
-  - DOMAIN-FULL,api.10jqka.com.cn
-  - DOMAIN-FULL,login.10jqka.com.cn
-  - DOMAIN-FULL,upass.10jqka.com.cn
-  - DOMAIN-FULL,push2.eastmoney.com   
+  - DOMAIN-SUFFIX,api.10jqka.com.cn
+  - DOMAIN-SUFFIX,login.10jqka.com.cn
+  - DOMAIN-SUFFIX,upass.10jqka.com.cn
+  - DOMAIN-SUFFIX,push2.eastmoney.com   
   - DOMAIN-KEYWORD,10jqka
   - DOMAIN-KEYWORD,ifind
   - DOMAIN-KEYWORD,hexin
@@ -259,11 +259,11 @@ payload:
   - DOMAIN-SUFFIX,pingan.cn
   - DOMAIN-SUFFIX,pingansec.com
   - DOMAIN-SUFFIX,pingan.com.hk
-  - DOMAIN-FULL,trade.pingan.com
-  - DOMAIN-FULL,stock.pingan.com
-  - DOMAIN-FULL,m.pingan.com
-  - DOMAIN-FULL,passport.pingan.com
-  - DOMAIN-FULL,api.pingansec.com
+  - DOMAIN-SUFFIX,trade.pingan.com
+  - DOMAIN-SUFFIX,stock.pingan.com
+  - DOMAIN-SUFFIX,m.pingan.com
+  - DOMAIN-SUFFIX,passport.pingan.com
+  - DOMAIN-SUFFIX,api.pingansec.com
   - DOMAIN-KEYWORD,pingansec
   - DOMAIN-KEYWORD,pinganstock
   - DOMAIN-KEYWORD,pingan
@@ -278,15 +278,15 @@ payload:
   - DOMAIN-SUFFIX,emsec.net
   - DOMAIN-SUFFIX,dfcfw.com
   - DOMAIN-SUFFIX,dfcfd.com
-  - DOMAIN-FULL,api.eastmoney.com
-  - DOMAIN-FULL,push2.eastmoney.com
-  - DOMAIN-FULL,push2his.eastmoney.com
-  - DOMAIN-FULL,passport.eastmoney.com
-  - DOMAIN-FULL,trade.eastmoney.com
-  - DOMAIN-FULL,live.eastmoney.com
-  - DOMAIN-FULL,fund.eastmoney.com
-  - DOMAIN-FULL,stock.eastmoney.com
-  - DOMAIN-FULL,guba.eastmoney.com
+  - DOMAIN-SUFFIX,api.eastmoney.com
+  - DOMAIN-SUFFIX,push2.eastmoney.com
+  - DOMAIN-SUFFIX,push2his.eastmoney.com
+  - DOMAIN-SUFFIX,passport.eastmoney.com
+  - DOMAIN-SUFFIX,trade.eastmoney.com
+  - DOMAIN-SUFFIX,live.eastmoney.com
+  - DOMAIN-SUFFIX,fund.eastmoney.com
+  - DOMAIN-SUFFIX,stock.eastmoney.com
+  - DOMAIN-SUFFIX,guba.eastmoney.com
   - DOMAIN-KEYWORD,eastmoney
   - DOMAIN-KEYWORD,dfcf
   - DOMAIN-KEYWORD,dfcfw
@@ -300,11 +300,11 @@ payload:
   - DOMAIN-SUFFIX,ccbjf.com
   - DOMAIN-SUFFIX,ccb-life.com.cn
   - DOMAIN-SUFFIX,ccbfund.cn
-  - DOMAIN-FULL,ebank.ccb.com
-  - DOMAIN-FULL,m.ccb.com
-  - DOMAIN-FULL,wx.ccb.com
-  - DOMAIN-FULL,creditcard.ccb.com
-  - DOMAIN-FULL,ccblogin.ccb.com
+  - DOMAIN-SUFFIX,ebank.ccb.com
+  - DOMAIN-SUFFIX,m.ccb.com
+  - DOMAIN-SUFFIX,wx.ccb.com
+  - DOMAIN-SUFFIX,creditcard.ccb.com
+  - DOMAIN-SUFFIX,ccblogin.ccb.com
   - DOMAIN-KEYWORD,ccb
 
   # 🏦 中国工商银行 (ICBC)
@@ -315,12 +315,12 @@ payload:
   - DOMAIN-SUFFIX,icbcus.com
   - DOMAIN-SUFFIX,icbcasia.com
   - DOMAIN-SUFFIX,icbc.com.mo
-  - DOMAIN-FULL,mybank.icbc.com.cn
-  - DOMAIN-FULL,corporbank.icbc.com.cn
-  - DOMAIN-FULL,3g.icbc.com.cn
-  - DOMAIN-FULL,ebill.icbc.com.cn
-  - DOMAIN-FULL,epass.icbc.com.cn
-  - DOMAIN-FULL,creditcard.icbc.com.cn
+  - DOMAIN-SUFFIX,mybank.icbc.com.cn
+  - DOMAIN-SUFFIX,corporbank.icbc.com.cn
+  - DOMAIN-SUFFIX,3g.icbc.com.cn
+  - DOMAIN-SUFFIX,ebill.icbc.com.cn
+  - DOMAIN-SUFFIX,epass.icbc.com.cn
+  - DOMAIN-SUFFIX,creditcard.icbc.com.cn
   - DOMAIN-KEYWORD,icbc
 
   # 🏦 平安银行 (PINGAN)
@@ -331,12 +331,12 @@ payload:
   - DOMAIN-SUFFIX,pingan.cn
   - DOMAIN-SUFFIX,pinganbank.com
   - DOMAIN-SUFFIX,pinganbank.com.cn
-  - DOMAIN-FULL,bank.pingan.com
-  - DOMAIN-FULL,creditcard.pingan.com
-  - DOMAIN-FULL,m.pingan.com
-  - DOMAIN-FULL,ebank.pingan.com
-  - DOMAIN-FULL,login.pingan.com
-  - DOMAIN-FULL,insurance.pingan.com
+  - DOMAIN-SUFFIX,bank.pingan.com
+  - DOMAIN-SUFFIX,creditcard.pingan.com
+  - DOMAIN-SUFFIX,m.pingan.com
+  - DOMAIN-SUFFIX,ebank.pingan.com
+  - DOMAIN-SUFFIX,login.pingan.com
+  - DOMAIN-SUFFIX,insurance.pingan.com
   - DOMAIN-KEYWORD,pingan
   - DOMAIN-KEYWORD,pabank
 
@@ -349,15 +349,15 @@ payload:
   - DOMAIN-SUFFIX,cmbimg.com
   - DOMAIN-SUFFIX,cmburl.cn
   - DOMAIN-SUFFIX,cmblife.com
-  - DOMAIN-FULL,m.cmbchina.com
-  - DOMAIN-FULL,openapi.cmbchina.com
-  - DOMAIN-FULL,ebank.cmbchina.com
-  - DOMAIN-FULL,creditcard.cmbchina.com
-  - DOMAIN-FULL,life.cmbchina.com
-  - DOMAIN-FULL,login.cmbchina.com
-  - DOMAIN-FULL,service.cmbchina.com
-  - DOMAIN-FULL,insurance.cmbchina.com
-  - DOMAIN-FULL,cmbapp.cmbchina.com
+  - DOMAIN-SUFFIX,m.cmbchina.com
+  - DOMAIN-SUFFIX,openapi.cmbchina.com
+  - DOMAIN-SUFFIX,ebank.cmbchina.com
+  - DOMAIN-SUFFIX,creditcard.cmbchina.com
+  - DOMAIN-SUFFIX,life.cmbchina.com
+  - DOMAIN-SUFFIX,login.cmbchina.com
+  - DOMAIN-SUFFIX,service.cmbchina.com
+  - DOMAIN-SUFFIX,insurance.cmbchina.com
+  - DOMAIN-SUFFIX,cmbapp.cmbchina.com
   - DOMAIN-KEYWORD,cmbchina
   - DOMAIN-KEYWORD,cmblife
   - DOMAIN-KEYWORD,cmb
