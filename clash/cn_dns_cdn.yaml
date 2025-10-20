@@ -136,6 +136,7 @@ payload:
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== LOL手游 游戏服务器 ====
   - DOMAIN-SUFFIX,lolmaclient.qq.com
+  - DOMAIN-SUFFIX,lolm.qq.com
   - DOMAIN-SUFFIX,lolma.qq.com
   - DOMAIN-SUFFIX,lolmconn1.qq.com
   - DOMAIN-SUFFIX,lolmconn2.qq.com
