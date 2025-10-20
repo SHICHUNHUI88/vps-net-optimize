@@ -24,6 +24,7 @@ payload:
   - DOMAIN-SUFFIX,mobile-api.riotgames.com
   - DOMAIN-SUFFIX,telemetry.riotgames.com
   - DOMAIN-SUFFIX,data.riotgames.com
+
   # ==== Riot 官方 CDN ====
   - DOMAIN-SUFFIX,riotcdn.net   
   - DOMAIN-SUFFIX,wr-assets.riotcdn.net
@@ -80,6 +81,12 @@ payload:
   - DOMAIN-SUFFIX,riotgamesapi.com  
   - DOMAIN-SUFFIX,riotclientservices.com  
   - DOMAIN-SUFFIX,play.riotgames.com
+
+  - DOMAIN-SUFFIX,api.pandascore.co
+  - DOMAIN-SUFFIX,pandascore.co
+  - DOMAIN-SUFFIX,wrstats.online
+  - DOMAIN-SUFFIX,rankedwr.com
+  - DOMAIN-SUFFIX,developer.riotgames.com
 
   # ==== Riot Games 常见 IP 段 ====
   - IP-CIDR,104.160.128.0/17,no-resolve
