@@ -536,6 +536,10 @@ payload:
   - DOMAIN-SUFFIX,slyip.net
   - DOMAIN-SUFFIX,suroot.com
 
+  # === 📱三星服务 ===
+  - PROCESS-NAME,com.sec.spp.push
+  - IP-CIDR,54.223.223.92/32,no-resolve
+
   # === IIJ 日本 CDN / 企业网络 ===
   - IP-CIDR,202.232.0.0/13,no-resolve
   - IP-CIDR,210.130.0.0/15,no-resolve
