@@ -256,6 +256,7 @@ payload:
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
   - DOMAIN-SUFFIX,gettr.com
   - DOMAIN-SUFFIX,vegslb.com
+  - DOMAIN-SUFFIX,skytigris.cn
   # tiktok兜底关键词
   - DOMAIN-KEYWORD,tiktokcdn
   - DOMAIN-KEYWORD,ibyteimg
