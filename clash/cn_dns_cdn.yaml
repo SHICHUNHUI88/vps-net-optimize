@@ -82,9 +82,10 @@ payload:
   - DOMAIN-SUFFIX,sohu.com
 
   # 💬 微信 登录 / 认证
+  - PROCESS-NAME,com.tencent.mm
   - PROCESS-NAME,WeChat.exe
   - PROCESS-NAME,WeChatApp.exe
-  - PROCESS-NAME,com.tencent.mm
+  - DOMAIN-SUFFIX,tc.qq.com
   - DOMAIN-SUFFIX,open.weixin.qq.com   
   - DOMAIN-SUFFIX,weixin.qq.com
   - DOMAIN-SUFFIX,wechat.com
