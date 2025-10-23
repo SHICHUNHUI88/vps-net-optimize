@@ -64,3 +64,43 @@ payload:
   - DOMAIN-KEYWORD,ixigua
   - DOMAIN-KEYWORD,huoshan
   - DOMAIN-KEYWORD,snssdk
+
+  # ==== TikTok （海外业务总表） ====
+  - PROCESS-NAME,com.zhiliaoapp.musically
+  - PROCESS-NAME,com.ss.android.ugc.trill
+  - PROCESS-NAME,com.zhiliaoapp.musically.go
+  - PROCESS-NAME,com.tiktok.tv
+  - PROCESS-NAME,com.ss.android.ugc.aweme.now
+  - PROCESS-NAME,com.ss.android.ugc.aweme.shop
+  - DOMAIN-SUFFIX,tiktok.com
+  - DOMAIN-SUFFIX,tiktokv.com
+  - DOMAIN-SUFFIX,tiktokv.us
+  - DOMAIN-SUFFIX,tiktokcdn.com
+  - DOMAIN-SUFFIX,tiktokcdn-us.com
+  - DOMAIN-SUFFIX,tiktoklive.com
+  - DOMAIN-SUFFIX,tiktok-browser.com
+  - DOMAIN-SUFFIX,ttlive.com
+  - DOMAIN-SUFFIX,ttwstatic.com
+  - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,muscdn.com
+  - DOMAIN-SUFFIX,ibyteimg.com
+  - DOMAIN-SUFFIX,ipstatp.com
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,ibytedtos.com
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,bytedance.map.fastly.net
+  - DOMAIN-SUFFIX,gettr.com
+  - DOMAIN-SUFFIX,vegslb.com
+  - DOMAIN-SUFFIX,skytigris.cn
+  # tiktok兜底关键词
+  - DOMAIN-KEYWORD,tiktokcdn
+  - DOMAIN-KEYWORD,ibyteimg
+  - DOMAIN-KEYWORD,ibytedtos  
+  - DOMAIN-KEYWORD,tiktok
+  - DOMAIN-KEYWORD,byteoversea
+  - IP-CIDR,170.176.0.0/12,no-resolve
+  - IP-CIDR,161.117.0.0/16,no-resolve
+  - IP-CIDR,47.246.0.0/16,no-resolve
+  - IP-CIDR,52.74.0.0/16,no-resolve
+  - IP-CIDR,52.220.0.0/15,no-resolve
