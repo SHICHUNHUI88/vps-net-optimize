@@ -584,6 +584,39 @@ payload:
   - PROCESS-NAME,com.hsbc.hsbcukmobilebanking
   - PROCESS-NAME,com.hsbc.hsbcchina
 
+  # ==== 🐦X (Twitter) 全域匹配 ====
+  # 官方域名
+  - DOMAIN-SUFFIX,x.com
+  - DOMAIN-SUFFIX,twitter.com
+  - DOMAIN-SUFFIX,t.co
+  - DOMAIN-SUFFIX,twimg.com
+  - DOMAIN-SUFFIX,twitpic.com
+  - DOMAIN-SUFFIX,periscope.tv
+  - DOMAIN-SUFFIX,pscp.tv
+  - DOMAIN-SUFFIX,video.twimg.com
+  - DOMAIN-SUFFIX,abs.twimg.com
+  - DOMAIN-SUFFIX,pbs.twimg.com
+  # API 接口域名
+  - DOMAIN-SUFFIX,api.twitter.com
+  - DOMAIN-SUFFIX,upload.twitter.com
+  - DOMAIN-SUFFIX,mobile.twitter.com
+  - DOMAIN-SUFFIX,analytics.twitter.com
+  # 登录认证 & 广告
+  - DOMAIN-SUFFIX,ads-twitter.com
+  - DOMAIN-SUFFIX,syndication.twimg.com
+  - DOMAIN-SUFFIX,platform.twitter.com
+  # 图片/视频 CDN
+  - DOMAIN-KEYWORD,twimg
+  - DOMAIN-KEYWORD,video.twimg
+  # 官方应用（Android / iOS）
+  - PROCESS-NAME,com.twitter.android
+  - PROCESS-NAME,com.twitter.android.lite
+  - PROCESS-NAME,com.twitter.android.beta
+  - PROCESS-NAME,com.twitter.android.dev
+  # X / 新版图标应用包名
+  - PROCESS-NAME,com.x.android
+  - PROCESS-NAME,com.xcorp.android
+
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
   - DOMAIN-SUFFIX,dyn.com
