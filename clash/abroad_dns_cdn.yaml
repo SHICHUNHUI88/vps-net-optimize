@@ -509,6 +509,81 @@ payload:
   - DOMAIN-KEYWORD,meta
   - DOMAIN-KEYWORD,oculus
 
+  # ==== 💹海外金融证券 ====
+  # 💹Tiger Brokers / TradeUP
+  - DOMAIN-SUFFIX,tigerbrokers.com
+  - DOMAIN-SUFFIX,tradeup.com
+  - DOMAIN-SUFFIX,itiger.com
+  - DOMAIN-SUFFIX,tigersecurities.com
+  - DOMAIN-SUFFIX,tigerfintech.com
+  - DOMAIN-SUFFIX,tradeupapi.com
+  - DOMAIN-SUFFIX,tigerbbs.com
+  - PROCESS-NAME,com.tigerbrokers.stock
+  # 💹Futu / Moomoo
+  - DOMAIN-SUFFIX,futunn.com
+  - DOMAIN-SUFFIX,moomoo.com
+  - DOMAIN-SUFFIX,moomooapp.com
+  - DOMAIN-SUFFIX,futu5.com
+  - PROCESS-NAME,com.futu5.android
+  - PROCESS-NAME,com.moomoo.android
+  # 💹Interactive Brokers
+  - DOMAIN-SUFFIX,interactivebrokers.com
+  - DOMAIN-SUFFIX,ibkr.com
+  - DOMAIN-SUFFIX,ibllc.com
+  - DOMAIN-SUFFIX,ibrokers.com
+  - PROCESS-NAME,com.interactivebrokers.ibkr
+  - PROCESS-NAME,com.interactivebrokers.ibkrmobile
+  # 💹OKX / OKCoin
+  - DOMAIN-SUFFIX,okx.com
+  - DOMAIN-SUFFIX,okcoin.com
+  - DOMAIN-SUFFIX,okex.com
+  - DOMAIN-SUFFIX,okg.com
+  - DOMAIN-SUFFIX,oklink.com
+  - PROCESS-NAME,com.okinc.okex.gp
+  - PROCESS-NAME,com.okex.wallet
+
+  # ==== 💳海外银行 ====
+  # 💳OCBC Bank（华侨银行）
+  - DOMAIN-SUFFIX,ocbc.com
+  - DOMAIN-SUFFIX,ocbcwhhk.com
+  - DOMAIN-SUFFIX,ocbcbank.com
+  - DOMAIN-SUFFIX,ocbcgroup.com
+  - DOMAIN-SUFFIX,ocbc.com.sg
+  - PROCESS-NAME,com.ocbc.mobile
+  - PROCESS-NAME,com.ocbc.westpac.android
+  # 💲PayPal
+  - DOMAIN-SUFFIX,paypal.com
+  - DOMAIN-SUFFIX,paypalobjects.com
+  - DOMAIN-SUFFIX,paypal.me
+  - DOMAIN-SUFFIX,paypal-dns.com
+  - DOMAIN-SUFFIX,venmo.com
+  - DOMAIN-SUFFIX,braintreepayments.com
+  - PROCESS-NAME,com.paypal.android.p2pmobile
+  - PROCESS-NAME,com.paypal.venmo
+  # 💱Wise (TransferWise)
+  - DOMAIN-SUFFIX,wise.com
+  - DOMAIN-SUFFIX,transferwise.com
+  - DOMAIN-SUFFIX,wise.jobs
+  - DOMAIN-SUFFIX,wiseassets.com
+  - PROCESS-NAME,com.transferwise.android
+  - PROCESS-NAME,com.wise.android
+  # 💳East West Bank (华美银行)
+  - DOMAIN-SUFFIX,eastwestbank.com
+  - DOMAIN-SUFFIX,ewbconnect.com
+  - DOMAIN-SUFFIX,ewb.me
+  - PROCESS-NAME,com.eastwestbank.mobilebanking
+  # 💳HSBC（汇丰银行）
+  - DOMAIN-SUFFIX,hsbc.com
+  - DOMAIN-SUFFIX,hsbc.com.hk
+  - DOMAIN-SUFFIX,hsbc.com.sg
+  - DOMAIN-SUFFIX,hsbc.com.cn
+  - DOMAIN-SUFFIX,hsbcnet.com
+  - DOMAIN-SUFFIX,hsbcadirect.com
+  - DOMAIN-SUFFIX,hsbcprivatebank.com
+  - PROCESS-NAME,com.htsu.hsbcpersonalbanking
+  - PROCESS-NAME,com.hsbc.hsbcukmobilebanking
+  - PROCESS-NAME,com.hsbc.hsbcchina
+
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
   - DOMAIN-SUFFIX,dyn.com
