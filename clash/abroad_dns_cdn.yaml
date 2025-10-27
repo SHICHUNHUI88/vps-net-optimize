@@ -510,7 +510,7 @@ payload:
   - DOMAIN-KEYWORD,oculus
 
   # ==== 💹海外金融证券 ====
-  # 💹Tiger Brokers / TradeUP
+  # 💹Tiger Brokers / TradeUP（老虎）
   - DOMAIN-SUFFIX,tigerbrokers.com
   - DOMAIN-SUFFIX,tradeup.com
   - DOMAIN-SUFFIX,itiger.com
@@ -519,21 +519,21 @@ payload:
   - DOMAIN-SUFFIX,tradeupapi.com
   - DOMAIN-SUFFIX,tigerbbs.com
   - PROCESS-NAME,com.tigerbrokers.stock
-  # 💹Futu / Moomoo
+  # 💹Futu / Moomoo（富途）
   - DOMAIN-SUFFIX,futunn.com
   - DOMAIN-SUFFIX,moomoo.com
   - DOMAIN-SUFFIX,moomooapp.com
   - DOMAIN-SUFFIX,futu5.com
   - PROCESS-NAME,com.futu5.android
   - PROCESS-NAME,com.moomoo.android
-  # 💹Interactive Brokers
+  # 💹Interactive Brokers（盈透）
   - DOMAIN-SUFFIX,interactivebrokers.com
   - DOMAIN-SUFFIX,ibkr.com
   - DOMAIN-SUFFIX,ibllc.com
   - DOMAIN-SUFFIX,ibrokers.com
   - PROCESS-NAME,com.interactivebrokers.ibkr
   - PROCESS-NAME,com.interactivebrokers.ibkrmobile
-  # 💹OKX / OKCoin
+  # 💹OKX / OKCoin（欧易）
   - DOMAIN-SUFFIX,okx.com
   - DOMAIN-SUFFIX,okcoin.com
   - DOMAIN-SUFFIX,okex.com
