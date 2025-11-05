@@ -3,6 +3,52 @@
 # 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie），幂等可回滚，容错增强
 set -euo pipefail
 
+# === 自动自更新 + 自动保存副本（含 curl/wget & sha256 兜底）===
+SCRIPT_PATH="/usr/local/sbin/net-optimize-full.sh"
+REMOTE_URL="https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-full.sh"
+
+fetch_raw() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$1"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO- "$1"
+  else
+    echo "curl/wget 不可用，跳过在线更新" >&2
+    return 1
+  fi
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | cut -d' ' -f1
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 | awk '{print $2}'
+  else
+    # 没有哈希工具就直接返回空，表示无法对比
+    cat >/dev/null
+    echo ""
+  fi
+}
+
+remote_buf="$(fetch_raw "$REMOTE_URL" || true)"
+if [ -n "${remote_buf:-}" ]; then
+  remote_hash="$(printf "%s" "$remote_buf" | sha256_of)"
+  local_hash="$( [ -f "$SCRIPT_PATH" ] && sha256sum "$SCRIPT_PATH" 2>/dev/null | cut -d' ' -f1 || echo "" )"
+
+  if [ -n "$remote_hash" ] && [ "$remote_hash" != "$local_hash" ]; then
+    echo "🌀 检测到 GitHub 上有新版本，正在自动更新..."
+    printf "%s" "$remote_buf" > "$SCRIPT_PATH"
+    chmod +x "$SCRIPT_PATH"
+    echo "✅ 已更新到最新版，重新执行..."
+    exec "$SCRIPT_PATH" "$@"
+    exit 0
+  fi
+fi
+
+# 首次运行或本地执行时，将当前脚本同步到系统路径，便于以后直接调用
+install -Dm755 "$0" "$SCRIPT_PATH" 2>/dev/null || true
+echo "💾 当前脚本已同步到 $SCRIPT_PATH"
+
 # —— 错误追踪：打印出错行与命令 —— #
 trap 'code=$?; echo "❌ 出错：第 ${BASH_LINENO[0]} 行 -> ${BASH_COMMAND} (退出码 $code)"; exit $code' ERR
 
@@ -371,4 +417,3 @@ main() {
 
 main
 
-chmod +x net-optimize-full.v2.1.sh
