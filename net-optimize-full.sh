@@ -1,274 +1,374 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# net-optimize-full.v2.1.sh
+# 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie），幂等可回滚，容错增强
+set -euo pipefail
 
-echo "🚀 开始执行全局网络优化（TCP+UDP+IPv6+WiFi+ulimit+Nginx）..."
+# —— 错误追踪：打印出错行与命令 —— #
+trap 'code=$?; echo "❌ 出错：第 ${BASH_LINENO[0]} 行 -> ${BASH_COMMAND} (退出码 $code)"; exit $code' ERR
+
+echo "🚀 开始执行全局网络优化（TCP/UDP/ulimit/MSS/可选项）..."
 echo "------------------------------------------------------------"
 
-# 是否交互模式
+# ============== 基础 & 工具函数 ==============
+require_root() { [[ ${EUID:-$(id -u)} -eq 0 ]] || { echo "❌ 请用 root 运行"; exit 1; }; }
+have_cmd() { command -v "$1" >/dev/null 2>&1; }
+# 检查 sysctl 键是否存在（将 net.ipv4.tcp_congestion_control → /proc/sys/net/ipv4/tcp_congestion_control）
+has_sysctl_key(){ local p="/proc/sys/${1//./\/}"; [[ -e "$p" ]]; }
+get_sysctl(){ sysctl -n "$1" 2>/dev/null || echo "N/A"; }
+
+require_root
 interactive=0
 [ -t 0 ] && interactive=1
 
-# === 函数定义 ===
+# 开关（可通过环境变量传入）
+: "${ENABLE_FQ_PIE:=0}"              # 1: 使用 fq_pie（内核须支持），默认 0=使用 fq
+: "${ENABLE_MTU_PROBE:=1}"           # 1: 按需探测（稳妥）；2: 激进探测
+: "${ENABLE_MSS_CLAMP:=0}"           # 1: 开启 MSS Clamp
+: "${CLAMP_IFACE:=}"                 # 不指定则自动识别默认出接口
+: "${MSS_VALUE:=1452}"               # 保守值，避免协议差异（IPv6/隧道等）
+: "${ENABLE_CONNTRACK_TUNE:=0}"      # 1: 开启 conntrack 调优
+: "${NFCT_MAX:=262144}"
+: "${NFCT_UDP_TO:=30}"
+: "${NFCT_UDP_STREAM_TO:=180}"
+: "${ENABLE_NGINX_REPO:=0}"          # 1: 切换 nginx.org 官方源（默认关闭）
+: "${APPLY_AT_BOOT:=1}"              # 始终安装开机自恢复（应用 sysctl & MSS）
+: "${SKIP_APT:=0}"                   # 1: 跳过 apt 安装（网络差时很有用）
 
+CONFIG_DIR="/etc/net-optimize"
+CONFIG_FILE="$CONFIG_DIR/config"
+APPLY_SCRIPT="/usr/local/sbin/net-optimize-apply"
+
+# ============== 工具安装（apt 系列，其他发行版自动跳过） ==============
+maybe_install_tools() {
+  if [ "$SKIP_APT" = "1" ]; then
+    echo "⏭️ 跳过工具安装（SKIP_APT=1）"
+    return 0
+  fi
+  if have_cmd apt-get; then
+    echo "🧰 安装必要工具（apt）..."
+    DEBIAN_FRONTEND=noninteractive apt-get update -y || echo "⚠️ apt-get update 失败，继续执行基线优化"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      ca-certificates ethtool iproute2 irqbalance chrony nftables conntrack curl gpg lsb-release \
+      || echo "⚠️ apt-get install 失败，某些可选功能可能不可用"
+    systemctl enable --now irqbalance chrony nftables >/dev/null 2>&1 || true
+  else
+    echo "ℹ️ 非 apt 系统，跳过工具安装"
+  fi
+}
+
+# ============== 清理旧状态（只清理我们管的内容） ==============
 clean_old_config() {
-    echo "🧹 清理旧配置..."
-    rm -f /etc/rc.local 2>/dev/null
-    sed -i '/^\* soft nofile/d;/^\* hard nofile/d' /etc/security/limits.conf
-    sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/system.conf /etc/systemd/user.conf
-    rm -f /etc/systemd/system.conf.d/99-nofile.conf /etc/systemd/system/ssh.service.d/override.conf 2>/dev/null
-    sed -i '/^net.core.default_qdisc/d;/^net.ipv4.tcp_congestion_control/d;/^net.ipv4.tcp_mtu_probing/d;/^net.ipv4.ip_forward/d;/^net.ipv6.conf.all.forwarding/d;/^net.ipv6.conf.default.forwarding/d;/^net.ipv6.conf.all.accept_ra/d;/^net.ipv6.conf.default.accept_ra/d;/^net.ipv4.conf.all.rp_filter/d;/^net.ipv4.conf.default.rp_filter/d;/^net.ipv4.icmp_echo_ignore_broadcasts/d;/^net.ipv4.icmp_ignore_bogus_error_responses/d' /etc/sysctl.conf
+  echo "🧹 清理旧配置..."
+  rm -f /etc/systemd/system/net-optimize.service 2>/dev/null || true
+  # 清理历史可能叠加的 iptables TCPMSS 规则（避免重复）
+  if have_cmd iptables; then
+    iptables -t mangle -S 2>/dev/null | grep TCPMSS | sed 's/^-A/iptables -t mangle -D/' | bash 2>/dev/null || true
+  fi
 }
 
+# ============== 拥塞控制 & 队列 ==============
 setup_tcp_congestion() {
-    echo "📶 设置 TCP 拥塞算法和队列..."
-    if sysctl net.ipv4.tcp_available_congestion_control | grep -q bbrplus; then
-        cc_algo="bbrplus"
-    elif sysctl net.ipv4.tcp_available_congestion_control | grep -q bbr; then
-        cc_algo="bbr"
-    else
-        echo "❌ 未检测到 BBR/BBRplus，退出"
-        exit 1
-    fi
-    sysctl -w net.ipv4.tcp_congestion_control=$cc_algo
-    sysctl -w net.core.default_qdisc=fq_pie
+  echo "📶 设置 TCP 拥塞算法和队列..."
+  local cc_algo="cubic"
+  if sysctl net.ipv4.tcp_available_congestion_control 2>/dev/null | grep -qw bbrplus; then
+    cc_algo="bbrplus"
+  elif sysctl net.ipv4.tcp_available_congestion_control 2>/dev/null | grep -qw bbr; then
+    cc_algo="bbr"
+  fi
+  has_sysctl_key net.ipv4.tcp_congestion_control && \
+    sysctl -w net.ipv4.tcp_congestion_control="$cc_algo" >/dev/null
+
+  local qdisc="fq"
+  if lsmod | grep -qw fq_pie && [ "$ENABLE_FQ_PIE" = "1" ]; then
+    qdisc="fq_pie"
+  fi
+  has_sysctl_key net.core.default_qdisc && \
+    sysctl -w net.core.default_qdisc="$qdisc" >/dev/null
 }
 
+# ============== ulimit（limits.d + systemd） ==============
 setup_ulimit() {
-    echo "📂 设置 ulimit ..."
-    sed -i '/\* soft nofile/d;/\* hard nofile/d' /etc/security/limits.conf
-    echo "* soft nofile 1048576" >> /etc/security/limits.conf
-    echo "* hard nofile 1048576" >> /etc/security/limits.conf
-    sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/system.conf
-    sed -i '/^DefaultLimitNOFILE=/d' /etc/systemd/user.conf
-    echo "DefaultLimitNOFILE=1048576" >> /etc/systemd/system.conf
-    echo "DefaultLimitNOFILE=1048576" >> /etc/systemd/user.conf
-    mkdir -p /etc/systemd/system/sshd.service.d
-    cat > /etc/systemd/system/sshd.service.d/override.conf <<EOF
-[Service]
-LimitNOFILE=1048576
+  echo "📂 设置 ulimit ..."
+  install -d /etc/security/limits.d
+  cat > /etc/security/limits.d/99-nofile.conf <<'EOF'
+* soft nofile 1048576
+* hard nofile 1048576
+root soft nofile 1048576
+root hard nofile 1048576
 EOF
-    grep -q pam_limits.so /etc/pam.d/common-session || echo "session required pam_limits.so" >> /etc/pam.d/common-session
-    grep -q 'ulimit -n 1048576' ~/.bashrc || echo 'ulimit -n 1048576' >> ~/.bashrc
+
+  if ! grep -q '^DefaultLimitNOFILE' /etc/systemd/system.conf 2>/dev/null; then
+    echo 'DefaultLimitNOFILE=1048576' >> /etc/systemd/system.conf
+  else
+    sed -i 's/^DefaultLimitNOFILE.*/DefaultLimitNOFILE=1048576/' /etc/systemd/system.conf
+  fi
+  systemctl daemon-reload >/dev/null
+
+  for f in /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive; do
+    [ -f "$f" ] && grep -q pam_limits.so "$f" || echo "session required pam_limits.so" >> "$f"
+  done
 }
 
+# ============== MTU 探测 ==============
 enable_mtu_probe() {
-    echo "🌐 启用 TCP MTU 探测..."
-    sed -i '/^net.ipv4.tcp_mtu_probing/d' /etc/sysctl.conf
-    echo "net.ipv4.tcp_mtu_probing = 2" >> /etc/sysctl.conf
-    sysctl -w net.ipv4.tcp_mtu_probing=2
+  echo "🌐 启用 TCP MTU 探测（值：$ENABLE_MTU_PROBE）..."
+  has_sysctl_key net.ipv4.tcp_mtu_probing && sysctl -w net.ipv4.tcp_mtu_probing="$ENABLE_MTU_PROBE" >/dev/null || true
+}
+
+# ============== MSS Clamping（可选，nft 优先；含开机自恢复） ==============
+detect_iface() {
+  local iface="${CLAMP_IFACE:-}"
+  if [ -z "$iface" ]; then
+    iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -n1)
+    [ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -n1)
+  fi
+  echo -n "$iface"
+}
+
+apply_mss_nft() {
+  local iface="$1" mss="$2"
+  nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
+  nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
+  nft flush chain inet mangle postrouting 2>/dev/null || true
+  nft add rule inet mangle postrouting oifname "$iface" tcp flags syn tcp option maxseg size set "$mss"
+}
+
+apply_mss_iptables() {
+  local iface="$1" mss="$2"
+  modprobe ip_tables 2>/dev/null || true
+  modprobe iptable_mangle 2>/dev/null || true
+  iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+  iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
 }
 
 setup_mss_clamping() {
-    echo "📡 设置 MSS Clamping..."
-    modprobe ip_tables || true
-    modprobe iptable_mangle || true
-    iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
-    [ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
-    mtu=$(cat /sys/class/net/${iface}/mtu 2>/dev/null)
-    [ -z "$mtu" ] && mtu=1500
-    mss=$((mtu - 40))
-    [ "$mss" -lt 1000 ] && mss=1360
-    for chain in OUTPUT INPUT FORWARD; do
-        iptables -t mangle -D $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
-        iptables -t mangle -A $chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $mss
-    done
-    DEBIAN_FRONTEND=noninteractive apt-get update -y >/dev/null
-    DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent netfilter-persistent >/dev/null
-    netfilter-persistent save || echo "⚠️ 保存 iptables 失败"
-    systemctl enable netfilter-persistent || true
-}
+  if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
+    echo "⏭️ 跳过 MSS Clamping（未开启）"
+    return 0
+  fi
+  echo "📡 设置 MSS Clamping..."
+  local iface; iface="$(detect_iface)"
+  [ -z "$iface" ] && { echo "⚠️ 未找到出接口，跳过 MSS"; return 0; }
 
-udp_optimize() {
-    echo "📡 优化 UDP 参数..."
-    fix_param() {
-      key="$1"; val="$2"
-      cur=$(sysctl -n "$key" 2>/dev/null || echo "")
-      if [[ "$cur" != "$val" ]]; then
-        sed -i "/^$key/d" /etc/sysctl.conf
-        echo "$key = $val" >> /etc/sysctl.conf
-        sysctl -w "$key=$val" >/dev/null
-      fi
-    }
-    fix_param net.ipv4.udp_rmem_min 16384
-    fix_param net.ipv4.udp_wmem_min 16384
-    fix_param net.ipv4.udp_mem "65536 131072 262144"
-    fix_param net.core.rmem_max 67108864
-    fix_param net.core.wmem_max 67108864
-    fix_param net.core.rmem_default 2500000
-    fix_param net.core.wmem_default 2500000
-}
+  if have_cmd nft; then
+    apply_mss_nft "$iface" "$MSS_VALUE"
+  else
+    apply_mss_iptables "$iface" "$MSS_VALUE"
+  fi
 
-nf_conntrack_optimize() {
-    echo "🧩 启用 nf_conntrack ..."
-    modprobe nf_conntrack 2>/dev/null || modprobe nf_conntrack_ipv4 2>/dev/null || true
-    echo nf_conntrack > /etc/modules-load.d/nf_conntrack.conf
-    sysctl -w net.netfilter.nf_conntrack_max=262144
-    sysctl -w net.netfilter.nf_conntrack_udp_timeout=30
-    sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=180
-}
-
-write_sysctl_conf() {
-    echo "📊 写入 sysctl 参数..."
-    cat >> /etc/sysctl.conf <<EOF
-net.core.default_qdisc = fq_pie
-net.ipv4.tcp_congestion_control = $(sysctl -n net.ipv4.tcp_congestion_control)
-net.core.netdev_max_backlog = 250000
-net.core.somaxconn = 65535
-net.ipv4.tcp_max_syn_backlog = 8192
-net.ipv4.tcp_syncookies = 1
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_fin_timeout = 15
-net.ipv4.ip_local_port_range = 1024 65535
-net.ipv4.ip_forward = 1
-net.ipv6.conf.all.forwarding = 1
-net.ipv6.conf.default.forwarding = 1
-net.ipv6.conf.all.accept_ra = 2
-net.ipv6.conf.default.accept_ra = 2
-# 安全优化
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-net.ipv4.icmp_ignore_bogus_error_responses = 1
+  install -d "$CONFIG_DIR"
+  cat > "$CONFIG_FILE" <<EOF
+ENABLE_MSS_CLAMP=1
+CLAMP_IFACE=$iface
+MSS_VALUE=$MSS_VALUE
 EOF
-    sysctl -p
 }
 
+# ============== conntrack（可选，写到 sysctl.d） ==============
+nf_conntrack_optimize() {
+  if [ "$ENABLE_CONNTRACK_TUNE" != "1" ]; then
+    echo "⏭️ 跳过 conntrack 调优（未开启）"
+    return 0
+  fi
+  echo "🧩 启用 nf_conntrack 并持久化 ..."
+  modprobe nf_conntrack 2>/dev/null || true
+  echo nf_conntrack > /etc/modules-load.d/nf_conntrack.conf
+  install -d /etc/sysctl.d
+  {
+    echo "net.netfilter.nf_conntrack_max = ${NFCT_MAX}"
+    echo "net.netfilter.nf_conntrack_udp_timeout = ${NFCT_UDP_TO}"
+    echo "net.netfilter.nf_conntrack_udp_timeout_stream = ${NFCT_UDP_STREAM_TO}"
+  } >> /etc/sysctl.d/99-net-optimize.conf
+}
+
+# ============== sysctl.d 持久化（统一落盘，容忍未知键） ==============
+write_sysctl_conf() {
+  echo "📊 写入 sysctl 参数到 /etc/sysctl.d/99-net-optimize.conf ..."
+  install -d /etc/sysctl.d
+  local f="/etc/sysctl.d/99-net-optimize.conf"
+
+  {
+    echo "# ===== Network Optimize (managed by net-optimize-full.v2.1.sh) ====="
+    has_sysctl_key net.core.default_qdisc && echo "net.core.default_qdisc = $(get_sysctl net.core.default_qdisc | sed 's/ /_/g')"
+    has_sysctl_key net.ipv4.tcp_congestion_control && echo "net.ipv4.tcp_congestion_control = $(get_sysctl net.ipv4.tcp_congestion_control | sed 's/ /_/g')"
+
+    echo "net.core.netdev_max_backlog = 250000"
+    echo "net.core.somaxconn = 65535"
+    echo "net.ipv4.tcp_max_syn_backlog = 8192"
+    echo "net.ipv4.tcp_syncookies = 1"
+    echo "net.ipv4.tcp_fin_timeout = 15"
+    echo "net.ipv4.ip_local_port_range = 1024 65535"
+
+    has_sysctl_key net.ipv4.tcp_mtu_probing && echo "net.ipv4.tcp_mtu_probing = ${ENABLE_MTU_PROBE}"
+
+    echo "net.core.rmem_max = 67108864"
+    echo "net.core.wmem_max = 67108864"
+    echo "net.core.rmem_default = 2621440"
+    echo "net.core.wmem_default = 2621440"
+    echo "net.ipv4.udp_rmem_min = 16384"
+    echo "net.ipv4.udp_wmem_min = 16384"
+    echo "net.ipv4.udp_mem = 65536 131072 262144"
+
+    echo "net.ipv4.conf.all.rp_filter = 1"
+    echo "net.ipv4.conf.default.rp_filter = 1"
+    echo "net.ipv4.icmp_echo_ignore_broadcasts = 1"
+    echo "net.ipv4.icmp_ignore_bogus_error_responses = 1"
+    # 不默认打开转发/RA
+    # net.ipv4.ip_forward = 1
+    # net.ipv6.conf.all.forwarding = 1
+  } > "$f"
+
+  # -e：遇到不认识的键只报告不终止；>/dev/null 保持安静
+  sysctl -e --system >/dev/null || echo "⚠️ 部分 sysctl 键内核不支持，已跳过但不影响其他项"
+}
+
+# ============== Nginx 官方源（可选） ==============
 fix_nginx_repo() {
-    echo "🔧 修复 nginx.org 官方源并安装最新版本..."
-    
-    # 获取系统代号
-    codename=$(lsb_release -sc)
-
-    # 安装必要工具
-    apt-get install -y software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl
-
-    # 配置 nginx 官方源
-    rm -f /etc/apt/sources.list.d/nginx.list
-    cat > /etc/apt/sources.list.d/nginx.list <<EOF
+  if [ "$ENABLE_NGINX_REPO" != "1" ]; then
+    echo "⏭️ 跳过 Nginx 源变更（未开启）"
+    return 0
+  fi
+  echo "🔧 配置 nginx.org 官方源并安装最新版本..."
+  have_cmd apt-get || { echo "⚠️ 非 apt 系统，跳过"; return 0; }
+  local codename; codename="$(lsb_release -sc 2>/dev/null || echo noble)"
+  apt-get install -y software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl \
+    || echo "⚠️ 依赖安装失败，跳过 Nginx 源变更"
+  rm -f /etc/apt/sources.list.d/nginx.list
+  cat > /etc/apt/sources.list.d/nginx.list <<EOF
 deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
 deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
 EOF
-
-    # 导入公钥
-    curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg
-
-    # 配置优先级
-    cat > /etc/apt/preferences.d/99nginx <<EOF
+  curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg || true
+  cat > /etc/apt/preferences.d/99nginx <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
-
-    # 更新和安装 nginx
-    apt-get update -y
-    apt-get remove -y nginx-core nginx-common || true
-    DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
-
-    # 重启 nginx 并显示版本
-    systemctl restart nginx
-    nginx -v
-    systemctl status nginx | grep Active
-
-    # 设置 root 用户的定时任务
-    cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
-
-    # 使用临时文件安全写入 root crontab
-    tmpfile=$(mktemp)
-    sudo crontab -l -u root 2>/dev/null > "$tmpfile"
-    grep -Fq "$cron_job" "$tmpfile" || echo "$cron_job" >> "$tmpfile"
-    sudo crontab -u root "$tmpfile"
-    rm -f "$tmpfile"
-
-    echo "✅ 已启用 nginx.org 官方源并优先使用"
-    echo "🗓️ 已设置定时任务：每月 1 号凌晨 3 点自动更新 Nginx (root 用户)"
+  apt-get update -y || true
+  apt-get remove -y nginx-core nginx-common || true
+  DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || echo "⚠️ nginx 安装失败（请手动处理）"
+  systemctl restart nginx || true
+  systemctl status nginx | grep Active || true
+  # 每月 1 日自动更新
+  local cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
+  local tmpfile; tmpfile="$(mktemp)"
+  crontab -l -u root 2>/dev/null > "$tmpfile" || true
+  grep -Fq "$cron_job" "$tmpfile" || echo "$cron_job" >> "$tmpfile"
+  crontab -u root "$tmpfile" || true
+  rm -f "$tmpfile"
 }
 
-install_conntrack() {
-    echo "🔧 安装 conntrack 工具..."
-    apt-get install -y conntrack >/dev/null 2>&1
-}
+# ============== 开机自恢复（sysctl + 可选 MSS） ==============
+install_apply_script() {
+  install -d "$CONFIG_DIR"
+  cat > "$APPLY_SCRIPT" <<'EOS'
+#!/usr/bin/env bash
+set -euo pipefail
+CONFIG_DIR="/etc/net-optimize"
+CONFIG_FILE="$CONFIG_DIR/config"
+have_cmd(){ command -v "$1" >/dev/null 2>&1; }
+/usr/sbin/sysctl -e --system >/dev/null || true
+if [ -f "$CONFIG_FILE" ]; then
+  . "$CONFIG_FILE"
+  if [ "${ENABLE_MSS_CLAMP:-0}" = "1" ]; then
+    IFACE="${CLAMP_IFACE:-}"; MSS="${MSS_VALUE:-1452}"
+    if [ -n "$IFACE" ]; then
+      if have_cmd nft; then
+        nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
+        nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
+        nft flush chain inet mangle postrouting 2>/dev/null || true
+        nft add rule inet mangle postrouting oifname "$IFACE" tcp flags syn tcp option maxseg size set "$MSS"
+      elif have_cmd iptables; then
+        modprobe ip_tables 2>/dev/null || true
+        modprobe iptable_mangle 2>/dev/null || true
+        iptables -t mangle -D POSTROUTING -o "$IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+        iptables -t mangle -A POSTROUTING -o "$IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS"
+      fi
+    fi
+  fi
+fi
+EOS
+  chmod +x "$APPLY_SCRIPT"
 
-setup_boot_restore() {
-    echo "🛠 配置开机自动恢复 ..."
-    cat > /root/net-optimize-boot.sh <<EOL
-#!/bin/bash
-iface=\$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(\$i=="dev") print \$(i+1)}')
-[ -z "\$iface" ] && iface=\$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(\$i=="dev") print \$(i+1)}')
-mtu=\$(cat /sys/class/net/\${iface}/mtu 2>/dev/null)
-[ -z "\$mtu" ] && mtu=1500
-mss=\$((mtu - 40))
-[ "\$mss" -lt 1000 ] && mss=1360
-for chain in OUTPUT INPUT FORWARD; do
-    iptables -t mangle -D \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
-    iptables -t mangle -A \$chain -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss \$mss
-done
-sysctl -p
-ulimit -n 1048576
-exit 0
-EOL
-    chmod +x /root/net-optimize-boot.sh
-    cat > /etc/systemd/system/net-optimize.service <<EOL
+  cat > /etc/systemd/system/net-optimize-apply.service <<'EOL'
 [Unit]
-Description=Network Optimization Restore at Boot
-After=network.target
+Description=Apply network optimization at boot (sysctl.d + MSS clamp)
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/root/net-optimize-boot.sh
+ExecStart=/usr/local/sbin/net-optimize-apply
 
 [Install]
 WantedBy=multi-user.target
 EOL
-    systemctl daemon-reload
-    systemctl enable net-optimize.service
+  systemctl daemon-reload
+  systemctl enable net-optimize-apply.service >/dev/null 2>&1 || true
 }
 
+# ============== 状态输出 ==============
 print_status() {
-    echo "------------------------------------------------------------"
-    echo "✅ 拥塞算法：$(sysctl -n net.ipv4.tcp_congestion_control)"
-    echo "✅ 默认队列：$(sysctl -n net.core.default_qdisc)"
-    echo "✅ MTU 探测：$(sysctl -n net.ipv4.tcp_mtu_probing)"
-    echo "✅ UDP rmem_min：$(sysctl -n net.ipv4.udp_rmem_min)"
-    echo "✅ nf_conntrack_max：$(sysctl -n net.netfilter.nf_conntrack_max)"
-    echo "✅ 当前 ulimit：$(ulimit -n)"
-    echo "✅ MSS Clamping："
+  echo "------------------------------------------------------------"
+  echo "✅ 拥塞算法：$(get_sysctl net.ipv4.tcp_congestion_control)"
+  echo "✅ 默认队列：$(get_sysctl net.core.default_qdisc)"
+  echo "✅ MTU 探测：$(get_sysctl net.ipv4.tcp_mtu_probing)"
+  echo "✅ UDP rmem_min：$(get_sysctl net.ipv4.udp_rmem_min)"
+  if [ -f /proc/sys/net/netfilter/nf_conntrack_max ]; then
+    echo "✅ nf_conntrack_max：$(get_sysctl net.netfilter.nf_conntrack_max)"
+  else
+    echo "ℹ️ nf_conntrack 未启用（按需 ENABLE_CONNTRACK_TUNE=1 可开启）"
+  fi
+  echo "✅ 当前 ulimit：$(ulimit -n)"
+  echo "✅ MSS Clamping："
+  if have_cmd nft; then
+    nft list chain inet mangle postrouting 2>/dev/null | grep -E 'maxseg|TCPMSS' || echo "⚠️ 未检测到"
+  elif have_cmd iptables; then
     iptables -t mangle -L -n -v | grep TCPMSS || echo "⚠️ 未检测到"
-    echo "✅ UDP 监听："
-    ss -u -l -n -p | grep -E 'LISTEN|UNCONN' || echo "⚠️ 无监听"
+  else
+    echo "ℹ️ 未安装 nft/iptables"
+  fi
+  echo "✅ UDP 监听："
+  ss -u -l -n -p | grep -E 'LISTEN|UNCONN' || echo "⚠️ 无监听"
+  if have_cmd conntrack; then
     echo "✅ UDP 活跃连接数：$(conntrack -L -p udp 2>/dev/null | wc -l)"
-    echo "------------------------------------------------------------"
+  else
+    echo "ℹ️ 未安装 conntrack（可 apt install conntrack）"
+  fi
+  echo "------------------------------------------------------------"
 }
 
 ask_reboot() {
-    if [ "$interactive" = "1" ]; then
-        read -p "🔁 是否立即重启以使优化生效？(y/N): " answer
-        if [[ "$answer" =~ ^[Yy]$ ]]; then
-            echo "🌀 正在重启..."
-            (sleep 1; reboot) &
-        else
-            echo "📌 请稍后手动重启以生效所有配置"
-        fi
+  if [ "$interactive" = "1" ]; then
+    read -r -p "🔁 是否立即重启以使优化生效？(y/N): " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+      echo "🌀 正在重启..."
+      (sleep 1; reboot) &
     else
-        echo "📌 非交互模式执行，未触发重启，建议手动重启"
+      echo "📌 请稍后手动重启以生效所有配置"
     fi
+  else
+    echo "📌 非交互模式执行，未触发重启，建议手动重启"
+  fi
 }
 
+# ============== 主流程 ==============
 main() {
-    clean_old_config
-    setup_tcp_congestion
-    setup_ulimit
-    enable_mtu_probe
-    setup_mss_clamping
-    udp_optimize
-    nf_conntrack_optimize
-    write_sysctl_conf
-    fix_nginx_repo
-    install_conntrack
-    setup_boot_restore
-    print_status
-    ask_reboot
-    echo "🎉 网络优化完成，重启后将自动恢复设置！"
+  maybe_install_tools
+  clean_old_config
+  setup_tcp_congestion
+  setup_ulimit
+  enable_mtu_probe
+  setup_mss_clamping
+  write_sysctl_conf
+  nf_conntrack_optimize
+  fix_nginx_repo
+  install_apply_script
+  print_status
+  ask_reboot
+  echo "🎉 网络优化完成：sysctl.d 持久化 + 可选开关（MSS/conntrack/nginx/fq_pie），开机自动应用。"
 }
 
-# === 执行 ===
 main
+
+chmod +x net-optimize-full.v2.1.sh
