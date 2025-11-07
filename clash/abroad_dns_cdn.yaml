@@ -298,6 +298,7 @@ payload:
   - PROCESS-NAME,org.telegram.messenger.web
   - PROCESS-NAME,Telegram.exe
   - PROCESS-NAME,TelegramDesktop.exe
+  - PROCESS-NAME-REGEX,(?i)telegram
   # ✈️ 核心域名（官网、注册、登录）
   - DOMAIN-SUFFIX,telegram.org
   - DOMAIN-SUFFIX,t.me
