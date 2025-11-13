@@ -3,6 +3,14 @@ payload:
   - DOMAIN,adblock.mydns.network
   - DOMAIN,applied-privacy.net
   - DOMAIN,dns.alidns.com
+  - DOMAIN,dns.alidns.net
+  - DOMAIN,alidns.com
+  - DOMAIN,alidns.net
+  - DOMAIN,pub.alidns.com
+  - DOMAIN,public1.alidns.com
+  - DOMAIN,public2.alidns.com
+  - DOMAIN,public3.alidns.com
+  - DOMAIN,public4.alidns.com
   - DOMAIN,doh.pub
   - DOMAIN,dns.pub
   - DOMAIN,dnspod.cn
