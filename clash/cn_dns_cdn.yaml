@@ -3,6 +3,10 @@ payload:
   - DOMAIN,adblock.mydns.network
   - DOMAIN,applied-privacy.net
   - DOMAIN,dns.alidns.com
+  - DOMAIN,doh.pub
+  - DOMAIN,dns.pub
+  - DOMAIN,dnspod.cn
+  - DOMAIN,dnspod.com
   - DOMAIN,edns.233py.com
   - DOMAIN,i.233py.com
   - DOMAIN,sdns.233py.com
