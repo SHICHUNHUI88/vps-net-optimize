@@ -179,14 +179,27 @@ enable_mtu_probe() {
   has_sysctl_key net.ipv4.tcp_mtu_probing && sysctl -w net.ipv4.tcp_mtu_probing="$ENABLE_MTU_PROBE" >/dev/null || true
 }
 
-# ============== MSS Clamping（可选，nft 优先；含开机自恢复） ==============
+# ============== MSS Clamping（可选，nft 优先，失败自动回退 iptables） ==============
 detect_iface() {
   local iface="${CLAMP_IFACE:-}"
   if [ -z "$iface" ]; then
-    iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -n1)
-    [ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}' | head -n1)
+    iface=$(ip route get 1.1.1.1 2>/dev/null \
+      | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' \
+      | head -n1)
+    [ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null \
+      | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' \
+      | head -n1)
   fi
   echo -n "$iface"
+}
+
+apply_mss_iptables() {
+  local iface="$1" mss="$2"
+  modprobe ip_tables 2>/dev/null || true
+  modprobe iptable_mangle 2>/dev/null || true
+  # 先删旧的，再加新的
+  iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+  iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
 }
 
 apply_mss_nft() {
@@ -195,10 +208,10 @@ apply_mss_nft() {
   # 建表
   nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
 
-  # 建 chain（不同系统的优先级写法略有差异，失败就忽略）
+  # 建 chain（失败就忽略，下面再检查）
   nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
 
-  # 确认 chain 真的存在，否则直接回退到 iptables
+  # chain 不存在就直接用 iptables 兜底
   if ! nft list chain inet mangle postrouting >/dev/null 2>&1; then
     echo "⚠️ nft mangle/postrouting 不存在，回退到 iptables TCPMSS 方案"
     apply_mss_iptables "$iface" "$mss"
@@ -207,11 +220,36 @@ apply_mss_nft() {
 
   nft flush chain inet mangle postrouting 2>/dev/null || true
 
-  # 尝试添加规则，失败也回退到 iptables，而不是中断整个脚本
+  # 添加规则，失败也回退 iptables，而不是把整个脚本干崩
   if ! nft add rule inet mangle postrouting oifname "$iface" tcp flags syn tcp option maxseg size set "$mss"; then
     echo "⚠️ nft 添加 MSS 规则失败，回退到 iptables TCPMSS 方案"
     apply_mss_iptables "$iface" "$mss"
   fi
+}
+
+setup_mss_clamping() {
+  if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
+    echo "⏭️ 跳 过 MSS Clamping（未开启）"
+    return 0
+  fi
+
+  echo "📡 设 置 MSS Clamping..."
+  local iface; iface="$(detect_iface)"
+  [ -z "$iface" ] && { echo "⚠️ 未找 到 出 口 接 口，跳 过 MSS"; return 0; }
+
+  if have_cmd nft; then
+    apply_mss_nft "$iface" "$MSS_VALUE"
+  else
+    apply_mss_iptables "$iface" "$MSS_VALUE"
+  fi
+
+  # 写入配置文件，给开机自恢复脚本用
+  install -d "$CONFIG_DIR"
+  cat > "$CONFIG_FILE" <<EOF
+ENABLE_MSS_CLAMP=1
+CLAMP_IFACE=$iface
+MSS_VALUE=$MSS_VALUE
+EOF
 }
 
 # ============== conntrack（可选，写到 sysctl.d） ==============
