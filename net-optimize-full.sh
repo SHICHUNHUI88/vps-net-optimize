@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# net-optimize-full.v2.1.sh
+# net-optimize-full.v2.2.sh
 # 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie），幂等可回滚，容错增强
 set -euo pipefail
 
@@ -62,6 +62,22 @@ have_cmd() { command -v "$1" >/dev/null 2>&1; }
 has_sysctl_key(){ local p="/proc/sys/${1//./\/}"; [[ -e "$p" ]]; }
 get_sysctl(){ sysctl -n "$1" 2>/dev/null || echo "N/A"; }
 
+# 检测发行版（Ubuntu / Debian），用于 Nginx 源适配
+detect_distro() {
+  # 返回格式： "ubuntu:noble" / "debian:bookworm" / "unknown:unknown"
+  local id codename
+  if [ -r /etc/os-release ]; then
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    id="${ID:-unknown}"
+    codename="${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}"
+  else
+    id="unknown"
+    codename="unknown"
+  fi
+  echo "${id}:${codename}"
+}
+
 require_root
 interactive=0
 [ -t 0 ] && interactive=1
@@ -76,7 +92,7 @@ interactive=0
 : "${NFCT_MAX:=262144}"
 : "${NFCT_UDP_TO:=30}"
 : "${NFCT_UDP_STREAM_TO:=180}"
-: "${ENABLE_NGINX_REPO:=0}"          # 1: 切换 nginx.org 官方源（默认关闭）
+: "${ENABLE_NGINX_REPO:=0}"          # 1: 切换 nginx.org 官方源（Ubuntu + Debian 双系统适配）
 : "${APPLY_AT_BOOT:=1}"              # 始终安装开机自恢复（应用 sysctl & MSS）
 : "${SKIP_APT:=0}"                   # 1: 跳过 apt 安装（网络差时很有用）
 
@@ -234,7 +250,7 @@ write_sysctl_conf() {
   local f="/etc/sysctl.d/99-net-optimize.conf"
 
   {
-    echo "# ===== Network Optimize (managed by net-optimize-full.v2.1.sh) ====="
+    echo "# ===== Network Optimize (managed by net-optimize-full.v2.2.sh) ====="
     has_sysctl_key net.core.default_qdisc && echo "net.core.default_qdisc = $(get_sysctl net.core.default_qdisc | sed 's/ /_/g')"
     has_sysctl_key net.ipv4.tcp_congestion_control && echo "net.ipv4.tcp_congestion_control = $(get_sysctl net.ipv4.tcp_congestion_control | sed 's/ /_/g')"
 
@@ -268,34 +284,72 @@ write_sysctl_conf() {
   sysctl -e --system >/dev/null || echo "⚠️ 部分 sysctl 键内核不支持，已跳过但不影响其他项"
 }
 
-# ============== Nginx 官方源（可选） ==============
+# ============== Nginx 官方源（可选，Ubuntu + Debian 兼容） ==============
 fix_nginx_repo() {
   if [ "$ENABLE_NGINX_REPO" != "1" ]; then
     echo "⏭️ 跳过 Nginx 源变更（未开启）"
     return 0
   fi
+
+  # 尊重 SKIP_APT：如果显式要求跳过 apt，就不动 nginx 源
+  if [ "$SKIP_APT" = "1" ]; then
+    echo "⏭️ SKIP_APT=1，跳过 Nginx 源变更"
+    return 0
+  fi
+
+  have_cmd apt-get || { echo "⚠️ 非 apt 系统，跳过 Nginx 源变更"; return 0; }
+
   echo "🔧 配置 nginx.org 官方源并安装最新版本..."
-  have_cmd apt-get || { echo "⚠️ 非 apt 系统，跳过"; return 0; }
-  local codename; codename="$(lsb_release -sc 2>/dev/null || echo noble)"
-  apt-get install -y software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl \
+
+  local distro codename pkg_url
+  IFS=":" read -r distro codename <<<"$(detect_distro)"
+
+  case "$distro" in
+    ubuntu)
+      pkg_url="http://nginx.org/packages/ubuntu/"
+      ;;
+    debian)
+      pkg_url="http://nginx.org/packages/debian/"
+      ;;
+    *)
+      echo "⚠️ 未识别的发行版：$distro，跳过 Nginx 源变更"
+      return 0
+      ;;
+  esac
+
+  # codename 兜底（实在拿不到再用 lsb_release 或 stable）
+  if [ -z "$codename" ] || [ "$codename" = "unknown" ]; then
+    codename="$(lsb_release -sc 2>/dev/null || echo stable)"
+  fi
+
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl \
     || echo "⚠️ 依赖安装失败，跳过 Nginx 源变更"
+
   rm -f /etc/apt/sources.list.d/nginx.list
+
   cat > /etc/apt/sources.list.d/nginx.list <<EOF
-deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
-deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/ubuntu/ $codename nginx
+deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${codename} nginx
+deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${codename} nginx
 EOF
-  curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg || true
+
+  curl -fsSL https://nginx.org/keys/nginx_signing.key \
+    | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg || true
+
   cat > /etc/apt/preferences.d/99nginx <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
+
   apt-get update -y || true
-  apt-get remove -y nginx-core nginx-common || true
+  apt-get remove -y nginx-core nginx-common >/dev/null 2>&1 || true
   DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || echo "⚠️ nginx 安装失败（请手动处理）"
+
   systemctl restart nginx || true
   systemctl status nginx | grep Active || true
-  # 每月 1 日自动更新
+
+  # 每月 1 日自动更新 nginx
   local cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
   local tmpfile; tmpfile="$(mktemp)"
   crontab -l -u root 2>/dev/null > "$tmpfile" || true
@@ -412,8 +466,7 @@ main() {
   install_apply_script
   print_status
   ask_reboot
-  echo "🎉 网络优化完成：sysctl.d 持久化 + 可选开关（MSS/conntrack/nginx/fq_pie），开机自动应用。"
+  echo "🎉 网络优化完成：sysctl.d 持久化 + 可选开关（MSS/conntrack/nginx/fq_pie/nginx 源），开机自动应用。"
 }
 
 main
-
