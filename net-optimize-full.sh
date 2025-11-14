@@ -179,7 +179,7 @@ enable_mtu_probe() {
   has_sysctl_key net.ipv4.tcp_mtu_probing && sysctl -w net.ipv4.tcp_mtu_probing="$ENABLE_MTU_PROBE" >/dev/null || true
 }
 
-# ============== MSS Clamping（可选，nft 优先，失败自动回退 iptables） ==============
+# ============== MSS Clamping（纯 iptables 方案，Ubuntu + Debian 通用） ==============
 detect_iface() {
   local iface="${CLAMP_IFACE:-}"
   if [ -z "$iface" ]; then
@@ -195,35 +195,23 @@ detect_iface() {
 
 apply_mss_iptables() {
   local iface="$1" mss="$2"
-  modprobe ip_tables 2>/dev/null || true
-  modprobe iptable_mangle 2>/dev/null || true
-  # 先删旧的，再加新的
-  iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
-  iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
-}
 
-apply_mss_nft() {
-  local iface="$1" mss="$2"
-
-  # 建表
-  nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
-
-  # 建 chain（失败就忽略，下面再检查）
-  nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
-
-  # chain 不存在就直接用 iptables 兜底
-  if ! nft list chain inet mangle postrouting >/dev/null 2>&1; then
-    echo "⚠️ nft mangle/postrouting 不存在，回退到 iptables TCPMSS 方案"
-    apply_mss_iptables "$iface" "$mss"
+  if ! have_cmd iptables; then
+    echo "⚠️ 系统未安装 iptables，跳过 MSS Clamping"
     return 0
   fi
 
-  nft flush chain inet mangle postrouting 2>/dev/null || true
+  modprobe ip_tables 2>/dev/null || true
+  modprobe iptable_mangle 2>/dev/null || true
 
-  # 添加规则，失败也回退 iptables，而不是把整个脚本干崩
-  if ! nft add rule inet mangle postrouting oifname "$iface" tcp flags syn tcp option maxseg size set "$mss"; then
-    echo "⚠️ nft 添加 MSS 规则失败，回退到 iptables TCPMSS 方案"
-    apply_mss_iptables "$iface" "$mss"
+  # 先删旧规则
+  if [ -n "$iface" ]; then
+    iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+    iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
+  else
+    # 找不到网卡就不指定 -o，做一条全局 MSS 规则
+    iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+    iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
   fi
 }
 
@@ -235,13 +223,14 @@ setup_mss_clamping() {
 
   echo "📡 设 置 MSS Clamping..."
   local iface; iface="$(detect_iface)"
-  [ -z "$iface" ] && { echo "⚠️ 未找 到 出 口 接 口，跳 过 MSS"; return 0; }
 
-  if have_cmd nft; then
-    apply_mss_nft "$iface" "$MSS_VALUE"
+  if [ -n "$iface" ]; then
+    echo "🔎 检 测 到 出 口 接 口：$iface"
   else
-    apply_mss_iptables "$iface" "$MSS_VALUE"
+    echo "⚠️ 未找 到 出 口 接 口，将使 用 全 局 MSS 规 则（不限接口）"
   fi
+
+  apply_mss_iptables "$iface" "$MSS_VALUE"
 
   # 写入配置文件，给开机自恢复脚本用
   install -d "$CONFIG_DIR"
