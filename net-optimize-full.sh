@@ -82,19 +82,21 @@ require_root
 interactive=0
 [ -t 0 ] && interactive=1
 
-# 开关（可通过环境变量传入）
-: "${ENABLE_FQ_PIE:=0}"              # 1: 使用 fq_pie（内核须支持），默认 0=使用 fq
-: "${ENABLE_MTU_PROBE:=1}"           # 1: 按需探测（稳妥）；2: 激进探测
-: "${ENABLE_MSS_CLAMP:=0}"           # 1: 开启 MSS Clamp
-: "${CLAMP_IFACE:=}"                 # 不指定则自动识别默认出接口
-: "${MSS_VALUE:=1452}"               # 保守值，避免协议差异（IPv6/隧道等）
-: "${ENABLE_CONNTRACK_TUNE:=0}"      # 1: 开启 conntrack 调优
-: "${NFCT_MAX:=262144}"
-: "${NFCT_UDP_TO:=30}"
-: "${NFCT_UDP_STREAM_TO:=180}"
-: "${ENABLE_NGINX_REPO:=0}"          # 1: 切换 nginx.org 官方源（Ubuntu + Debian 双系统适配）
-: "${APPLY_AT_BOOT:=1}"              # 始终安装开机自恢复（应用 sysctl & MSS）
-: "${SKIP_APT:=0}"                   # 1: 跳过 apt 安装（网络差时很有用）
+# ⚙️ 全局功能开关（默认全部开启）
+: "${ENABLE_FQ_PIE:=1}"              # 1: 使用 fq_pie（推荐）
+: "${ENABLE_MTU_PROBE:=1}"           # 1: 稳妥模式 MTU Probing（推荐）
+: "${ENABLE_MSS_CLAMP:=1}"           # 1: 开启 MSS Clamp（强烈推荐）
+: "${CLAMP_IFACE:=}"                 # 自动识别出口网卡
+: "${MSS_VALUE:=1452}"               # 最稳妥普适值（适配 IPv4/IPv6/隧道）
+
+: "${ENABLE_CONNTRACK_TUNE:=1}"      # 1: 开启 conntrack 调优（推荐）
+: "${NFCT_MAX:=262144}"              # 连接跟踪表大小
+: "${NFCT_UDP_TO:=30}"               # UDP 超时
+: "${NFCT_UDP_STREAM_TO:=180}"       # UDP 流超时
+
+: "${ENABLE_NGINX_REPO:=1}"          # 1: 使用 nginx.org 官方源（最新、最稳定）
+: "${APPLY_AT_BOOT:=1}"              # 1: 开机自动恢复所有调优（必须启用）
+: "${SKIP_APT:=0}"                   # 0: 允许 apt 自动安装依赖
 
 CONFIG_DIR="/etc/net-optimize"
 CONFIG_FILE="$CONFIG_DIR/config"
