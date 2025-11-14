@@ -191,41 +191,27 @@ detect_iface() {
 
 apply_mss_nft() {
   local iface="$1" mss="$2"
+
+  # 建表
   nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
+
+  # 建 chain（不同系统的优先级写法略有差异，失败就忽略）
   nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
-  nft flush chain inet mangle postrouting 2>/dev/null || true
-  nft add rule inet mangle postrouting oifname "$iface" tcp flags syn tcp option maxseg size set "$mss"
-}
 
-apply_mss_iptables() {
-  local iface="$1" mss="$2"
-  modprobe ip_tables 2>/dev/null || true
-  modprobe iptable_mangle 2>/dev/null || true
-  iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
-  iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
-}
-
-setup_mss_clamping() {
-  if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
-    echo "⏭️ 跳过 MSS Clamping（未开启）"
+  # 确认 chain 真的存在，否则直接回退到 iptables
+  if ! nft list chain inet mangle postrouting >/dev/null 2>&1; then
+    echo "⚠️ nft mangle/postrouting 不存在，回退到 iptables TCPMSS 方案"
+    apply_mss_iptables "$iface" "$mss"
     return 0
   fi
-  echo "📡 设置 MSS Clamping..."
-  local iface; iface="$(detect_iface)"
-  [ -z "$iface" ] && { echo "⚠️ 未找到出接口，跳过 MSS"; return 0; }
 
-  if have_cmd nft; then
-    apply_mss_nft "$iface" "$MSS_VALUE"
-  else
-    apply_mss_iptables "$iface" "$MSS_VALUE"
+  nft flush chain inet mangle postrouting 2>/dev/null || true
+
+  # 尝试添加规则，失败也回退到 iptables，而不是中断整个脚本
+  if ! nft add rule inet mangle postrouting oifname "$iface" tcp flags syn tcp option maxseg size set "$mss"; then
+    echo "⚠️ nft 添加 MSS 规则失败，回退到 iptables TCPMSS 方案"
+    apply_mss_iptables "$iface" "$mss"
   fi
-
-  install -d "$CONFIG_DIR"
-  cat > "$CONFIG_FILE" <<EOF
-ENABLE_MSS_CLAMP=1
-CLAMP_IFACE=$iface
-MSS_VALUE=$MSS_VALUE
-EOF
 }
 
 # ============== conntrack（可选，写到 sysctl.d） ==============
