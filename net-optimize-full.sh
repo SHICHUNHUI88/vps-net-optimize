@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# net-optimize-full.v2.2.sh
+# net-optimize-full.v2.3.sh
 # 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie），幂等可回滚，容错增强
 set -euo pipefail
 
@@ -24,7 +24,6 @@ sha256_of() {
   elif command -v openssl >/dev/null 2>&1; then
     openssl dgst -sha256 | awk '{print $2}'
   else
-    # 没有哈希工具就直接返回空，表示无法对比
     cat >/dev/null
     echo ""
   fi
@@ -58,16 +57,12 @@ echo "------------------------------------------------------------"
 # ============== 基础 & 工具函数 ==============
 require_root() { [[ ${EUID:-$(id -u)} -eq 0 ]] || { echo "❌ 请用 root 运行"; exit 1; }; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
-# 检查 sysctl 键是否存在（将 net.ipv4.tcp_congestion_control → /proc/sys/net/ipv4/tcp_congestion_control）
 has_sysctl_key(){ local p="/proc/sys/${1//./\/}"; [[ -e "$p" ]]; }
 get_sysctl(){ sysctl -n "$1" 2>/dev/null || echo "N/A"; }
 
-# 检测发行版（Ubuntu / Debian），用于 Nginx 源适配
 detect_distro() {
-  # 返回格式： "ubuntu:noble" / "debian:bookworm" / "unknown:unknown"
   local id codename
   if [ -r /etc/os-release ]; then
-    # shellcheck source=/dev/null
     . /etc/os-release
     id="${ID:-unknown}"
     codename="${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}"
@@ -84,18 +79,18 @@ interactive=0
 
 # ⚙️ 全局功能开关（默认全部开启）
 : "${ENABLE_FQ_PIE:=1}"              # 1: 使用 fq_pie（推荐）
-: "${ENABLE_MTU_PROBE:=1}"           # 1: 稳妥模式 MTU Probing（推荐）
-: "${ENABLE_MSS_CLAMP:=1}"           # 1: 开启 MSS Clamp（强烈推荐）
+: "${ENABLE_MTU_PROBE:=1}"           # 1: 稳妥模式 MTU Probing
+: "${ENABLE_MSS_CLAMP:=1}"           # 1: 开启 MSS Clamp
 : "${CLAMP_IFACE:=}"                 # 自动识别出口网卡
-: "${MSS_VALUE:=1452}"               # 最稳妥普适值（适配 IPv4/IPv6/隧道）
+: "${MSS_VALUE:=1452}"               # 通用保守值
 
-: "${ENABLE_CONNTRACK_TUNE:=1}"      # 1: 开启 conntrack 调优（推荐）
-: "${NFCT_MAX:=262144}"              # 连接跟踪表大小
-: "${NFCT_UDP_TO:=30}"               # UDP 超时
-: "${NFCT_UDP_STREAM_TO:=180}"       # UDP 流超时
+: "${ENABLE_CONNTRACK_TUNE:=1}"      # 1: 开启 conntrack 调优
+: "${NFCT_MAX:=262144}"
+: "${NFCT_UDP_TO:=30}"
+: "${NFCT_UDP_STREAM_TO:=180}"
 
-: "${ENABLE_NGINX_REPO:=1}"          # 1: 使用 nginx.org 官方源（最新、最稳定）
-: "${APPLY_AT_BOOT:=1}"              # 1: 开机自动恢复所有调优（必须启用）
+: "${ENABLE_NGINX_REPO:=1}"          # 1: 使用 nginx.org 官方源
+: "${APPLY_AT_BOOT:=1}"              # 1: 开机自动恢复所有调优
 : "${SKIP_APT:=0}"                   # 0: 允许 apt 自动安装依赖
 
 CONFIG_DIR="/etc/net-optimize"
@@ -112,7 +107,7 @@ maybe_install_tools() {
     echo "🧰 安装必要工具（apt）..."
     DEBIAN_FRONTEND=noninteractive apt-get update -y || echo "⚠️ apt-get update 失败，继续执行基线优化"
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      ca-certificates ethtool iproute2 irqbalance chrony nftables conntrack curl gpg lsb-release \
+      ca-certificates ethtool iproute2 irqbalance chrony nftables conntrack curl gpg lsb-release iptables \
       || echo "⚠️ apt-get install 失败，某些可选功能可能不可用"
     systemctl enable --now irqbalance chrony nftables >/dev/null 2>&1 || true
   else
@@ -124,7 +119,6 @@ maybe_install_tools() {
 clean_old_config() {
   echo "🧹 清理旧配置..."
   rm -f /etc/systemd/system/net-optimize.service 2>/dev/null || true
-  # 清理历史可能叠加的 iptables TCPMSS 规则（避免重复）
   if have_cmd iptables; then
     iptables -t mangle -S 2>/dev/null | grep TCPMSS | sed 's/^-A/iptables -t mangle -D/' | bash 2>/dev/null || true
   fi
@@ -139,15 +133,13 @@ setup_tcp_congestion() {
   elif sysctl net.ipv4.tcp_available_congestion_control 2>/dev/null | grep -qw bbr; then
     cc_algo="bbr"
   fi
-  has_sysctl_key net.ipv4.tcp_congestion_control && \
-    sysctl -w net.ipv4.tcp_congestion_control="$cc_algo" >/dev/null
+  has_sysctl_key net.ipv4.tcp_congestion_control && sysctl -w net.ipv4.tcp_congestion_control="$cc_algo" >/dev/null
 
   local qdisc="fq"
   if lsmod | grep -qw fq_pie && [ "$ENABLE_FQ_PIE" = "1" ]; then
     qdisc="fq_pie"
   fi
-  has_sysctl_key net.core.default_qdisc && \
-    sysctl -w net.core.default_qdisc="$qdisc" >/dev/null
+  has_sysctl_key net.core.default_qdisc && sysctl -w net.core.default_qdisc="$qdisc" >/dev/null
 }
 
 # ============== ulimit（limits.d + systemd） ==============
@@ -204,12 +196,10 @@ apply_mss_iptables() {
   modprobe ip_tables 2>/dev/null || true
   modprobe iptable_mangle 2>/dev/null || true
 
-  # 先删旧规则
   if [ -n "$iface" ]; then
     iptables -t mangle -D POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
     iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
   else
-    # 找不到网卡就不指定 -o，做一条全局 MSS 规则
     iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
     iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$mss"
   fi
@@ -217,22 +207,21 @@ apply_mss_iptables() {
 
 setup_mss_clamping() {
   if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
-    echo "⏭️ 跳 过 MSS Clamping（未开启）"
+    echo "⏭️ 跳过 MSS Clamping（未开启）"
     return 0
   fi
 
-  echo "📡 设 置 MSS Clamping..."
+  echo "📡 设置 MSS Clamping..."
   local iface; iface="$(detect_iface)"
 
   if [ -n "$iface" ]; then
-    echo "🔎 检 测 到 出 口 接 口：$iface"
+    echo "🔎 检测到出口接口：$iface"
   else
-    echo "⚠️ 未找 到 出 口 接 口，将使 用 全 局 MSS 规 则（不限接口）"
+    echo "⚠️ 未找到出口接口，将使用全局 MSS 规则（不限接口）"
   fi
 
   apply_mss_iptables "$iface" "$MSS_VALUE"
 
-  # 写入配置文件，给开机自恢复脚本用
   install -d "$CONFIG_DIR"
   cat > "$CONFIG_FILE" <<EOF
 ENABLE_MSS_CLAMP=1
@@ -265,7 +254,7 @@ write_sysctl_conf() {
   local f="/etc/sysctl.d/99-net-optimize.conf"
 
   {
-    echo "# ===== Network Optimize (managed by net-optimize-full.v2.2.sh) ====="
+    echo "# ===== Network Optimize (managed by net-optimize-full.v2.3.sh) ====="
     has_sysctl_key net.core.default_qdisc && echo "net.core.default_qdisc = $(get_sysctl net.core.default_qdisc | sed 's/ /_/g')"
     has_sysctl_key net.ipv4.tcp_congestion_control && echo "net.ipv4.tcp_congestion_control = $(get_sysctl net.ipv4.tcp_congestion_control | sed 's/ /_/g')"
 
@@ -290,44 +279,34 @@ write_sysctl_conf() {
     echo "net.ipv4.conf.default.rp_filter = 1"
     echo "net.ipv4.icmp_echo_ignore_broadcasts = 1"
     echo "net.ipv4.icmp_ignore_bogus_error_responses = 1"
-    # 不默认打开转发/RA
-    # net.ipv4.ip_forward = 1
-    # net.ipv6.conf.all.forwarding = 1
   } > "$f"
 
-  # -e：遇到不认识的键只报告不终止；>/dev/null 保持安静
   sysctl -e --system >/dev/null || echo "⚠️ 部分 sysctl 键内核不支持，已跳过但不影响其他项"
 }
 
 # ============== Nginx 官方源（强制启用，Ubuntu + Debian 兼容 + 每月自动更新） ==============
 fix_nginx_repo() {
+  if [ "$ENABLE_NGINX_REPO" != "1" ]; then
+    echo "⏭️ 跳过 Nginx 源变更（未开启）"
+    return 0
+  fi
 
-  # 不允许跳过，始终使用 nginx.org 最新源
-  echo "🔧 正在配置 nginx.org 官方源（强制启用）..."
+  echo "🔧 正在配置 nginx.org 官方源..."
 
   have_cmd apt-get || { 
     echo "⚠️ 非 apt 系统（不是 Debian/Ubuntu），跳过 Nginx 配置"; 
     return 0; 
   }
 
-  # 检测发行版
   local distro codename pkg_url
   IFS=":" read -r distro codename <<<"$(detect_distro)"
 
   case "$distro" in
-    ubuntu)
-      pkg_url="http://nginx.org/packages/ubuntu/"
-      ;;
-    debian)
-      pkg_url="http://nginx.org/packages/debian/"
-      ;;
-    *)
-      echo "⚠️ 未识别发行版：$distro，将使用 Debian 通用源"
-      pkg_url="http://nginx.org/packages/debian/"
-      ;;
+    ubuntu) pkg_url="http://nginx.org/packages/ubuntu/";;
+    debian) pkg_url="http://nginx.org/packages/debian/";;
+    *)      echo "⚠️ 未识别发行版：$distro，将使用 Debian 通用源"; pkg_url="http://nginx.org/packages/debian/";;
   esac
 
-  # codename 兜底
   if [ -z "$codename" ] || [ "$codename" = "unknown" ]; then
     codename="$(lsb_release -sc 2>/dev/null || echo stable)"
   fi
@@ -336,12 +315,10 @@ fix_nginx_repo() {
   echo "📌 Codename: $codename"
   echo "📌 使用 Nginx 源: ${pkg_url}${codename}"
 
-  # 安装依赖
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
     software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl \
     || echo "⚠️ 安装依赖失败，继续尝试配置源"
 
-  # 写入源文件
   rm -f /etc/apt/sources.list.d/nginx.list
 
   cat > /etc/apt/sources.list.d/nginx.list <<EOF
@@ -349,35 +326,27 @@ deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${coden
 deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${codename} nginx
 EOF
 
-  # 导入签名 key
   curl -fsSL https://nginx.org/keys/nginx_signing.key \
     | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg || true
 
-  # 设置 pin 优先级（确保 nginx.org > 系统源）
   cat > /etc/apt/preferences.d/99nginx <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
 
-  # 更新源
   apt-get update -y || true
-
-  # 卸载系统 Nginx（避免冲突）
   apt-get remove -y nginx-core nginx-common nginx-full nginx-light >/dev/null 2>&1 || true
 
-  # 安装 nginx.org 最新版
   echo "📦 正在安装 nginx.org 最新版..."
   DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || {
     echo "❌ 安装 nginx.org 失败，请手动检查网络或源";
     return 1;
   }
 
-  # 启动服务
   systemctl restart nginx || true
   systemctl status nginx | grep Active || true
 
-  # 每月 1 日 03:00 自动更新 nginx 到最新版本
   local cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
   local tmpfile
   tmpfile="$(mktemp)"
@@ -389,7 +358,7 @@ EOF
   echo "✅ 已配置 nginx.org 官方源并安装最新 Nginx（含每月自动更新）"
 }
 
-# ============== 开机自恢复（sysctl + 可选 MSS） ==============
+# ============== 开机自恢复（sysctl + MSS） ==============
 install_apply_script() {
   install -d "$CONFIG_DIR"
   cat > "$APPLY_SCRIPT" <<'EOS'
@@ -398,22 +367,23 @@ set -euo pipefail
 CONFIG_DIR="/etc/net-optimize"
 CONFIG_FILE="$CONFIG_DIR/config"
 have_cmd(){ command -v "$1" >/dev/null 2>&1; }
+
 /usr/sbin/sysctl -e --system >/dev/null || true
+
 if [ -f "$CONFIG_FILE" ]; then
   . "$CONFIG_FILE"
   if [ "${ENABLE_MSS_CLAMP:-0}" = "1" ]; then
-    IFACE="${CLAMP_IFACE:-}"; MSS="${MSS_VALUE:-1452}"
-    if [ -n "$IFACE" ]; then
-      if have_cmd nft; then
-        nft list table inet mangle >/dev/null 2>&1 || nft add table inet mangle
-        nft 'add chain inet mangle postrouting { type route hook postrouting priority -150; }' 2>/dev/null || true
-        nft flush chain inet mangle postrouting 2>/dev/null || true
-        nft add rule inet mangle postrouting oifname "$IFACE" tcp flags syn tcp option maxseg size set "$MSS"
-      elif have_cmd iptables; then
-        modprobe ip_tables 2>/dev/null || true
-        modprobe iptable_mangle 2>/dev/null || true
+    IFACE="${CLAMP_IFACE:-}"
+    MSS="${MSS_VALUE:-1452}"
+    if have_cmd iptables; then
+      modprobe ip_tables 2>/dev/null || true
+      modprobe iptable_mangle 2>/dev/null || true
+      if [ -n "$IFACE" ]; then
         iptables -t mangle -D POSTROUTING -o "$IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
         iptables -t mangle -A POSTROUTING -o "$IFACE" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS"
+      else
+        iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS 2>/dev/null || true
+        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS"
       fi
     fi
   fi
@@ -451,16 +421,21 @@ print_status() {
     echo "ℹ️ nf_conntrack 未启用（按需 ENABLE_CONNTRACK_TUNE=1 可开启）"
   fi
   echo "✅ 当前 ulimit：$(ulimit -n)"
-  echo "✅ MSS Clamping："
+
+  echo "✅ MSS Clamping 规则："
+  local found=0
   if have_cmd nft; then
-    nft list chain inet mangle postrouting 2>/dev/null | grep -E 'maxseg|TCPMSS' || echo "⚠️ 未检测到"
-  elif have_cmd iptables; then
-    iptables -t mangle -L -n -v | grep TCPMSS || echo "⚠️ 未检测到"
-  else
-    echo "ℹ️ 未安装 nft/iptables"
+    nft list ruleset 2>/dev/null | grep -E 'maxseg|TCPMSS' && found=1 || true
   fi
+  if have_cmd iptables; then
+    iptables -t mangle -L -n -v | grep -E 'TCPMSS' && found=1 || true
+  fi
+  if [ "$found" != "1" ]; then
+    echo "⚠️ 未检测到 MSS 规则"
+  fi
+
   echo "✅ UDP 监听："
-  ss -u -l -n -p | grep -E 'LISTEN|UNCONN' || echo "⚠️ 无监听"
+  ss -u -l -n -p | grep -E 'LISTEN|UNCONN' || echo "⚠️ 无 UDP 监听"
   if have_cmd conntrack; then
     echo "✅ UDP 活跃连接数：$(conntrack -L -p udp 2>/dev/null | wc -l)"
   else
@@ -497,7 +472,7 @@ main() {
   install_apply_script
   print_status
   ask_reboot
-  echo "🎉 网络优化完成：sysctl.d 持久化 + 可选开关（MSS/conntrack/nginx/fq_pie/nginx 源），开机自动应用。"
+  echo "🎉 网络优化完成：sysctl.d 持久化 + MSS/conntrack/nginx/fq_pie + nginx 源，开机自动应用。"
 }
 
 main
