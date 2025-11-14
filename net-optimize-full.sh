@@ -284,23 +284,18 @@ write_sysctl_conf() {
   sysctl -e --system >/dev/null || echo "⚠️ 部分 sysctl 键内核不支持，已跳过但不影响其他项"
 }
 
-# ============== Nginx 官方源（可选，Ubuntu + Debian 兼容） ==============
+# ============== Nginx 官方源（强制启用，Ubuntu + Debian 兼容 + 每月自动更新） ==============
 fix_nginx_repo() {
-  if [ "$ENABLE_NGINX_REPO" != "1" ]; then
-    echo "⏭️ 跳过 Nginx 源变更（未开启）"
-    return 0
-  fi
 
-  # 尊重 SKIP_APT：如果显式要求跳过 apt，就不动 nginx 源
-  if [ "$SKIP_APT" = "1" ]; then
-    echo "⏭️ SKIP_APT=1，跳过 Nginx 源变更"
-    return 0
-  fi
+  # 不允许跳过，始终使用 nginx.org 最新源
+  echo "🔧 正在配置 nginx.org 官方源（强制启用）..."
 
-  have_cmd apt-get || { echo "⚠️ 非 apt 系统，跳过 Nginx 源变更"; return 0; }
+  have_cmd apt-get || { 
+    echo "⚠️ 非 apt 系统（不是 Debian/Ubuntu），跳过 Nginx 配置"; 
+    return 0; 
+  }
 
-  echo "🔧 配置 nginx.org 官方源并安装最新版本..."
-
+  # 检测发行版
   local distro codename pkg_url
   IFS=":" read -r distro codename <<<"$(detect_distro)"
 
@@ -312,20 +307,26 @@ fix_nginx_repo() {
       pkg_url="http://nginx.org/packages/debian/"
       ;;
     *)
-      echo "⚠️ 未识别的发行版：$distro，跳过 Nginx 源变更"
-      return 0
+      echo "⚠️ 未识别发行版：$distro，将使用 Debian 通用源"
+      pkg_url="http://nginx.org/packages/debian/"
       ;;
   esac
 
-  # codename 兜底（实在拿不到再用 lsb_release 或 stable）
+  # codename 兜底
   if [ -z "$codename" ] || [ "$codename" = "unknown" ]; then
     codename="$(lsb_release -sc 2>/dev/null || echo stable)"
   fi
 
+  echo "📌 系统类型: $distro"
+  echo "📌 Codename: $codename"
+  echo "📌 使用 Nginx 源: ${pkg_url}${codename}"
+
+  # 安装依赖
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
     software-properties-common apt-transport-https gnupg2 ca-certificates lsb-release curl \
-    || echo "⚠️ 依赖安装失败，跳过 Nginx 源变更"
+    || echo "⚠️ 安装依赖失败，继续尝试配置源"
 
+  # 写入源文件
   rm -f /etc/apt/sources.list.d/nginx.list
 
   cat > /etc/apt/sources.list.d/nginx.list <<EOF
@@ -333,29 +334,44 @@ deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${coden
 deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${pkg_url} ${codename} nginx
 EOF
 
+  # 导入签名 key
   curl -fsSL https://nginx.org/keys/nginx_signing.key \
     | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg || true
 
+  # 设置 pin 优先级（确保 nginx.org > 系统源）
   cat > /etc/apt/preferences.d/99nginx <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
 
+  # 更新源
   apt-get update -y || true
-  apt-get remove -y nginx-core nginx-common >/dev/null 2>&1 || true
-  DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || echo "⚠️ nginx 安装失败（请手动处理）"
 
+  # 卸载系统 Nginx（避免冲突）
+  apt-get remove -y nginx-core nginx-common nginx-full nginx-light >/dev/null 2>&1 || true
+
+  # 安装 nginx.org 最新版
+  echo "📦 正在安装 nginx.org 最新版..."
+  DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || {
+    echo "❌ 安装 nginx.org 失败，请手动检查网络或源";
+    return 1;
+  }
+
+  # 启动服务
   systemctl restart nginx || true
   systemctl status nginx | grep Active || true
 
-  # 每月 1 日自动更新 nginx
+  # 每月 1 日 03:00 自动更新 nginx 到最新版本
   local cron_job="0 3 1 * * /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y nginx'"
-  local tmpfile; tmpfile="$(mktemp)"
+  local tmpfile
+  tmpfile="$(mktemp)"
   crontab -l -u root 2>/dev/null > "$tmpfile" || true
   grep -Fq "$cron_job" "$tmpfile" || echo "$cron_job" >> "$tmpfile"
   crontab -u root "$tmpfile" || true
   rm -f "$tmpfile"
+
+  echo "✅ 已配置 nginx.org 官方源并安装最新 Nginx（含每月自动更新）"
 }
 
 # ============== 开机自恢复（sysctl + 可选 MSS） ==============
