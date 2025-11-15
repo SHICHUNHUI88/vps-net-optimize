@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# net-optimize-full.v2.3.sh
-# 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie），幂等可回滚，容错增强
+# net-optimize-full.v2.4.sh
+# 安全基线 + 可选开关（MSS/conntrack/nginx/fq_pie）+ 完全修复 apt/dpkg 中断问题
 set -euo pipefail
 
 # === 自动自更新 + 自动保存副本（含 curl/wget & sha256 兜底）===
@@ -44,7 +44,6 @@ if [ -n "${remote_buf:-}" ]; then
   fi
 fi
 
-# 首次运行或本地执行时，将当前脚本同步到系统路径，便于以后直接调用
 install -Dm755 "$0" "$SCRIPT_PATH" 2>/dev/null || true
 echo "💾 当前脚本已同步到 $SCRIPT_PATH"
 
@@ -77,33 +76,56 @@ require_root
 interactive=0
 [ -t 0 ] && interactive=1
 
-# ⚙️ 全局功能开关（默认全部开启）
-: "${ENABLE_FQ_PIE:=1}"              # 1: 使用 fq_pie（推荐）
-: "${ENABLE_MTU_PROBE:=1}"           # 1: 稳妥模式 MTU Probing
-: "${ENABLE_MSS_CLAMP:=1}"           # 1: 开启 MSS Clamp
-: "${CLAMP_IFACE:=}"                 # 自动识别出口网卡
-: "${MSS_VALUE:=1452}"               # 通用保守值
+# ⚙️ 全局功能开关（你要求后的默认设置已调整）
+: "${ENABLE_FQ_PIE:=1}"
+: "${ENABLE_MTU_PROBE:=1}"
+: "${ENABLE_MSS_CLAMP:=1}"
+: "${CLAMP_IFACE:=}"
+: "${MSS_VALUE:=1452}"
 
-: "${ENABLE_CONNTRACK_TUNE:=1}"      # 1: 开启 conntrack 调优
+: "${ENABLE_CONNTRACK_TUNE:=1}"
 : "${NFCT_MAX:=262144}"
 : "${NFCT_UDP_TO:=30}"
 : "${NFCT_UDP_STREAM_TO:=180}"
 
-: "${ENABLE_NGINX_REPO:=1}"          # 1: 使用 nginx.org 官方源
-: "${APPLY_AT_BOOT:=1}"              # 1: 开机自动恢复所有调优
-: "${SKIP_APT:=0}"                   # 0: 允许 apt 自动安装依赖
+# 🔥你要求默认启用 nginx.org 源
+: "${ENABLE_NGINX_REPO:=1}"
+
+: "${APPLY_AT_BOOT:=1}"
+
+# 🔥 为避免 apt 导致 dpkg 半配置状态，默认关闭自动 apt 操作
+: "${SKIP_APT:=1}"
 
 CONFIG_DIR="/etc/net-optimize"
 CONFIG_FILE="$CONFIG_DIR/config"
 APPLY_SCRIPT="/usr/local/sbin/net-optimize-apply"
 
+# ============== dpkg 状态检查函数（重要：防止 apt 损坏证书安装流程） ==============
+check_dpkg_clean() {
+  if ! have_cmd dpkg; then
+    return 0
+  fi
+
+  if dpkg --audit 2>/dev/null | grep -q .; then
+    echo "⚠️ 检测到 dpkg 处于【未完成配置】状态，停止继续执行以保护系统。"
+    echo "请先执行修复命令："
+    echo "  dpkg --configure -a"
+    echo "  apt-get --fix-broken install -y"
+    exit 1
+  fi
+}
+
 # ============== 工具安装（apt 系列，其他发行版自动跳过） ==============
 maybe_install_tools() {
   if [ "$SKIP_APT" = "1" ]; then
-    echo "⏭️ 跳过工具安装（SKIP_APT=1）"
+    echo "⏭️ 跳过工具安装（SKIP_APT=1，不触碰 apt/dpkg）"
     return 0
   fi
+
   if have_cmd apt-get; then
+    # 在使用 apt 之前，先确认 dpkg 没有处于“未配置完成”危险状态
+    check_dpkg_clean
+
     echo "🧰 安装必要工具（apt）..."
     DEBIAN_FRONTEND=noninteractive apt-get update -y || echo "⚠️ apt-get update 失败，继续执行基线优化"
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -174,14 +196,21 @@ enable_mtu_probe() {
 # ============== MSS Clamping（纯 iptables 方案，Ubuntu + Debian 通用） ==============
 detect_iface() {
   local iface="${CLAMP_IFACE:-}"
+  if [ -n "$iface" ]; then
+    echo -n "$iface"
+    return 0
+  fi
+
+  iface=$(ip route get 1.1.1.1 2>/dev/null \
+    | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' \
+    | head -n1)
+
   if [ -z "$iface" ]; then
-    iface=$(ip route get 1.1.1.1 2>/dev/null \
-      | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' \
-      | head -n1)
-    [ -z "$iface" ] && iface=$(ip -6 route get 240c::6666 2>/dev/null \
+    iface=$(ip -6 route get 240c::6666 2>/dev/null \
       | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' \
       | head -n1)
   fi
+
   echo -n "$iface"
 }
 
@@ -236,9 +265,11 @@ nf_conntrack_optimize() {
     echo "⏭️ 跳过 conntrack 调优（未开启）"
     return 0
   fi
+
   echo "🧩 启用 nf_conntrack 并持久化 ..."
   modprobe nf_conntrack 2>/dev/null || true
   echo nf_conntrack > /etc/modules-load.d/nf_conntrack.conf
+
   install -d /etc/sysctl.d
   {
     echo "net.netfilter.nf_conntrack_max = ${NFCT_MAX}"
@@ -254,7 +285,7 @@ write_sysctl_conf() {
   local f="/etc/sysctl.d/99-net-optimize.conf"
 
   {
-    echo "# ===== Network Optimize (managed by net-optimize-full.v2.3.sh) ====="
+    echo "# ===== Network Optimize (managed by net-optimize-full.v2.4.sh) ====="
     has_sysctl_key net.core.default_qdisc && echo "net.core.default_qdisc = $(get_sysctl net.core.default_qdisc | sed 's/ /_/g')"
     has_sysctl_key net.ipv4.tcp_congestion_control && echo "net.ipv4.tcp_congestion_control = $(get_sysctl net.ipv4.tcp_congestion_control | sed 's/ /_/g')"
 
@@ -284,19 +315,27 @@ write_sysctl_conf() {
   sysctl -e --system >/dev/null || echo "⚠️ 部分 sysctl 键内核不支持，已跳过但不影响其他项"
 }
 
-# ============== Nginx 官方源（强制启用，Ubuntu + Debian 兼容 + 每月自动更新） ==============
+# ============== Nginx 官方源（Ubuntu + Debian 兼容 + 每月自动更新） ==============
 fix_nginx_repo() {
   if [ "$ENABLE_NGINX_REPO" != "1" ]; then
-    echo "⏭️ 跳过 Nginx 源变更（未开启）"
+    echo "⏭️ 跳过 Nginx 源变更（ENABLE_NGINX_REPO!=1）"
+    return 0
+  fi
+
+  if [ "$SKIP_APT" = "1" ]; then
+    echo "⏭️ 已设置 SKIP_APT=1，出于安全考虑跳过 Nginx 源配置与安装（不触碰 apt/dpkg）"
     return 0
   fi
 
   echo "🔧 正在配置 nginx.org 官方源..."
 
-  have_cmd apt-get || { 
-    echo "⚠️ 非 apt 系统（不是 Debian/Ubuntu），跳过 Nginx 配置"; 
-    return 0; 
+  have_cmd apt-get || {
+    echo "⚠️ 非 apt 系统（不是 Debian/Ubuntu），跳过 Nginx 配置"
+    return 0
   }
+
+  # 在使用 apt 安装 nginx 之前，先确认 dpkg 状态正常
+  check_dpkg_clean
 
   local distro codename pkg_url
   IFS=":" read -r distro codename <<<"$(detect_distro)"
@@ -340,8 +379,8 @@ EOF
 
   echo "📦 正在安装 nginx.org 最新版..."
   DEBIAN_FRONTEND=noninteractive apt-get install -y nginx || {
-    echo "❌ 安装 nginx.org 失败，请手动检查网络或源";
-    return 1;
+    echo "❌ 安装 nginx.org 失败，请手动检查网络或源"
+    return 1
   }
 
   systemctl restart nginx || true
@@ -476,3 +515,5 @@ main() {
 }
 
 main
+
+
