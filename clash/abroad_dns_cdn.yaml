@@ -199,8 +199,6 @@ payload:
   - DOMAIN-KEYWORD,openai
   - DOMAIN-KEYWORD,gpt
   - DOMAIN-KEYWORD,chatgpt
-  - DOMAIN-KEYWORD,api
-  - DOMAIN-KEYWORD,ai
  
   # ==== Telegram / 电报 全面规则 ====
   - PROCESS-NAME,org.telegram.plus
@@ -232,7 +230,6 @@ payload:
   - DOMAIN-SUFFIX,telegram-store.org
   # ✈️ 关键词兜底（防止新域名漏网）
   - DOMAIN-KEYWORD,telegram
-  - DOMAIN-KEYWORD,tg
   - DOMAIN-KEYWORD,telegramcdn
   - DOMAIN-KEYWORD,telegram-cdn
   - DOMAIN-KEYWORD,cdn-telegram
@@ -356,20 +353,20 @@ payload:
   # 📲（Meta）Android / iOS 进程名匹配
   # === Instagram ===
   - PROCESS-NAME,com.instagram.android
-  - PROCESS-NAME,com.instagram.barcelona     # Threads
+  - PROCESS-NAME,com.instagram.barcelona
   - PROCESS-NAME,com.instagram.direct
   - PROCESS-NAME,com.instagram.lite
   # === Facebook ===
-  - PROCESS-NAME,com.facebook.katana          # Facebook 主应用
+  - PROCESS-NAME,com.facebook.katana
   - PROCESS-NAME,com.facebook.lite
-  - PROCESS-NAME,com.facebook.orca            # Messenger 主进程
+  - PROCESS-NAME,com.facebook.orca
   - PROCESS-NAME,com.facebook.mlite
   - PROCESS-NAME,com.facebook.appmanager
   - PROCESS-NAME,com.facebook.services
   - PROCESS-NAME,com.facebook.system
   # === WhatsApp ===
   - PROCESS-NAME,com.whatsapp
-  - PROCESS-NAME,com.whatsapp.w4b             # WhatsApp Business
+  - PROCESS-NAME,com.whatsapp.w4b
   # === Messenger Lite ===
   - PROCESS-NAME,com.facebook.mlite
   # === Meta VR / AR ===
@@ -560,7 +557,7 @@ payload:
   - PROCESS-NAME,com.sec.spp.push
   - IP-CIDR,54.223.223.92/32,no-resolve
 
-  # === IIJ 日本 CDN / 企业网络 ===
+  # === IIJ 日本 CDN / 企业网络 IP ===
   - IP-CIDR,202.232.0.0/13,no-resolve
   - IP-CIDR,210.130.0.0/15,no-resolve
   - IP-CIDR,203.138.0.0/15,no-resolve
@@ -568,10 +565,7 @@ payload:
   - IP-CIDR,106.186.0.0/16,no-resolve
   - IP-CIDR,118.151.0.0/16,no-resolve
 
-  # ==== IP-CIDR ====
-  - IP-CIDR,1.0.0.2/31
-  - IP-CIDR,1.1.1.1/32
-  - IP-CIDR,1.1.1.2/31
+  # ==== IP-CIDR（公共 DNS / 安全 DNS） ====
   - IP-CIDR,12.159.2.159/32
   - IP-CIDR,136.243.69.38/32
   - IP-CIDR,176.103.130.130/32
@@ -591,4 +585,3 @@ payload:
   - IP-CIDR,185.228.168.10/32
   - IP-CIDR,94.140.14.14/32
   - IP-CIDR,94.140.15.15/32
-
