@@ -212,8 +212,6 @@ payload:
   # ==== 关键词 ====
   - DOMAIN-KEYWORD,jdpay
   - DOMAIN-KEYWORD,baitiao
-  - DOMAIN-KEYWORD,finance
-  - DOMAIN-KEYWORD,credit
   - DOMAIN-KEYWORD,jingdong
 
   # 中国主要证券类 App 规则集 (ClashMeta)
