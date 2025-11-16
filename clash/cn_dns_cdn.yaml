@@ -114,8 +114,7 @@ payload:
   # 关键词
   - DOMAIN-KEYWORD,wechat
   - DOMAIN-KEYWORD,weixin
-  - DOMAIN-KEYWORD,wxapp
-  - DOMAIN-KEYWORD,qq      
+  - DOMAIN-KEYWORD,wxapp      
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== LOL手游 游戏服务器 ====
@@ -216,7 +215,6 @@ payload:
   - DOMAIN-KEYWORD,finance
   - DOMAIN-KEYWORD,credit
   - DOMAIN-KEYWORD,jingdong
-  - DOMAIN-KEYWORD,jd
 
   # 中国主要证券类 App 规则集 (ClashMeta)
   # 📊 同花顺 iFinD / 10jqka
