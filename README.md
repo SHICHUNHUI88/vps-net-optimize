@@ -21,6 +21,17 @@ bash <(wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize
 
 ---
 
+## 🧬 BBRPlus 内核一键安装（慎用❗）
+
+📢适用于 RAM 足够的 KVM VPS
+🚫⚠ AMD 核心 VPS 请勿安装，否则可能直接报废！
+
+```bash
+wget -O bbrplus.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcp.sh && chmod +x bbrplus.sh && ./bbrplus.sh
+```
+
+---
+
 ## 🌏 vps-net-optimize
 
 一键优化脚本，适用于 TCP / UDP / IPv6 / ulimit / MSS 等场景的 VPS 网络性能优化。
@@ -54,3 +65,21 @@ wget -qO- https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/n
 bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-reset.sh)
 ```
 ---
+
+# 🛰 VPS11 协议一键安装脚本
+
+由 mack-a 开发的 V2ray / Xray / Trojan / Reality 综合安装程序。
+
+```bash
+wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
+```
+
+---
+
+# 📱（3）ClashMeta 可直接提取的 10 协议模板（移动端可用）
+
+适用于 Android 手機 ClashMeta / Mihomo
+支持与 VPS11 协议配合使用：
+
+👉 一键查看模板：
+https://gist.github.com/SHICHUNHUI88/279cc51c0f53e7739c832492143a3159/raw/Clashmeta.yaml
