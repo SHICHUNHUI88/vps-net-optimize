@@ -79,7 +79,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimiz
 ```bash
 wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
 ```
-代码跑完之后建议把所有的连接信息复制下来保存到谷歌文档
+代码跑完之后建议把所有的连接信息复制下来保存到**谷歌文档**，方便以后提取
 
 ---
 
