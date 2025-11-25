@@ -72,7 +72,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimiz
 
 由 mack-a 开发的 V2ray / Xray / Trojan / Reality 综合安装程序。
 
-安装前请准备好**域名**绑定了VPS才能执行代码
+安装前请准备好**域名**托管到CF绑定了VPS不要开小黄云才能执行代码
 
 **建议选2安装Sing-box**
 
