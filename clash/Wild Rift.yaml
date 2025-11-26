@@ -1,12 +1,10 @@
 payload:
-
   # ==== Riot Games Core / 游戏核心服务 ====
   - DOMAIN-SUFFIX,riotgames.com
   - DOMAIN-SUFFIX,riot.com
   - DOMAIN-SUFFIX,pvp.net
   - DOMAIN-SUFFIX,wr.pvp.net
   - DOMAIN-SUFFIX,a.pvp.net
-
   # ==== Riot API / 登录 / Token 服务 ====
   - DOMAIN-SUFFIX,account.riotgames.com
   - DOMAIN-SUFFIX,auth.riotgames.com
@@ -18,13 +16,11 @@ payload:
   - DOMAIN-SUFFIX,mobile-api.riotgames.com
   - DOMAIN-SUFFIX,chat.riotgames.com
   - DOMAIN-KEYWORD,glz         
-
   # ==== Wild Rift（英雄联盟手游） ====
   - DOMAIN-SUFFIX,wildrift.riotgames.com
   - DOMAIN-SUFFIX,jp1.wildrift.riotgames.com
   - DOMAIN-SUFFIX,sg2.wildrift.riotgames.com
   - DOMAIN-SUFFIX,sea.wildrift.riotgames.com
-
   # ==== 游戏补丁 / 静态资源 CDN ====
   - DOMAIN-SUFFIX,riotcdn.net
   - DOMAIN-SUFFIX,wr-assets.riotcdn.net
@@ -32,12 +28,10 @@ payload:
   - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
   - DOMAIN-SUFFIX,l3cdn.riotgames.com
   - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
-
   # ==== Valorant（瓦罗兰特） ====
   - DOMAIN-SUFFIX,valorant.secure.dyn.riotcdn.net
   - DOMAIN-SUFFIX,playvalorant.com
   - DOMAIN-KEYWORD,valorant
-
   # ==== Riot Games 进程（安卓 & PC） ====
   - PROCESS-NAME,com.riotgames.league.wildrift
   - PROCESS-NAME,com.riotgames.league.wildrift.android
