@@ -3,7 +3,7 @@ payload:
   - PROCESS-NAME,com.openai.chatgpt
   - PROCESS-NAME,com.openai.chatgpt.beta
   - PROCESS-NAME,ChatGPT
-  - PROCESS-NAME,com.microsoft.bing   # Bing 内建 GPT
+  - PROCESS-NAME,com.microsoft.bing   
   # ==== 精准 DOMAIN ====
   - DOMAIN,browser-intake-datadoghq.com
   - DOMAIN,chat.openai.com.cdn.cloudflare.net
@@ -63,7 +63,7 @@ payload:
   - DOMAIN-SUFFIX,intercom.io
   - DOMAIN-SUFFIX,intercomcdn.com
   - DOMAIN-SUFFIX,identrust.com
-  # ==== 通用云 / CDN 辅助域名（OpenAI 常用）====
+  # ==== 通用云 / CDN 辅助域名 ====
   - DOMAIN-SUFFIX,akamaized.net
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,cloudflareinsights.com
