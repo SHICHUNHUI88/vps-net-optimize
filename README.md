@@ -92,3 +92,13 @@ wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-
 https://gist.github.com/SHICHUNHUI88/279cc51c0f53e7739c832492143a3159/raw/Clashmeta.yaml
 
 可以将此模板全部复制给gpt让他记住，然后把VPS的11个协议全部复制出来给gpt让他按照这个模板来提取连接配置更换就可以了
+
+---
+
+# 📱 Singbox 可直接提取的 10 协议模板（移动端可用）
+
+**用手机singbox内核1.12.12可运行10协议**
+
+👉 一键查看模板：
+https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json
+
