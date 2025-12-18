@@ -4,7 +4,6 @@ payload:
   PROCESS-NAME,com.openai.chatgpt.beta
   PROCESS-NAME,ChatGPT
   PROCESS-NAME,com.microsoft.bing
-
   # ========== 精准域名 ==========
   DOMAIN,browser-intake-datadoghq.com
   DOMAIN,chat.openai.com.cdn.cloudflare.net
