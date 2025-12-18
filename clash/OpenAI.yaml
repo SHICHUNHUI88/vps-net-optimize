@@ -1,15 +1,15 @@
 payload:
-  # ========== APP 进程规则 ==========
+  # ==== 🧠 APP 进程 ====
   PROCESS-NAME,com.openai.chatgpt
   PROCESS-NAME,com.openai.chatgpt.beta
   PROCESS-NAME,ChatGPT
   PROCESS-NAME,com.microsoft.bing
+
   # ========== 精准域名 ==========
   DOMAIN,browser-intake-datadoghq.com
   DOMAIN,chat.openai.com.cdn.cloudflare.net
-  DOMAIN,openai-api.arkoselabs.com      
-
-DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
+  DOMAIN,openai-api.arkoselabs.com
+  DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
   DOMAIN,openaicomproductionae4b.blob.core.windows.net
   DOMAIN,production-openaicom-storage.azureedge.net
   DOMAIN,static.cloudflareinsights.com
@@ -32,17 +32,17 @@ DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
   DOMAIN,o33249.ingest.sentry.io
   DOMAIN,rum.browser-intake-datadoghq.com
   DOMAIN,setup.auth.openai.com
-  # ========== 域名后缀规则 ==========
+  # ==== OpenAI 主站 ====
   DOMAIN-SUFFIX,openai.com
   DOMAIN-SUFFIX,ai.com
   DOMAIN-SUFFIX,chatgpt.com
   DOMAIN-SUFFIX,openai-staging.com
-  ==== GPT / API 服务 ====
+  # ==== GPT / API 服务 ====
   DOMAIN-SUFFIX,api.openai.com
   DOMAIN-SUFFIX,api.openai.azure.com
   DOMAIN-SUFFIX,api.openai-staging.com
   DOMAIN-SUFFIX,openai.azure.com
-  ==== 静态资源 / CDN / 文件服务 ====
+  # ==== 静态资源 / CDN / 文件服务 ====
   DOMAIN-SUFFIX,cdn.openai.com
   DOMAIN-SUFFIX,openaicdn.com
   DOMAIN-SUFFIX,oaistatic.com
@@ -53,7 +53,7 @@ DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
   DOMAIN-SUFFIX,blob.core.windows.net
   DOMAIN-SUFFIX,cloudflareclient.com
   DOMAIN-SUFFIX,cloudflare.com
-  ==== Sora / 视频模型服务 ====
+  # ==== Sora / 视频模型服务 ====
   DOMAIN-SUFFIX,sora.openai.com
   DOMAIN-SUFFIX,video.openai.com
   DOMAIN-SUFFIX,media.openai.com
@@ -61,16 +61,16 @@ DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
   DOMAIN-SUFFIX,openai-video.com
   DOMAIN-SUFFIX,openai-media.com
   DOMAIN-SUFFIX,livestream.openai.com
-  ==== LiveKit（语音 / 实时 API）====
+  # ==== LiveKit（语音 / 实时 API）====
   DOMAIN-SUFFIX,chatgpt.livekit.cloud
   DOMAIN-SUFFIX,host.livekit.cloud
   DOMAIN-SUFFIX,turn.livekit.cloud
   DOMAIN-SUFFIX,livekit.io
-  ==== 验证服务 Arkose Labs ====
+  # ==== 验证服务 Arkose Labs ====
   DOMAIN-SUFFIX,client-api.arkoselabs.com
   DOMAIN-SUFFIX,auth0.com
   DOMAIN-SUFFIX,auth0usercontent.com
-  ==== 功能开关 / 配置 / 统计分析 ====
+  # ==== 功能开关 / 配置 / 统计分析 ====
   DOMAIN-SUFFIX,api.statsig.com
   DOMAIN-SUFFIX,statsig.com
   DOMAIN-SUFFIX,events.statsigapi.net
@@ -88,12 +88,12 @@ DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
   DOMAIN-SUFFIX,featureassets.org
   DOMAIN-SUFFIX,prodregistryv2.org
   DOMAIN-SUFFIX,*.ct.sendgrid.net
-  ==== 通用云 / CDN 辅助域名 ====
+  # ==== 通用云 / CDN 辅助域名 ====
   DOMAIN-SUFFIX,akamaized.net
   DOMAIN-SUFFIX,fastly.net
   DOMAIN-SUFFIX,cloudflareinsights.com
   DOMAIN-SUFFIX,workos.imgix.net
-  ==== 后备测试段域名 ====
+  # ==== 后备测试段域名 ====
   DOMAIN-SUFFIX,openaiapis.com
   DOMAIN-SUFFIX,openaidev.com
   DOMAIN-SUFFIX,openaiproxy.com
