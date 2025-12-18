@@ -13,7 +13,7 @@ payload:
   DOMAIN,production-openaicom-storage.azureedge.net
   DOMAIN,static.cloudflareinsights.com
   DOMAIN,android.chat.openai.com
-  DOMAIN,auth0.openai.com
+  DOMAIN,auth.openai.com
   DOMAIN,cdn.openaimerge.com
   DOMAIN,challenges.cloudflare.com
   DOMAIN,chat.openai.com
@@ -86,7 +86,6 @@ payload:
   DOMAIN-SUFFIX,identrust.com
   DOMAIN-SUFFIX,featureassets.org
   DOMAIN-SUFFIX,prodregistryv2.org
-  DOMAIN-SUFFIX,*.ct.sendgrid.net
   # ==== 通用云 / CDN 辅助域名 ====
   DOMAIN-SUFFIX,akamaized.net
   DOMAIN-SUFFIX,fastly.net
@@ -97,6 +96,16 @@ payload:
   DOMAIN-SUFFIX,openaidev.com
   DOMAIN-SUFFIX,openaiproxy.com
   DOMAIN-SUFFIX,openaiworks.com
+  # ========== 通配符域名规则 ==========
+  DOMAIN-WILDCARD,*.auth.openai.com
+  DOMAIN-WILDCARD,*.ct.sendgrid.net
+  DOMAIN-WILDCARD,*.featuregates.org
+  DOMAIN-WILDCARD,*.intercom.io
+  DOMAIN-WILDCARD,*.intercomcdn.com
+  DOMAIN-WILDCARD,*.oaistatic.com
+  DOMAIN-WILDCARD,*.oaiusercontent.com
+  DOMAIN-WILDCARD,*.openai.com
+  DOMAIN-WILDCARD,*.statsig.com
   # ========== 关键词兜底规则 ==========
   DOMAIN-KEYWORD,openai
   DOMAIN-KEYWORD,gpt
