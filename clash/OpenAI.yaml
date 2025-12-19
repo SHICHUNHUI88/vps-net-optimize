@@ -13,7 +13,6 @@ payload:
   DOMAIN,production-openaicom-storage.azureedge.net
   DOMAIN,static.cloudflareinsights.com
   DOMAIN,android.chat.openai.com
-  DOMAIN,auth.openai.com
   DOMAIN,auth0.openai.com
   DOMAIN,cdn.openaimerge.com
   DOMAIN,challenges.cloudflare.com
