@@ -45,7 +45,7 @@ wget -O bbrplus.sh https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/mast
 复制以下命令，在 VPS 上粘贴执行：
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-full.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-ultimate.sh)
 ```
 
 ---
