@@ -628,85 +628,67 @@ EOF
     return 1
 }
 
-# === 11. Nginx官方源（保留你的原逻辑：SKIP_APT=1 默认跳过）===
+# === 11. Nginx官方源 + 自动更新（APT 可跳过，cron 永远可用）===
 fix_nginx_repo() {
-  if [ "$ENABLE_NGINX_REPO" != "1" ]; then
-    echo "⏭️ 跳过Nginx源配置"
-    return 0
-  fi
+    if [ "$ENABLE_NGINX_REPO" != "1" ]; then
+        echo "⏭️ 跳过Nginx配置"
+        return 0
+    fi
 
-  if [ "$SKIP_APT" = "1" ]; then
-    echo "⏭️ SKIP_APT=1，跳过Nginx源配置（不触碰APT）"
-    return 0
-  fi
+    # ========= 1. 自动更新 cron（无论 SKIP_APT）=========
+    local cron_file="/etc/cron.d/net-optimize-nginx-update"
+    if [ ! -f "$cron_file" ]; then
+        cat > "$cron_file" <<'CRON_JOB'
+# Net-Optimize: monthly nginx upgrade
+0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /var/log/nginx-auto-upgrade.log 2>&1
+CRON_JOB
+        chmod 644 "$cron_file"
+        echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+    else
+        echo "ℹ️ Nginx 自动更新 cron 已存在"
+    fi
 
-  if ! have_cmd apt-get; then
-    echo "⚠️ 非APT系统，跳过Nginx配置"
-    return 0
-  fi
+    # ========= 2. 若 SKIP_APT=1，到此为止 =========
+    if [ "$SKIP_APT" = "1" ]; then
+        echo "⏭️ SKIP_APT=1，跳过 Nginx 源与安装，仅保留自动更新 cron"
+        return 0
+    fi
 
-  echo "🔧 配置nginx.org官方源..."
-  check_dpkg_clean
+    # ========= 3. 以下才是真正的 APT 操作 =========
+    if ! have_cmd apt-get; then
+        echo "⚠️ 非APT系统，跳过Nginx源配置"
+        return 0
+    fi
 
-  local distro_info distro codename
-  distro_info="$(detect_distro)"
-  distro="${distro_info%:*}"
-  codename="${distro_info#*:}"
+    echo "🔧 配置 nginx.org 官方源..."
 
-  local nginx_url=""
-  case "$distro" in
-    ubuntu) nginx_url="http://nginx.org/packages/ubuntu/" ;;
-    debian) nginx_url="http://nginx.org/packages/debian/" ;;
-    *)      nginx_url="http://nginx.org/packages/debian/" ;;
-  esac
+    local distro codename
+    distro="$(. /etc/os-release; echo "$ID")"
+    codename="$(. /etc/os-release; echo "${VERSION_CODENAME:-stable}")"
 
-  if [ -z "$codename" ] || [ "$codename" = "unknown" ]; then
-    codename="stable"
-  fi
+    local base="http://nginx.org/packages"
+    [ "$distro" = "ubuntu" ] && base="$base/ubuntu" || base="$base/debian"
 
-  echo "📌 发行版: $distro"
-  echo "📌 Codename: $codename"
-  echo "📌 Nginx源: ${nginx_url}${codename}"
+    curl -fsSL https://nginx.org/keys/nginx_signing.key \
+      | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
 
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    gnupg2 curl ca-certificates lsb-release software-properties-common || echo "⚠️ 依赖安装失败，继续尝试"
-
-  rm -f /etc/apt/sources.list.d/nginx*.list
-
-  if ! curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor --yes -o /usr/share/keyrings/nginx-archive-keyring.gpg 2>/dev/null; then
-    echo "⚠️ GPG密钥下载失败，尝试其他方法..."
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 2>/dev/null || true
-  fi
-
-  cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
-deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${nginx_url} ${codename} nginx
-deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] ${nginx_url} ${codename} nginx
+    cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
+deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] $base $codename nginx
 EOF
 
-  cat > /etc/apt/preferences.d/99-nginx-official <<'EOF'
+    cat > /etc/apt/preferences.d/99-nginx-official <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
 
-  apt-get update -y || echo "⚠️ apt update 失败"
-  apt-get remove -y nginx-common nginx-core nginx-full nginx-light 2>/dev/null || true
+    apt-get update -y
+    apt-get install -y nginx
 
-  echo "📦 安装nginx.org最新版..."
-  if DEBIAN_FRONTEND=noninteractive apt-get install -y nginx; then
-    systemctl restart nginx 2>/dev/null || true
-    systemctl enable nginx 2>/dev/null || true
+    systemctl enable nginx >/dev/null 2>&1 || true
+    systemctl restart nginx >/dev/null 2>&1 || true
 
-    local cron_file="/etc/cron.d/net-optimize-nginx-update"
-    cat >"$cron_file" <<'CRON_JOB'
-# 每月1号凌晨3点自动更新nginx
-0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /dev/null 2>&1
-CRON_JOB
-    chmod 644 "$cron_file"
-    echo "✅ Nginx官方源配置完成，已添加自动更新任务"
-  else
-    echo "⚠️ Nginx安装失败，请检查网络连接"
-  fi
+    echo "✅ Nginx 官方源 + 安装完成"
 }
 
 # === 12. 开机自启服务（同步三后端 MSS 写入）===
