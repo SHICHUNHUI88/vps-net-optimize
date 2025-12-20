@@ -628,49 +628,64 @@ EOF
     return 1
 }
 
-# === 11. Nginx官方源 + 自动更新（APT 可跳过，cron 永远可用）===
+# === 11. Nginx 安装 + 自动更新（工程幂等版）===
 fix_nginx_repo() {
     if [ "$ENABLE_NGINX_REPO" != "1" ]; then
-        echo "⏭️ 跳过Nginx配置"
+        echo "⏭️ 跳过 Nginx 管理"
         return 0
     fi
 
-    # ========= 1. 自动更新 cron（无论 SKIP_APT）=========
+    # 1. 永远保证：自动更新 cron 存在
     local cron_file="/etc/cron.d/net-optimize-nginx-update"
     if [ ! -f "$cron_file" ]; then
-        cat > "$cron_file" <<'CRON_JOB'
-# Net-Optimize: monthly nginx upgrade
+        cat > "$cron_file" <<'CRON'
+# Net-Optimize: monthly nginx auto upgrade
 0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /var/log/nginx-auto-upgrade.log 2>&1
-CRON_JOB
+CRON
         chmod 644 "$cron_file"
         echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
     else
         echo "ℹ️ Nginx 自动更新 cron 已存在"
     fi
 
-    # ========= 2. 若 SKIP_APT=1，到此为止 =========
+    # 2. 检测 nginx 是否已安装
+    if have_cmd nginx; then
+        local ver
+        ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
+        echo "ℹ️ 已检测到 Nginx：$ver（保留现有来源）"
+        return 0
+    fi
+
+    # 3. nginx 未安装 → 是否允许 APT？
     if [ "$SKIP_APT" = "1" ]; then
-        echo "⏭️ SKIP_APT=1，跳过 Nginx 源与安装，仅保留自动更新 cron"
-        return 0
+        echo "❌ 系统未安装 Nginx，但 SKIP_APT=1"
+        echo "👉 请使用以下方式之一："
+        echo "   1) SKIP_APT=0 bash net-optimize-ultimate.sh"
+        echo "   2) 手动安装 nginx 后重新运行脚本"
+        return 1
     fi
 
-    # ========= 3. 以下才是真正的 APT 操作 =========
+    # 4. 安装 nginx（最新版，来源自适应）
     if ! have_cmd apt-get; then
-        echo "⚠️ 非APT系统，跳过Nginx源配置"
-        return 0
+        echo "❌ 非 APT 系统，无法自动安装 nginx"
+        return 1
     fi
 
-    echo "🔧 配置 nginx.org 官方源..."
+    echo "📦 未检测到 Nginx，开始安装最新版..."
 
-    local distro codename
-    distro="$(. /etc/os-release; echo "$ID")"
-    codename="$(. /etc/os-release; echo "${VERSION_CODENAME:-stable}")"
+    # ---- 发行版信息 ----
+    . /etc/os-release
+    local distro="$ID"
+    local codename="${VERSION_CODENAME:-stable}"
 
+    # ---- nginx.org 官方源 ----
     local base="http://nginx.org/packages"
     [ "$distro" = "ubuntu" ] && base="$base/ubuntu" || base="$base/debian"
 
+    echo "📌 使用官方源：$base $codename"
+
     curl -fsSL https://nginx.org/keys/nginx_signing.key \
-      | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
+        | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
 
     cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
 deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] $base $codename nginx
@@ -686,9 +701,9 @@ EOF
     apt-get install -y nginx
 
     systemctl enable nginx >/dev/null 2>&1 || true
-    systemctl restart nginx >/dev/null 2>&1 || true
+    systemctl start nginx >/dev/null 2>&1 || true
 
-    echo "✅ Nginx 官方源 + 安装完成"
+    echo "✅ Nginx 最新版安装完成"
 }
 
 # === 12. 开机自启服务（同步三后端 MSS 写入）===
