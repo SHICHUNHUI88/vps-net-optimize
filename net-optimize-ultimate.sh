@@ -458,28 +458,103 @@ detect_outbound_iface() {
 }
 
 setup_mss_clamping() {
-  if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
-    echo "⏭️ 跳过 MSS Clamping（未开启）"
-    return 0
-  fi
+    if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
+        echo "⏭️ 跳过MSS Clamping"
+        return 0
+    fi
 
-  echo "📡 设置 MSS Clamping..."
-  local iface; iface="$(detect_iface)"
+    echo "📡 设置MSS Clamping (MSS=$MSS_VALUE)..."
 
-  if [ -n "$iface" ]; then
-    echo "🔎 检测到出口接口：$iface"
-  else
-    echo "⚠️ 未找到出口接口，将使用全局 MSS 规则（不限接口）"
-  fi
+    # 检测出口接口
+    local iface
+    iface=$(detect_outbound_iface)
 
-  apply_mss_iptables "$iface" "$MSS_VALUE"
+    if [ -z "$iface" ]; then
+        echo "⚠️ 无法确定出口接口，将使用全局规则"
+    else
+        echo "✅ 检测到出口接口: $iface"
+    fi
 
-  install -d "$CONFIG_DIR"
-  cat > "$CONFIG_FILE" <<EOF
+    # 保存配置
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cat > "$CONFIG_FILE" <<EOF
 ENABLE_MSS_CLAMP=1
 CLAMP_IFACE=$iface
 MSS_VALUE=$MSS_VALUE
 EOF
+
+    # 检查iptables
+    if ! have_cmd iptables; then
+        echo "⚠️ iptables 不可用，跳过规则设置"
+        return 0
+    fi
+
+    # === 修复点1：确保模块加载 ===
+    echo "🛠️ 加载iptables模块..."
+    for module in "ip_tables" "iptable_filter" "iptable_mangle"; do
+        if ! lsmod | grep -q "^${module} "; then
+            if modprobe "$module" 2>/dev/null; then
+                echo "  ✅ 加载: $module"
+            else
+                echo "  ⚠️ 无法加载: $module"
+            fi
+        fi
+    done
+
+    # === 修复点2：安全清理旧规则 ===
+    echo "🧹 清理旧MSS规则..."
+
+    # 方法1：使用规则序号（更安全）
+    local line_num=1
+    while iptables -t mangle -L POSTROUTING --line-numbers 2>/dev/null | grep -q "TCPMSS"; do
+        local rule_num=$(iptables -t mangle -L POSTROUTING --line-numbers 2>/dev/null | grep "TCPMSS" | head -1 | awk '{print $1}')
+
+        if [[ "$rule_num" =~ ^[0-9]+$ ]] && [ "$rule_num" -ge 1 ]; then
+            iptables -t mangle -D POSTROUTING "$rule_num" 2>/dev/null || break
+            echo "  🔄 删除规则 #$rule_num"
+        else
+            break
+        fi
+
+        # 安全限制，最多尝试10次
+        if [ "$line_num" -ge 10 ]; then
+            echo "  ⚠️ 达到最大清理次数"
+            break
+        fi
+        ((line_num++))
+    done
+
+    # 方法2：备用方案 - 直接清除链（如果有其他规则要小心）
+    # iptables -t mangle -F POSTROUTING 2>/dev/null || true
+
+    # === 修复点3：添加新规则 ===
+    echo "➕ 添加新MSS规则..."
+
+    if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
+        if iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"; then
+            echo "✅ 已添加接口规则: $iface, MSS=$MSS_VALUE"
+        else
+            echo "❌ 添加接口规则失败"
+            return 1
+        fi
+    else
+        if iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"; then
+            echo "✅ 已添加全局规则, MSS=$MSS_VALUE"
+        else
+            echo "❌ 添加全局规则失败"
+            return 1
+        fi
+    fi
+
+    # 验证规则
+    echo "🔍 验证规则..."
+    if iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep -q "TCPMSS"; then
+        iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep "TCPMSS" --color=auto
+    else
+        echo "⚠️ 规则添加成功但未找到（可能是显示问题）"
+    fi
+
+    return 0
 }
 
 # === 11. Nginx官方源（完整实现）===
