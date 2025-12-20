@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 🚀 Net-Optimize-Ultimate v3.2.1 (修复版)
+# 🚀 Net-Optimize-Ultimate v3.2.2 (修复版)
 # 修复点：
 #  1) conntrack 检测：不再依赖 lsmod（兼容“内建/不可见模块”场景）
 #  2) qdisc 判断：不再依赖 lsmod，改为“能否成功设置”的真实探测
@@ -727,13 +727,22 @@ print_status() {
         echo "  最大连接数: $(get_sysctl net.netfilter.nf_conntrack_max)"
 
         if [ -f /proc/net/nf_conntrack ]; then
-            udp_count=$(grep -c "^udp" /proc/net/nf_conntrack 2>/dev/null || echo 0)
-            tcp_count=$(grep -c "^tcp" /proc/net/nf_conntrack 2>/dev/null || echo 0)
+            # 注意：grep -c 在 0 匹配时也会输出 0，但 exit code=1
+            # 这里用 || true + 兜底，避免出现 0\n0
+            udp_count="$(grep -c '^udp' /proc/net/nf_conntrack 2>/dev/null || true)"
+            tcp_count="$(grep -c '^tcp' /proc/net/nf_conntrack 2>/dev/null || true)"
+
+            # 防御性处理：只取第一行，空值视为 0
+            udp_count="${udp_count%%$'\n'*}"
+            tcp_count="${tcp_count%%$'\n'*}"
+            udp_count="${udp_count:-0}"
+            tcp_count="${tcp_count:-0}"
+
             echo "  UDP连接: $udp_count"
             echo "  TCP连接: $tcp_count"
             echo "  总连接数: $((udp_count + tcp_count))"
         else
-            echo "  ℹ️ /proc/net/nf_conntrack 不存在（可能是 nft/内核暴露差异）"
+            echo "  ℹ️ /proc/net/nf_conntrack 不存在（可能是 nftables / 内核暴露差异）"
         fi
     else
         echo "  ⚠️ conntrack 不可用（内核未启用 netfilter conntrack）"
