@@ -270,6 +270,17 @@ converge_sysctl_authority() {
   fi
 }
 
+force_apply_sysctl_runtime() {
+  echo "🧷 强制写入 sysctl runtime（防止云镜像覆盖）"
+
+  sysctl -w net.core.rmem_default=67108864 >/dev/null 2>&1 || true
+  sysctl -w net.core.wmem_default=67108864 >/dev/null 2>&1 || true
+  sysctl -w net.ipv4.tcp_mtu_probing=1 >/dev/null 2>&1 || true
+
+  # 再整体加载一次权威文件兜底
+  sysctl --system >/dev/null 2>&1 || true
+}
+
 # === 4. 清理旧配置 ===
 clean_old_config() {
   echo "🧹 清理旧配置..."
