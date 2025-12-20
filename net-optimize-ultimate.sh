@@ -447,42 +447,27 @@ setup_conntrack() {
     echo "✅ 连接跟踪模块配置完成"
 }
 
-# === 10. MSS Clamping（智能检测接口）===
-detect_outbound_iface() {
-    local iface=""
-
-    iface=$(ip -4 route get 1.1.1.1 2>/dev/null | \
-            awk '{for(i=1;i<=NF;i++) if($i=="dev") {print $(i+1); exit}}' | head -n1)
-
-    if [ -z "$iface" ]; then
-        iface=$(ip -6 route get 2001:4860:4860::8888 2>/dev/null | \
-                awk '{for(i=1;i<=NF;i++) if($i=="dev") {print $(i+1); exit}}' | head -n1)
-    fi
-
-    if [ -z "$iface" ]; then
-        iface=$(ip route show default 2>/dev/null | awk '/default/ {print $5}' | head -n1)
-    fi
-
-    echo "$iface"
-}
-
+# === 10. MSS Clamping（三后端一致版：iptables / iptables-nft / iptables-legacy）===
 setup_mss_clamping() {
-    if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
+    if [ "${ENABLE_MSS_CLAMP:-0}" != "1" ]; then
         echo "⏭️ 跳过MSS Clamping"
         return 0
     fi
 
     echo "📡 设置MSS Clamping (MSS=$MSS_VALUE)..."
 
+    # 检测出口接口
     local iface
-    iface=$(detect_outbound_iface)
+    iface="$(detect_outbound_iface)"
 
-    if [ -z "$iface" ]; then
+    if [ -z "${iface:-}" ]; then
         echo "⚠️ 无法确定出口接口，将使用全局规则"
+        iface=""
     else
         echo "✅ 检测到出口接口: $iface"
     fi
 
+    # 保存配置（供开机脚本读取）
     mkdir -p "$(dirname "$CONFIG_FILE")"
     cat > "$CONFIG_FILE" <<EOF
 ENABLE_MSS_CLAMP=1
@@ -490,55 +475,125 @@ CLAMP_IFACE=$iface
 MSS_VALUE=$MSS_VALUE
 EOF
 
-    if ! have_cmd iptables; then
+    # 选择要处理的 iptables 后端
+    local ipt_cmds=()
+    for c in iptables iptables-nft iptables-legacy; do
+        if have_cmd "$c"; then
+            ipt_cmds+=("$c")
+        fi
+    done
+
+    if [ "${#ipt_cmds[@]}" -eq 0 ]; then
         echo "⚠️ iptables 不可用，跳过规则设置"
         return 0
     fi
 
+    # 确保内核模块（尽量加载，失败不致命）
     echo "🛠️ 加载iptables模块..."
-    for module in "ip_tables" "iptable_filter" "iptable_mangle"; do
-        if ! lsmod | grep -q "^${module} "; then
+    for module in ip_tables iptable_filter iptable_mangle; do
+        if ! lsmod 2>/dev/null | grep -q "^${module} "; then
             if modprobe "$module" 2>/dev/null; then
                 echo "  ✅ 加载: $module"
             else
-                echo "  ⚠️ 无法加载: $module"
+                echo "  ⚠️ 无法加载: $module（可能内建或不需要）"
             fi
         fi
     done
 
-    echo "🧹 清理旧MSS规则..."
-    local line_num=1
-    while iptables -t mangle -L POSTROUTING --line-numbers 2>/dev/null | grep -q "TCPMSS"; do
-        rule_num=$(iptables -t mangle -L POSTROUTING --line-numbers 2>/dev/null | grep "TCPMSS" | head -1 | awk '{print $1}')
+    # 删除 TCPMSS 规则（逐条删，避免误伤其他规则）
+    _mss_clear_one_backend() {
+        local cmd="$1"
+        local rules del parts
+        local round=0
 
-        if [[ "$rule_num" =~ ^[0-9]+$ ]] && [ "$rule_num" -ge 1 ]; then
-            iptables -t mangle -D POSTROUTING "$rule_num" 2>/dev/null || break
-            echo "  🔄 删除规则 #$rule_num"
+        echo "🧹 [$cmd] 清理旧MSS规则..."
+
+        while :; do
+            rules="$("$cmd" -t mangle -S POSTROUTING 2>/dev/null | grep -E '(^-A POSTROUTING .*TCPMSS| TCPMSS )' || true)"
+            [ -z "$rules" ] && break
+
+            # 一次最多清 50 轮，防止异常死循环
+            round=$((round + 1))
+            if [ "$round" -gt 50 ]; then
+                echo "  ⚠️ [$cmd] 清理轮次过多，停止以避免死循环"
+                break
+            fi
+
+            # 逐行删
+            while IFS= read -r rule; do
+                [ -z "$rule" ] && continue
+                # 把 -A POSTROUTING 替换成 -D POSTROUTING
+                del="${rule/-A POSTROUTING/-D POSTROUTING}"
+                # 拆成数组，避免 eval
+                read -r -a parts <<<"$del"
+                "$cmd" -t mangle "${parts[@]}" 2>/dev/null || true
+            done <<<"$rules"
+        done
+    }
+
+    # 添加 TCPMSS 规则（先 -C 检查避免重复）
+    _mss_apply_one_backend() {
+        local cmd="$1"
+        local ok=0
+
+        echo "➕ [$cmd] 添加MSS规则..."
+
+        if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
+            if "$cmd" -t mangle -C POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
+                echo "  ✅ [$cmd] 已存在：iface=$iface MSS=$MSS_VALUE"
+                ok=1
+            else
+                if "$cmd" -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
+                    echo "  ✅ [$cmd] 已添加：iface=$iface MSS=$MSS_VALUE"
+                    ok=1
+                else
+                    echo "  ⚠️ [$cmd] 添加失败（iface 规则）"
+                fi
+            fi
         else
-            break
+            if "$cmd" -t mangle -C POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
+                echo "  ✅ [$cmd] 已存在：global MSS=$MSS_VALUE"
+                ok=1
+            else
+                if "$cmd" -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
+                    echo "  ✅ [$cmd] 已添加：global MSS=$MSS_VALUE"
+                    ok=1
+                else
+                    echo "  ⚠️ [$cmd] 添加失败（global 规则）"
+                fi
+            fi
         fi
 
-        if [ "$line_num" -ge 10 ]; then
-            echo "  ⚠️ 达到最大清理次数"
-            break
-        fi
-        ((line_num++))
+        return "$ok"
+    }
+
+    # 1) 三后端全清理
+    for cmd in "${ipt_cmds[@]}"; do
+        _mss_clear_one_backend "$cmd"
     done
 
-    echo "➕ 添加新MSS规则..."
-    if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
-        iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
-        echo "✅ 已添加接口规则: $iface, MSS=$MSS_VALUE"
-    else
-        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
-        echo "✅ 已添加全局规则, MSS=$MSS_VALUE"
-    fi
+    # 2) 三后端都写入（这样未来你切换 alternatives 也不会丢）
+    local success=0
+    for cmd in "${ipt_cmds[@]}"; do
+        if _mss_apply_one_backend "$cmd"; then
+            success=1
+        fi
+    done
 
-    echo "🔍 验证规则..."
-    if iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep -q "TCPMSS"; then
-        iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep "TCPMSS" --color=auto
+    # 3) 验证输出（逐后端）
+    echo "🔍 验证MSS规则（逐后端）..."
+    for cmd in "${ipt_cmds[@]}"; do
+        echo "---- [$cmd] ----"
+        "$cmd" -t mangle -L POSTROUTING -n -v 2>/dev/null | grep -E 'Chain|pkts|bytes|TCPMSS' || echo "  (none)"
+        echo "count: $(("$cmd" -t mangle -S POSTROUTING 2>/dev/null | grep -c TCPMSS || true))"
+    done
+
+    if [ "$success" -eq 1 ]; then
+        echo "✅ MSS Clamping 设置完成"
+        return 0
     else
-        echo "⚠️ 规则添加成功但未找到（可能是显示问题）"
+        echo "❌ MSS Clamping 设置失败（所有后端都未成功写入）"
+        return 1
     fi
 }
 
