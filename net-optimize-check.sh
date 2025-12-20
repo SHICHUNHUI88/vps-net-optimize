@@ -19,9 +19,14 @@ safe_grep_count() {
   echo "${out:-0}"
 }
 
+unit_exists() {
+  local s="$1"
+  systemctl cat "$s" >/dev/null 2>&1
+}
+
 svc_state() {
   local s="$1"
-  if systemctl list-unit-files 2>/dev/null | awk '{print $1}' | grep -qx "$s"; then
+  if unit_exists "$s"; then
     local en act
     en="$(systemctl is-enabled "$s" 2>/dev/null || true)"
     act="$(systemctl is-active "$s" 2>/dev/null || true)"
@@ -238,10 +243,10 @@ else
   echo "  👉 预期路径：/etc/cron.d/net-optimize-nginx-update"
 fi
 
-if systemctl list-unit-files 2>/dev/null | grep -q '^cron\.service'; then
+if unit_exists "cron.service"; then
   state="$(systemctl is-active cron 2>/dev/null || true)"
   [[ "$state" == "active" ]] && green "✅ cron 服务运行中" || yellow "⚠️ cron 服务状态：$state"
-elif systemctl list-unit-files 2>/dev/null | grep -q '^crond\.service'; then
+elif unit_exists "crond.service"; then
   state="$(systemctl is-active crond 2>/dev/null || true)"
   [[ "$state" == "active" ]] && green "✅ crond 服务运行中" || yellow "⚠️ crond 服务状态：$state"
 else
