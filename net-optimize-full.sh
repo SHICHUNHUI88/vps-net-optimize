@@ -8,8 +8,8 @@
 set -euo pipefail
 
 # === 1. 自动更新机制 ===
-SCRIPT_PATH="/usr/local/sbin/net-optimize-ultimate.sh"
-REMOTE_URL="https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-ultimate.sh"
+SCRIPT_PATH="/usr/local/sbin/net-optimize-full.sh"
+REMOTE_URL="https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-full.sh"
 
 fetch_raw() {
     if command -v curl >/dev/null 2>&1; then
