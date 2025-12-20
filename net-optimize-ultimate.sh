@@ -480,21 +480,17 @@ detect_outbound_iface() {
   echo "$iface"
 }
 
-# === 10. MSS Clamping（三后端去重版：避免 iptables/iptables-nft 重复叠加）===
+# === 10.1 MSS Clamping（强制收敛为1条，避免重复叠加）===
 setup_mss_clamping() {
     if [ "${ENABLE_MSS_CLAMP:-0}" != "1" ]; then
         echo "⏭️ 跳过MSS Clamping"
         return 0
     fi
 
-    echo "📡 设置MSS Clamping (MSS=${MSS_VALUE})..."
+    echo "📡 设置MSS Clamping (MSS=$MSS_VALUE)..."
 
-    # 你脚本里已有 detect_outbound_iface() 的话就用它
-    # 如果没有，会走到 fallback（全局规则）
-    local iface=""
-    if declare -F detect_outbound_iface >/dev/null 2>&1; then
-        iface="$(detect_outbound_iface || true)"
-    fi
+    local iface
+    iface="$(detect_outbound_iface 2>/dev/null || true)"
 
     if [ -z "${iface:-}" ]; then
         echo "⚠️ 无法确定出口接口，将使用全局规则"
@@ -503,7 +499,6 @@ setup_mss_clamping() {
         echo "✅ 检测到出口接口: $iface"
     fi
 
-    # 保存配置（供开机脚本读取）
     mkdir -p "$(dirname "$CONFIG_FILE")"
     cat > "$CONFIG_FILE" <<EOF
 ENABLE_MSS_CLAMP=1
@@ -511,121 +506,82 @@ CLAMP_IFACE=$iface
 MSS_VALUE=$MSS_VALUE
 EOF
 
-    # 收集可用 iptables 命令，并做“后端去重”
-    # 关键：iptables 和 iptables-nft 很可能指向同一套规则，不去重就会写两遍
-    declare -A seen_sig
+    # 收集可用 iptables 后端（至少保证 iptables 本体）
     local ipt_cmds=()
-
-    _sig_of_backend() {
-        local cmd="$1"
-        # 用规则输出做 hash：同后端（同表）时输出几乎一致
-        # 若失败则退回 cmd 名称（不影响）
-        "$cmd" -t mangle -S 2>/dev/null | sha256sum 2>/dev/null | awk '{print $1}' || echo "$cmd"
-    }
-
-    _add_backend() {
-        local cmd="$1"
-        have_cmd "$cmd" || return 0
-        local sig
-        sig="$(_sig_of_backend "$cmd")"
-        if [ -n "${seen_sig[$sig]:-}" ]; then
-            echo "ℹ️ [$cmd] 与 [${seen_sig[$sig]}] 指向同一后端，跳过避免重复写"
-            return 0
-        fi
-        seen_sig[$sig]="$cmd"
-        ipt_cmds+=("$cmd")
-    }
-
-    _add_backend iptables
-    _add_backend iptables-nft
-    _add_backend iptables-legacy
-
-    if [ "${#ipt_cmds[@]}" -eq 0 ]; then
-        echo "⚠️ iptables 不可用，跳过 MSS 规则设置"
-        return 0
-    fi
-
-    echo "✅ MSS 将写入的后端：${ipt_cmds[*]}"
-
-    # 尽量加载相关模块（内建/不存在都不致命）
-    echo "🛠️ 尝试加载 iptables 相关模块..."
-    for module in ip_tables iptable_filter iptable_mangle x_tables; do
-        modprobe "$module" 2>/dev/null || true
+    for c in iptables iptables-nft iptables-legacy; do
+        have_cmd "$c" && ipt_cmds+=("$c")
     done
+    [ "${#ipt_cmds[@]}" -eq 0 ] && { echo "⚠️ iptables 不可用，跳过"; return 0; }
 
-    # 清理 TCPMSS：对每个“去重后的后端”都清理一次
-    _mss_clear_one_backend() {
+    # 统一清理：删掉所有 POSTROUTING 里的 TCPMSS（不管之前怎么加的）
+    _clear_all_tcp_mss() {
         local cmd="$1"
-        echo "🧹 [$cmd] 清理旧 MSS 规则..."
+        local rules round=0
 
-        # 只删 POSTROUTING 链里的 TCPMSS，避免误删别的链
-        # 循环删到没有为止
-        local line
+        echo "🧹 [$cmd] 强制清理所有 TCPMSS 规则..."
         while :; do
-            line="$("$cmd" -t mangle -S POSTROUTING 2>/dev/null | grep -E '^-A POSTROUTING .*TCPMSS' | head -n1 || true)"
-            [ -z "$line" ] && break
-            "$cmd" -t mangle ${line/-A POSTROUTING/-D POSTROUTING} 2>/dev/null || true
+            rules="$("$cmd" -t mangle -S POSTROUTING 2>/dev/null | grep -E 'TCPMSS' || true)"
+            [ -z "$rules" ] && break
+
+            round=$((round + 1))
+            [ "$round" -gt 80 ] && { echo "  ⚠️ [$cmd] 清理轮次过多，停止"; break; }
+
+            while IFS= read -r rule; do
+                [ -z "$rule" ] && continue
+                local del="${rule/-A POSTROUTING/-D POSTROUTING}"
+                local -a parts
+                read -r -a parts <<<"$del"
+                "$cmd" -t mangle "${parts[@]}" 2>/dev/null || true
+            done <<<"$rules"
         done
     }
 
-    # 写入 TCPMSS：先 -C 检测避免重复
-    _mss_apply_one_backend() {
+    # 统一添加：只添加 1 条
+    _apply_one_tcp_mss() {
         local cmd="$1"
-        echo "➕ [$cmd] 写入 MSS 规则..."
+        echo "➕ [$cmd] 写入 1 条 TCPMSS 规则..."
 
         if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
-            if "$cmd" -t mangle -C POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
-                echo "  ✅ [$cmd] 已存在：iface=$iface MSS=$MSS_VALUE"
-                return 0
-            fi
-            if "$cmd" -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
-                echo "  ✅ [$cmd] 已添加：iface=$iface MSS=$MSS_VALUE"
-                return 0
-            fi
-            echo "  ⚠️ [$cmd] 写入失败（iface 规则）"
-            return 1
+            "$cmd" -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN \
+                -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null && return 0
         else
-            if "$cmd" -t mangle -C POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
-                echo "  ✅ [$cmd] 已存在：global MSS=$MSS_VALUE"
-                return 0
-            fi
-            if "$cmd" -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null; then
-                echo "  ✅ [$cmd] 已添加：global MSS=$MSS_VALUE"
-                return 0
-            fi
-            echo "  ⚠️ [$cmd] 写入失败（global 规则）"
-            return 1
+            "$cmd" -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN \
+                -j TCPMSS --set-mss "$MSS_VALUE" 2>/dev/null && return 0
         fi
+
+        return 1
     }
 
-    # 1) 清理
+    # 1) 各后端先强制清理
     for cmd in "${ipt_cmds[@]}"; do
-        _mss_clear_one_backend "$cmd"
+        _clear_all_tcp_mss "$cmd"
     done
 
-    # 2) 写入
-    local ok_any=0
-    for cmd in "${ipt_cmds[@]}"; do
-        if _mss_apply_one_backend "$cmd"; then
-            ok_any=1
-        fi
-    done
-
-    # 3) 验证（逐后端）
-    echo "🔍 验证 MSS 规则（逐后端）..."
-    for cmd in "${ipt_cmds[@]}"; do
-        echo "---- [$cmd] ----"
-        "$cmd" -t mangle -L POSTROUTING -n -v 2>/dev/null | grep -E 'Chain|pkts|bytes|TCPMSS' || echo "  (none)"
-        echo "count: $("$cmd" -t mangle -S POSTROUTING 2>/dev/null | grep -c TCPMSS || true)"
-    done
-
-    if [ "$ok_any" -eq 1 ]; then
-        echo "✅ MSS Clamping 设置完成（已避免重复叠加）"
-        return 0
+    # 2) 只用 “当前默认 iptables” 写入（避免三后端都写导致你看见重复）
+    #    如果你坚持三后端都写，那你检测时就必然会看到多条（因为后端其实共用规则集/或转换显示差异）
+    if _apply_one_tcp_mss "iptables"; then
+        echo "✅ MSS 规则已写入（iptables）"
+    else
+        echo "⚠️ 写入失败（iptables），尝试其他后端..."
+        local ok=0
+        for cmd in "${ipt_cmds[@]}"; do
+            [ "$cmd" = "iptables" ] && continue
+            if _apply_one_tcp_mss "$cmd"; then ok=1; echo "✅ MSS 规则已写入（$cmd）"; break; fi
+        done
+        [ "$ok" -eq 1 ] || { echo "❌ MSS 写入失败"; return 1; }
     fi
 
-    echo "❌ MSS Clamping 设置失败（所有后端都未成功写入）"
-    return 1
+    # 3) 验证：只允许 1 条
+    local cnt
+    cnt="$(iptables -t mangle -S POSTROUTING 2>/dev/null | grep -c 'TCPMSS' || true)"
+    cnt="${cnt%%$'\n'*}"; cnt="${cnt:-0}"
+    if [ "$cnt" -gt 1 ]; then
+        echo "⚠️ 仍检测到重复 TCPMSS：$cnt 条（可能有其他脚本/服务在加）"
+    else
+        echo "✅ TCPMSS 规则数量：$cnt"
+    fi
+
+    echo "✅ MSS Clamping 设置完成"
 }
 
 # === 11. Nginx 安装 + 自动更新（工程幂等版）===
