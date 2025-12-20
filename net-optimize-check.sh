@@ -190,16 +190,21 @@ sep
 echo "🔧 [8] Nginx 源与服务"
 sep
 
-if has apt-cache; then
+{
+  if ! has apt-cache; then
+    echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
+    return 0
+  fi
+
   # 1) sources 文件展示（兼容 .list / .sources）
-  if ls /etc/apt/sources.list.d/*nginx* 1>/dev/null 2>&1; then
+  if ls /etc/apt/sources.list.d/*nginx* >/dev/null 2>&1; then
     echo "📌 nginx 相关 sources："
     ls -l /etc/apt/sources.list.d/*nginx* 2>/dev/null || true
   else
     echo "ℹ️ 未发现 /etc/apt/sources.list.d/*nginx* 文件"
   fi
 
-  # 2) nginx.org 源检测（兼容 Debian/Ubuntu、http/https、list/sources、包含 /etc/apt/sources.list）
+  # 2) nginx.org 源检测（兼容 Debian/Ubuntu / http/https / list/sources / sources.list）
   if grep -RIEq 'nginx\.org/(packages|keys)' \
       /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     green "✅ 检测到 nginx.org 源"
@@ -207,13 +212,13 @@ if has apt-cache; then
     echo "ℹ️ 未检测到 nginx.org 源"
   fi
 
-  # 3) ondrej PPA 源检测（Ubuntu 常见）
+  # 3) ondrej PPA（Ubuntu 常见，可选）
   if grep -RIEq 'ppa\.launchpadcontent\.net/ondrej/nginx|ondrej.*nginx' \
       /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     green "✅ 检测到 ondrej/nginx PPA 源"
   fi
 
-  # 4) Nginx 状态
+  # 4) Nginx 本体状态
   if has nginx; then
     ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
     green "✅ Nginx 版本：$ver"
@@ -222,28 +227,11 @@ if has apt-cache; then
     echo "ℹ️ 未安装 Nginx"
   fi
 
-  # 5) APT 候选版本（判断当前到底从哪个源拿包）
+  # 5) APT 候选版本
   echo ""
   echo "apt-cache policy nginx："
   apt-cache policy nginx || true
-else
-  echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
-fi
-
-  if has nginx; then
-    ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
-    green "✅ Nginx 版本：$ver"
-    systemctl is-active nginx >/dev/null 2>&1 && green "✅ Nginx：运行中" || yellow "⚠️ Nginx：未运行"
-  else
-    echo "ℹ️ 未安装 Nginx"
-  fi
-
-  echo ""
-  echo "apt-cache policy nginx："
-  apt-cache policy nginx || true
-else
-  echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
-fi
+}
 
 sep
 echo "🔁 [9] Nginx 自动更新（cron）"
