@@ -11,7 +11,6 @@ has(){ command -v "$1" >/dev/null 2>&1; }
 get(){ sysctl -n "$1" 2>/dev/null || echo "N/A"; }
 has_key(){ [[ -e "/proc/sys/${1//./\/}" ]]; }
 
-# 安全读取文件（避免 set -e 在 grep 0 match 时中断）
 safe_grep_count() {
   local pattern="$1" file="$2"
   local out
@@ -112,7 +111,6 @@ else
   echo "  (nft not installed)"
 fi
 
-# 检查重复规则（iptables）
 if has iptables; then
   dup="$(iptables -t mangle -S POSTROUTING 2>/dev/null | grep -c 'TCPMSS' || true)"
   dup="${dup%%$'\n'*}"; dup="${dup:-0}"
@@ -134,10 +132,8 @@ else
 fi
 
 if has conntrack; then
-  # conntrack -L 在无连接时 exit=1，有输出表头/报错的情况
   udp_lines="$(conntrack -L -p udp 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
   tcp_lines="$(conntrack -L -p tcp 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
-  # 粗略减去可能的表头行（不同版本略不同），这里仅作趋势参考
   echo "✅ conntrack 工具可用（趋势参考）："
   echo "  🔸 UDP 列表行数：$udp_lines"
   echo "  🔸 TCP 列表行数：$tcp_lines"
@@ -180,7 +176,7 @@ else
 fi
 
 sep
-echo "🛠 [7] 开机自启服务（兼容你大脚本创建的 net-optimize.service）"
+echo "🛠 [7] 开机自启服务"
 sep
 svc_state "net-optimize.service"
 svc_state "net-optimize-apply.service"
@@ -192,13 +188,18 @@ if has apt-cache; then
   if ls /etc/apt/sources.list.d/*nginx* 1>/dev/null 2>&1; then
     echo "📌 nginx 相关 sources："
     ls -l /etc/apt/sources.list.d/*nginx* 2>/dev/null || true
-    grep -R "nginx.org/packages" /etc/apt/sources.list.d/ 2>/dev/null && green "✅ 检测到 nginx.org 源" || echo "ℹ️ 未检测到 nginx.org 源"
+
+    if grep -R "nginx.org/packages" /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null | grep -q .; then
+      green "✅ 检测到 nginx.org 源"
+    else
+      echo "ℹ️ 未检测到 nginx.org 源"
+    fi
   else
     echo "ℹ️ 未发现 nginx 相关 sources.list.d 文件"
   fi
 
   if has nginx; then
-    ver=$(nginx -v 2>&1 | awk -F/ '{print $2}')
+    ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
     green "✅ Nginx 版本：$ver"
     systemctl is-active nginx >/dev/null 2>&1 && green "✅ Nginx：运行中" || yellow "⚠️ Nginx：未运行"
   else
@@ -210,6 +211,42 @@ if has apt-cache; then
   apt-cache policy nginx || true
 else
   echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
+fi
+
+sep
+echo "🔁 [9] Nginx 自动更新（cron）"
+sep
+cron_file="/etc/cron.d/net-optimize-nginx-update"
+
+if [[ -f "$cron_file" ]]; then
+  green "✅ 已发现 Nginx 自动更新 cron：$cron_file"
+  echo "  - 内容："
+  sed 's/^/    /' "$cron_file"
+
+  perms="$(stat -c '%a' "$cron_file" 2>/dev/null || echo "?")"
+  owner="$(stat -c '%U:%G' "$cron_file" 2>/dev/null || echo "?")"
+  echo "  - 权限：$perms"
+  echo "  - 属主：$owner"
+
+  [[ "$perms" != "644" ]] && yellow "  ⚠️ cron 权限异常（建议 644）"
+
+  if ! grep -qE '(apt-get|apt)\s+.*(install|upgrade).*(nginx)(\s|$)' "$cron_file" 2>/dev/null; then
+    yellow "  ⚠️ cron 存在，但未检测到 nginx install/upgrade 命令（可能内容不对）"
+  fi
+else
+  yellow "⚠️ 未发现 Nginx 自动更新 cron"
+  echo "  👉 预期路径：/etc/cron.d/net-optimize-nginx-update"
+fi
+
+if systemctl list-unit-files 2>/dev/null | grep -q '^cron\.service'; then
+  state="$(systemctl is-active cron 2>/dev/null || true)"
+  [[ "$state" == "active" ]] && green "✅ cron 服务运行中" || yellow "⚠️ cron 服务状态：$state"
+elif systemctl list-unit-files 2>/dev/null | grep -q '^crond\.service'; then
+  state="$(systemctl is-active crond 2>/dev/null || true)"
+  [[ "$state" == "active" ]] && green "✅ crond 服务运行中" || yellow "⚠️ crond 服务状态：$state"
+else
+  yellow "ℹ️ 未检测到 cron/crond 服务（可能未安装或使用 systemd timer）"
+  echo "  👉 Ubuntu/Debian 可用：apt-get install -y cron && systemctl enable --now cron"
 fi
 
 title
