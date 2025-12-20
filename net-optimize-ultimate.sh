@@ -458,55 +458,28 @@ detect_outbound_iface() {
 }
 
 setup_mss_clamping() {
-    if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
-        echo "⏭️ 跳过MSS Clamping"
-        return 0
-    fi
-    
-    echo "📡 设置MSS Clamping (MSS=$MSS_VALUE)..."
-    
-    # 检测出口接口
-    local iface
-    iface=$(detect_outbound_iface)
-    
-    if [ -z "$iface" ]; then
-        echo "⚠️ 无法确定出口接口，将使用全局规则"
-    else
-        echo "✅ 检测到出口接口: $iface"
-    fi
-    
-    # 保存配置
-    cat > "$CONFIG_FILE" <<EOF
+  if [ "$ENABLE_MSS_CLAMP" != "1" ]; then
+    echo "⏭️ 跳过 MSS Clamping（未开启）"
+    return 0
+  fi
+
+  echo "📡 设置 MSS Clamping..."
+  local iface; iface="$(detect_iface)"
+
+  if [ -n "$iface" ]; then
+    echo "🔎 检测到出口接口：$iface"
+  else
+    echo "⚠️ 未找到出口接口，将使用全局 MSS 规则（不限接口）"
+  fi
+
+  apply_mss_iptables "$iface" "$MSS_VALUE"
+
+  install -d "$CONFIG_DIR"
+  cat > "$CONFIG_FILE" <<EOF
 ENABLE_MSS_CLAMP=1
 CLAMP_IFACE=$iface
 MSS_VALUE=$MSS_VALUE
 EOF
-    
-    # 应用iptables规则
-    if ! have_cmd iptables; then
-        echo "⚠️ iptables 不可用，跳过规则设置"
-        return 0
-    fi
-    
-    # 确保模块加载
-    modprobe ip_tables 2>/dev/null || true
-    modprobe iptable_mangle 2>/dev/null || true
-    
-    # 清理旧规则
-    iptables -t mangle -S POSTROUTING 2>/dev/null | grep "TCPMSS" | \
-        while read -r rule; do
-            local del_rule="${rule/-A/-D}"
-            iptables -t mangle $del_rule 2>/dev/null || true
-        done
-    
-    # 添加新规则
-    if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
-        iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
-        echo "✅ 已添加接口规则: $iface"
-    else
-        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
-        echo "✅ 已添加全局规则"
-    fi
 }
 
 # === 11. Nginx官方源（完整实现）===
