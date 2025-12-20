@@ -1,90 +1,216 @@
-curl -fsSL https://gist.githubusercontent.com/ -o /tmp/net-optimize-check.sh || true
-cat >/tmp/net-optimize-check.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+
 green(){ printf "\033[32m%s\033[0m\n" "$*"; }
 yellow(){ printf "\033[33m%s\033[0m\n" "$*"; }
+red(){ printf "\033[31m%s\033[0m\n" "$*"; }
 title(){ echo "============================================================"; }
+sep(){ echo "------------------------------------------------------------"; }
+
 has(){ command -v "$1" >/dev/null 2>&1; }
 get(){ sysctl -n "$1" 2>/dev/null || echo "N/A"; }
 has_key(){ [[ -e "/proc/sys/${1//./\/}" ]]; }
 
+# 安全读取文件（避免 set -e 在 grep 0 match 时中断）
+safe_grep_count() {
+  local pattern="$1" file="$2"
+  local out
+  out="$(grep -cE "$pattern" "$file" 2>/dev/null || true)"
+  out="${out%%$'\n'*}"
+  echo "${out:-0}"
+}
+
+svc_state() {
+  local s="$1"
+  if systemctl list-unit-files 2>/dev/null | awk '{print $1}' | grep -qx "$s"; then
+    local en act
+    en="$(systemctl is-enabled "$s" 2>/dev/null || true)"
+    act="$(systemctl is-active "$s" 2>/dev/null || true)"
+    echo "  - $s: enabled=$en, active=$act"
+  else
+    echo "  - $s: (not installed)"
+  fi
+}
+
 echo "🔍 开 始 系 统 状 态 检 测 （网 络 优 化 + Nginx）..."
 title
 
-echo "🌐 [1] 网 络 优 化 状 态"
-echo "------------------------------------------------------------"
-echo "✅ 拥塞算法：$(get net.ipv4.tcp_congestion_control)"
-echo "✅ 默认队列：$(get net.core.default_qdisc)"
-has_key net.ipv4.tcp_mtu_probing && echo "✅ TCP MTU 探测：$(get net.ipv4.tcp_mtu_probing)"
+echo "🌐 [1] 网 络 优 化 关 键 状 态"
+sep
+green "✅ 拥塞算法：$(get net.ipv4.tcp_congestion_control)"
+green "✅ 默认队列：$(get net.core.default_qdisc)"
+has_key net.ipv4.tcp_mtu_probing && green "✅ TCP MTU 探测：$(get net.ipv4.tcp_mtu_probing)"
+
 echo "✅ UDP 缓冲："
 echo "  🔹 udp_rmem_min = $(get net.ipv4.udp_rmem_min)"
 echo "  🔹 udp_wmem_min = $(get net.ipv4.udp_wmem_min)"
 echo "  🔹 udp_mem      = $(get net.ipv4.udp_mem)"
+echo "✅ TCP 缓冲："
+echo "  🔹 tcp_rmem      = $(get net.ipv4.tcp_rmem)"
+echo "  🔹 tcp_wmem      = $(get net.ipv4.tcp_wmem)"
+echo "✅ Core 缓冲："
+echo "  🔹 rmem_default  = $(get net.core.rmem_default)"
+echo "  🔹 wmem_default  = $(get net.core.wmem_default)"
 
-if [[ -f /proc/sys/net/netfilter/nf_conntrack_max ]]; then
-  echo "✅ nf_conntrack："
+sep
+echo "🔗 [2] conntrack / netfilter 状态（兼容内建模块）"
+sep
+if has_key net.netfilter.nf_conntrack_max || [[ -d /proc/sys/net/netfilter ]]; then
+  green "✅ nf_conntrack 可用（模块或内建）"
   echo "  🔸 nf_conntrack_max                 = $(get net.netfilter.nf_conntrack_max)"
   echo "  🔸 nf_conntrack_udp_timeout         = $(get net.netfilter.nf_conntrack_udp_timeout)"
   echo "  🔸 nf_conntrack_udp_timeout_stream  = $(get net.netfilter.nf_conntrack_udp_timeout_stream)"
+  echo "  🔸 nf_conntrack_tcp_timeout_established = $(get net.netfilter.nf_conntrack_tcp_timeout_established)"
 else
-  echo "ℹ️ nf_conntrack 未启用或不可用"
+  yellow "ℹ️ nf_conntrack 未启用或不可用"
 fi
 
-echo "✅ 当前 ulimit -n：$(ulimit -n)"
-echo "✅ MSS Clamping 规则："
-( nft list chain inet mangle postrouting 2>/dev/null | grep -E 'maxseg|TCPMSS' ) || \
-( iptables -t mangle -L -n -v 2>/dev/null | grep TCPMSS ) || echo "⚠️ 未检测到"
+if [[ -f /proc/net/nf_conntrack ]]; then
+  udp_c="$(safe_grep_count '^udp' /proc/net/nf_conntrack)"
+  tcp_c="$(safe_grep_count '^tcp' /proc/net/nf_conntrack)"
+  green "✅ /proc/net/nf_conntrack 可读"
+  echo "  🔸 UDP entries = $udp_c"
+  echo "  🔸 TCP entries = $tcp_c"
+  echo "  🔸 Total       = $((udp_c + tcp_c))"
+else
+  yellow "ℹ️ /proc/net/nf_conntrack 不存在（可能是 nft / 内核暴露差异）"
+fi
 
-echo "✅ UDP 监听："
-( ss -u -l -n -p 2>/dev/null | grep -E 'LISTEN|UNCONN' ) || echo "⚠️ 无 UDP 监听"
+if has lsmod; then
+  if lsmod | grep -q '^nf_conntrack'; then
+    green "✅ lsmod 可见 nf_conntrack（非内建）"
+  else
+    echo "ℹ️ lsmod 未显示 nf_conntrack（可能是内建，属正常）"
+  fi
+fi
+
+sep
+echo "📂 [3] ulimit / fd"
+sep
+green "✅ 当前 ulimit -n：$(ulimit -n)"
+if [[ -f /etc/security/limits.d/99-net-optimize.conf ]]; then
+  echo "✅ limits.d 已写入：/etc/security/limits.d/99-net-optimize.conf"
+else
+  yellow "⚠️ 未发现 limits.d 配置"
+fi
+grep -n '^DefaultLimitNOFILE' /etc/systemd/system.conf 2>/dev/null || echo "ℹ️ systemd system.conf 未设置 DefaultLimitNOFILE"
+
+sep
+echo "📡 [4] MSS Clamping 规则（iptables/nft 双栈）"
+sep
+echo "✅ iptables mangle/POSTROUTING (含计数)："
+if has iptables; then
+  iptables -t mangle -L POSTROUTING -n -v 2>/dev/null | grep -E 'TCPMSS|Chain|pkts|bytes' || echo "  (none)"
+else
+  echo "  (iptables not installed)"
+fi
+
+echo "✅ nft inet mangle postrouting："
+if has nft; then
+  nft list chain inet mangle postrouting 2>/dev/null | grep -E 'maxseg|TCPMSS|tcp option maxseg' || echo "  (none)"
+else
+  echo "  (nft not installed)"
+fi
+
+# 检查重复规则（iptables）
+if has iptables; then
+  dup="$(iptables -t mangle -S POSTROUTING 2>/dev/null | grep -c 'TCPMSS' || true)"
+  dup="${dup%%$'\n'*}"; dup="${dup:-0}"
+  if [[ "$dup" -gt 1 ]]; then
+    yellow "⚠️ 发现多条 TCPMSS 规则：$dup 条（可能重复叠加）"
+  else
+    green "✅ TCPMSS 规则数量：$dup"
+  fi
+fi
+
+sep
+echo "🧷 [5] UDP 监听 / 活跃连接"
+sep
+echo "✅ UDP 监听（ss）："
+if has ss; then
+  ss -u -l -n -p 2>/dev/null | head -n 50 || echo "  (none)"
+else
+  echo "  (ss not installed)"
+fi
 
 if has conntrack; then
-  echo "✅ 当前 UDP 活跃连接数：$(conntrack -L -p udp 2>/dev/null | wc -l)"
+  # conntrack -L 在无连接时 exit=1，有输出表头/报错的情况
+  udp_lines="$(conntrack -L -p udp 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
+  tcp_lines="$(conntrack -L -p tcp 2>/dev/null | sed '/^$/d' | wc -l | tr -d ' ')"
+  # 粗略减去可能的表头行（不同版本略不同），这里仅作趋势参考
+  echo "✅ conntrack 工具可用（趋势参考）："
+  echo "  🔸 UDP 列表行数：$udp_lines"
+  echo "  🔸 TCP 列表行数：$tcp_lines"
 else
-  echo "ℹ️ 未安装 conntrack（apt install conntrack 可安装）"
+  yellow "ℹ️ 未安装 conntrack（apt install conntrack 可安装）"
 fi
 
-echo "------------------------------------------------------------"
-echo "🗂 sysctl 持久化文件："
+sep
+echo "🗂 [6] sysctl 持久化与运行态一致性"
+sep
 if [[ -f /etc/sysctl.d/99-net-optimize.conf ]]; then
-  head -n 40 /etc/sysctl.d/99-net-optimize.conf
+  green "✅ 发现持久化文件：/etc/sysctl.d/99-net-optimize.conf"
+  echo "  - 文件前 60 行："
+  head -n 60 /etc/sysctl.d/99-net-optimize.conf
+
+  echo ""
+  echo "  - 关键项对比（runtime vs file）:"
+  check_keys=(
+    net.core.default_qdisc
+    net.ipv4.tcp_congestion_control
+    net.ipv4.tcp_mtu_probing
+    net.core.rmem_default
+    net.core.wmem_default
+    net.netfilter.nf_conntrack_max
+    net.netfilter.nf_conntrack_udp_timeout
+    net.netfilter.nf_conntrack_udp_timeout_stream
+  )
+  for k in "${check_keys[@]}"; do
+    rt="$(get "$k")"
+    fv="$(grep -E "^\s*${k}\s*=" /etc/sysctl.d/99-net-optimize.conf 2>/dev/null | tail -n1 | awk -F= '{gsub(/ /,"",$2); print $2}' || true)"
+    fv="${fv:-N/A}"
+    if [[ "$fv" != "N/A" && "$rt" != "N/A" && "$rt" != "$fv" ]]; then
+      yellow "  ⚠️ $k runtime=$rt  file=$fv  (不一致)"
+    else
+      echo "  ✅ $k runtime=$rt  file=$fv"
+    fi
+  done
 else
-  echo "⚠️ 未发现 /etc/sysctl.d/99-net-optimize.conf"
+  yellow "⚠️ 未发现 /etc/sysctl.d/99-net-optimize.conf"
 fi
 
-echo "------------------------------------------------------------"
-echo "🛠 开机自恢复服务："
-systemctl is-enabled net-optimize-apply.service >/dev/null 2>&1 \
-  && echo "✅ 已启用 net-optimize-apply.service" \
-  || echo "⚠️ 未启用 net-optimize-apply.service"
-systemctl is-active net-optimize-apply.service >/dev/null 2>&1 \
-  && echo "✅ 服务已运行（oneshot 已执行）" \
-  || echo "ℹ️ 服务非运行态（oneshot 类型正常）"
+sep
+echo "🛠 [7] 开机自启服务（兼容你大脚本创建的 net-optimize.service）"
+sep
+svc_state "net-optimize.service"
+svc_state "net-optimize-apply.service"
 
-echo "------------------------------------------------------------"
-echo "🔧 Nginx 源与服务："
+sep
+echo "🔧 [8] Nginx 源与服务"
+sep
 if has apt-cache; then
-  if grep -q "nginx.org/packages" /etc/apt/sources.list.d/nginx.list 2>/dev/null; then
-    echo "✅ Nginx 源：nginx.org"
+  if ls /etc/apt/sources.list.d/*nginx* 1>/dev/null 2>&1; then
+    echo "📌 nginx 相关 sources："
+    ls -l /etc/apt/sources.list.d/*nginx* 2>/dev/null || true
+    grep -R "nginx.org/packages" /etc/apt/sources.list.d/ 2>/dev/null && green "✅ 检测到 nginx.org 源" || echo "ℹ️ 未检测到 nginx.org 源"
   else
-    echo "ℹ️ Nginx 源：默认系统源"
+    echo "ℹ️ 未发现 nginx 相关 sources.list.d 文件"
   fi
+
   if has nginx; then
     ver=$(nginx -v 2>&1 | awk -F/ '{print $2}')
-    echo "✅ Nginx 版本：$ver"
-    systemctl is-active nginx >/dev/null 2>&1 && echo "✅ Nginx：运行中" || echo "⚠️ Nginx：未运行"
+    green "✅ Nginx 版本：$ver"
+    systemctl is-active nginx >/dev/null 2>&1 && green "✅ Nginx：运行中" || yellow "⚠️ Nginx：未运行"
   else
     echo "ℹ️ 未安装 Nginx"
   fi
+
+  echo ""
+  echo "apt-cache policy nginx："
+  apt-cache policy nginx || true
 else
   echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
 fi
 
-apt-cache policy nginx
-
 title
-echo "🎉 检 测 完 成"
-EOF
-chmod +x /tmp/net-optimize-check.sh
-bash /tmp/net-optimize-check.sh
+green "🎉 检 测 完 成"
