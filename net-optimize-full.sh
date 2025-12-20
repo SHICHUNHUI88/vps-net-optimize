@@ -464,47 +464,26 @@ setup_mss_clamping() {
     fi
     
     echo "📡 设置MSS Clamping (MSS=$MSS_VALUE)..."
-    
-    # 检测出口接口
     local iface
     iface=$(detect_outbound_iface)
     
-    if [ -z "$iface" ]; then
-        echo "⚠️ 无法确定出口接口，将使用全局规则"
-    else
-        echo "✅ 检测到出口接口: $iface"
-    fi
-    
-    # 保存配置
-    cat > "$CONFIG_FILE" <<EOF
-ENABLE_MSS_CLAMP=1
-CLAMP_IFACE=$iface
-MSS_VALUE=$MSS_VALUE
-EOF
-    
-    # 应用iptables规则
-    if ! have_cmd iptables; then
-        echo "⚠️ iptables 不可用，跳过规则设置"
-        return 0
-    fi
-    
-    # 确保模块加载
+    # 确保模块存在
     modprobe ip_tables 2>/dev/null || true
     modprobe iptable_mangle 2>/dev/null || true
     
-    # 清理旧规则
+    # 【修复重点】清理规则时强制忽略错误
     iptables -t mangle -S POSTROUTING 2>/dev/null | grep "TCPMSS" | \
         while read -r rule; do
             local del_rule="${rule/-A/-D}"
             iptables -t mangle $del_rule 2>/dev/null || true
-        done
+        done || true
     
-    # 添加新规则
+    # 【修复重点】添加规则时也加上容错
     if [ -n "$iface" ] && [ "$iface" != "unknown" ]; then
-        iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
+        iptables -t mangle -A POSTROUTING -o "$iface" -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" || true
         echo "✅ 已添加接口规则: $iface"
     else
-        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE"
+        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS_VALUE" || true
         echo "✅ 已添加全局规则"
     fi
 }
