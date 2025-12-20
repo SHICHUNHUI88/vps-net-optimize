@@ -156,21 +156,114 @@ backup_and_disable_sysctl_file() {
 }
 
 converge_sysctl_authority() {
-  echo "🧠 收敛 sysctl 权威（只保留 v3.x 的配置生效）..."
+  echo "🧠 收敛 sysctl 权威（强制以 $SYSCTL_AUTH_FILE 为准）..."
 
-  local keep1="$SYSCTL_AUTH_FILE"
+  local main_conf="$SYSCTL_AUTH_FILE"
   local keep2="/etc/sysctl.d/zzz-bbrplus.conf"
+  local override_conf="/etc/sysctl.d/99-zz-net-optimize-override.conf"
 
+  if [[ ! -f "$main_conf" ]]; then
+    echo "⚠️ 未发现权威文件：$main_conf，跳过收敛"
+    return 0
+  fi
+
+  # 你要强制收敛的关键项（按需加减）
+  local keys=(
+    net.ipv4.tcp_mtu_probing
+    net.core.rmem_default
+    net.core.wmem_default
+    net.core.rmem_max
+    net.core.wmem_max
+    net.ipv4.tcp_rmem
+    net.ipv4.tcp_wmem
+    net.ipv4.udp_rmem_min
+    net.ipv4.udp_wmem_min
+    net.ipv4.udp_mem
+    net.netfilter.nf_conntrack_max
+    net.netfilter.nf_conntrack_udp_timeout
+    net.netfilter.nf_conntrack_udp_timeout_stream
+  )
+
+  # 从 main_conf 抽取期望值
+  declare -A want
+  local k v
+  for k in "${keys[@]}"; do
+    v="$(awk -v kk="$k" '
+      $0 ~ "^[[:space:]]*#" {next}
+      $1 == kk && $2 == "=" {
+        sub("^[^=]*=[[:space:]]*", "", $0);
+        print $0;
+      }
+    ' "$main_conf" 2>/dev/null | tail -n1)"
+    [[ -n "${v:-}" ]] && want["$k"]="$v"
+  done
+
+  if [[ "${#want[@]}" -eq 0 ]]; then
+    echo "⚠️ 未从 $main_conf 解析到关键项，跳过收敛"
+    return 0
+  fi
+
+  # 1) 生成最后加载的 override 文件（保证 last-wins）
+  {
+    echo "# Net-Optimize: override to guarantee last-wins"
+    echo "# Generated: $(date -u '+%F %T UTC')"
+    for k in "${keys[@]}"; do
+      [[ -n "${want[$k]:-}" ]] && echo "$k = ${want[$k]}"
+    done
+  } > "$override_conf"
+  chmod 644 "$override_conf"
+  echo "✅ 写入 override：$override_conf（确保最终以你为准）"
+
+  # 2) 禁用 /etc/sysctl.d 里冲突文件（沿用你原来的备份+禁用策略）
+  mkdir -p "$SYSCTL_BACKUP_DIR"
   shopt -s nullglob
   local f
   for f in /etc/sysctl.d/*.conf; do
-    [ "$f" = "$keep1" ] && continue
-    [ "$f" = "$keep2" ] && continue
+    [[ "$f" == "$main_conf" ]] && continue
+    [[ "$f" == "$override_conf" ]] && continue
+    [[ "$f" == "$keep2" ]] && continue
     backup_and_disable_sysctl_file "$f"
   done
   shopt -u nullglob
 
-  if [ -f "$keep2" ]; then
+  # 3) 处理 /etc/sysctl.conf 的冲突项（不 mv，改为注释掉命中的 key 行）
+  if [[ -f /etc/sysctl.conf ]]; then
+    local hit=0
+    for k in "${keys[@]}"; do
+      if grep -qE "^[[:space:]]*${k}[[:space:]]*=" /etc/sysctl.conf 2>/dev/null; then
+        sed -i -E "s@^[[:space:]]*(${k}[[:space:]]*=.*)@# net-optimize disabled: \1@g" /etc/sysctl.conf 2>/dev/null || true
+        hit=1
+      fi
+    done
+    [[ "$hit" -eq 1 ]] && echo "✅ 已削弱冲突：/etc/sysctl.conf"
+  fi
+
+  # 4) 立即落地（先 sysctl --system，再逐项 sysctl -w）
+  sysctl --system >/dev/null 2>&1 || true
+  for k in "${keys[@]}"; do
+    [[ -n "${want[$k]:-}" ]] && sysctl -w "$k=${want[$k]}" >/dev/null 2>&1 || true
+  done
+
+  # 5) 简单复核：只打印不一致项
+  local bad=0 rt
+  for k in "${keys[@]}"; do
+    [[ -z "${want[$k]:-}" ]] && continue
+    rt="$(sysctl -n "$k" 2>/dev/null || echo "")"
+    if [[ -n "$rt" && "$rt" != "${want[$k]}" ]]; then
+      bad=1
+      echo "⚠️ 未收敛：$k runtime=$rt want=${want[$k]}"
+    fi
+  done
+
+  if [[ "$bad" -eq 0 ]]; then
+    echo "✅ sysctl 已收敛：runtime 与 $main_conf 一致"
+  else
+    echo "⚠️ 仍有不一致：通常是 cloud-init/服务在你之后又改了值"
+    echo "👉 但 override 已保证下次 sysctl --system 后以你为准：$override_conf"
+  fi
+
+  # 6) bbrplus 权威文件提示
+  if [[ -f "$keep2" ]]; then
     echo "✅ 保留 bbrplus 权威文件：$keep2（不做处理）"
   else
     echo "⚠️ 未发现 $keep2（如需 fq_pie/bbrplus 兜底请确认 bbrplus 脚本）"
