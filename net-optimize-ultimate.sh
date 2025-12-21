@@ -137,11 +137,9 @@ SYSCTL_BACKUP_DIR="/etc/net-optimize/sysctl-backup"
 SYSCTL_AUTH_FILE="/etc/sysctl.d/99-net-optimize.conf"
 
 # 你要强制收敛的关键项（按需加减）
-# ✅ v3.2.2+：把 qdisc / cc 也纳入收敛，否则容易被其它 conf 覆盖
 SYSCTL_KEYS=(
   net.core.default_qdisc
   net.ipv4.tcp_congestion_control
-
   net.ipv4.tcp_mtu_probing
   net.core.rmem_default
   net.core.wmem_default
@@ -152,23 +150,13 @@ SYSCTL_KEYS=(
   net.ipv4.udp_rmem_min
   net.ipv4.udp_wmem_min
   net.ipv4.udp_mem
-
   net.netfilter.nf_conntrack_max
   net.netfilter.nf_conntrack_udp_timeout
   net.netfilter.nf_conntrack_udp_timeout_stream
-
-  # ✅ 值得纳入收敛（你参考那套里有、而且确实有意义）
-  net.core.netdev_budget
-  net.core.netdev_budget_usecs
-  net.ipv4.tcp_early_retrans
-  net.ipv4.tcp_fack
-  net.ipv4.tcp_frto
 )
 
-# 判断文件是否包含任何冲突 key（更通用：只要写了我们关心的 key 就算冲突）
 sysctl_file_hits_keys() {
-  local f="$1"
-  local k
+  local f="$1" k
   for k in "${SYSCTL_KEYS[@]}"; do
     if grep -qE "^[[:space:]]*${k}[[:space:]]*=" "$f" 2>/dev/null; then
       return 0
@@ -180,8 +168,6 @@ sysctl_file_hits_keys() {
 backup_and_disable_sysctl_file() {
   local f="$1"
   [[ -f "$f" ]] || return 0
-
-  # 只对“写了冲突 key”的文件动手，避免误伤
   sysctl_file_hits_keys "$f" || return 0
 
   mkdir -p "$SYSCTL_BACKUP_DIR"
@@ -195,16 +181,12 @@ backup_and_disable_sysctl_file() {
 }
 
 converge_sysctl_authority() {
-  echo "🧠 收敛 sysctl 权威（强制以 $SYSCTL_AUTH_FILE 为准）..."
+  echo "🧠 收敛 sysctl 权威（以 $SYSCTL_AUTH_FILE 为准，保证 last-wins）..."
 
   local main_conf="$SYSCTL_AUTH_FILE"
-  local keep2="/etc/sysctl.d/zzz-bbrplus.conf"
   local override_conf="/etc/sysctl.d/zzz-net-optimize-override.conf"
 
-  if [[ ! -f "$main_conf" ]]; then
-    echo "⚠️ 未发现权威文件：$main_conf，跳过收敛"
-    return 0
-  fi
+  [[ -f "$main_conf" ]] || { echo "⚠️ 未发现：$main_conf，跳过"; return 0; }
 
   # 从 main_conf 抽取期望值
   declare -A want
@@ -220,12 +202,9 @@ converge_sysctl_authority() {
     [[ -n "${v:-}" ]] && want["$k"]="$v"
   done
 
-  if [[ "${#want[@]}" -eq 0 ]]; then
-    echo "⚠️ 未从 $main_conf 解析到关键项，跳过收敛"
-    return 0
-  fi
+  [[ "${#want[@]}" -gt 0 ]] || { echo "⚠️ $main_conf 未解析到关键项，跳过"; return 0; }
 
-  # 1) 生成最后加载的 override 文件（保证 last-wins）
+  # 1) 生成 override（最后加载，保证 last-wins）
   {
     echo "# Net-Optimize: override to guarantee last-wins"
     echo "# Generated: $(date -u '+%F %T UTC')"
@@ -234,21 +213,19 @@ converge_sysctl_authority() {
     done
   } > "$override_conf"
   chmod 644 "$override_conf"
-  echo "✅ 写入 override：$override_conf（确保最终以你为准）"
+  echo "✅ 写入 override：$override_conf"
 
-  # 2) 禁用 /etc/sysctl.d 里冲突文件（保留 main_conf / override / bbrplus）
-  mkdir -p "$SYSCTL_BACKUP_DIR"
+  # 2) 禁用 /etc/sysctl.d 里冲突文件（保留 main_conf 和 override）
   shopt -s nullglob
   local f
   for f in /etc/sysctl.d/*.conf; do
     [[ "$f" == "$main_conf" ]] && continue
     [[ "$f" == "$override_conf" ]] && continue
-    [[ "$f" == "$keep2" ]] && continue
     backup_and_disable_sysctl_file "$f"
   done
   shopt -u nullglob
 
-  # 3) 处理 /etc/sysctl.conf 的冲突项（注释掉命中的 key 行）
+  # 3) /etc/sysctl.conf 冲突项注释掉
   if [[ -f /etc/sysctl.conf ]]; then
     local hit=0
     for k in "${SYSCTL_KEYS[@]}"; do
@@ -260,55 +237,17 @@ converge_sysctl_authority() {
     [[ "$hit" -eq 1 ]] && echo "✅ 已削弱冲突：/etc/sysctl.conf"
   fi
 
-  # 4) 立即落地：先整体加载，再逐项写 runtime（避免部分 key 被忽略）
+  # 4) 立即落地
   sysctl --system >/dev/null 2>&1 || true
   for k in "${SYSCTL_KEYS[@]}"; do
     [[ -n "${want[$k]:-}" ]] && sysctl -w "$k=${want[$k]}" >/dev/null 2>&1 || true
   done
 
-  # 5) 简单复核：只打印不一致项
-  local bad=0 rt
-  for k in "${SYSCTL_KEYS[@]}"; do
-    [[ -z "${want[$k]:-}" ]] && continue
-    rt="$(sysctl -n "$k" 2>/dev/null || echo "")"
-    if [[ -n "$rt" && "$rt" != "${want[$k]}" ]]; then
-      bad=1
-      echo "⚠️ 未收敛：$k runtime=$rt want=${want[$k]}"
-    fi
-  done
-
-  if [[ "$bad" -eq 0 ]]; then
-    echo "✅ sysctl 已收敛：runtime 与 $main_conf 一致"
-  else
-    echo "⚠️ 仍有不一致：通常是 cloud-init/agent 在你之后又改了值"
-    echo "👉 但 override 已保证下次 sysctl --system 后以你为准：$override_conf"
-  fi
-
-  if [[ -f "$keep2" ]]; then
-    echo "✅ 保留 bbrplus 权威文件：$keep2（不做处理）"
-  fi
+  echo "✅ sysctl 收敛完成（override 已保证 last-wins）"
 }
 
 force_apply_sysctl_runtime() {
   echo "🧷 强制写入 sysctl runtime（防止云镜像/agent 覆盖）"
-
-  local k v
-  declare -A want
-  for k in "${SYSCTL_KEYS[@]}"; do
-    v="$(awk -v kk="$k" '
-      $0 ~ "^[[:space:]]*#" {next}
-      $1 == kk && $2 == "=" {
-        sub("^[^=]*=[[:space:]]*", "", $0);
-        print $0;
-      }
-    ' "$SYSCTL_AUTH_FILE" 2>/dev/null | tail -n1)"
-    [[ -n "${v:-}" ]] && want["$k"]="$v"
-  done
-
-  for k in "${SYSCTL_KEYS[@]}"; do
-    [[ -n "${want[$k]:-}" ]] && sysctl -w "$k=${want[$k]}" >/dev/null 2>&1 || true
-  done
-
   sysctl --system >/dev/null 2>&1 || true
 }
 
@@ -435,28 +374,28 @@ setup_tcp_congestion() {
   fi
 }
 
-# === 8. Sysctl 深度整合（写入文件）===
+# === 8. Sysctl 深度整合（写入文件，自适应内核能力）===
 write_sysctl_conf() {
   echo "📊 写入内核参数配置文件..."
 
   local sysctl_file="$SYSCTL_AUTH_FILE"
   install -d /etc/sysctl.d
 
+  # 如果 FINAL_CC / FINAL_QDISC 为空，兜底读取当前 runtime
+  local cc qdisc
+  cc="${FINAL_CC:-$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo cubic)}"
+  qdisc="${FINAL_QDISC:-$(sysctl -n net.core.default_qdisc 2>/dev/null || echo fq)}"
+
   {
     echo "# ========================================================="
-    echo "# 🚀 Net-Optimize Ultimate v3.2.2 - Kernel Parameters"
-    echo "# Generated: $(date)"
+    echo "# 🚀 Net-Optimize Ultimate - Kernel Parameters"
+    echo "# Generated: $(date -u '+%F %T UTC')"
     echo "# ========================================================="
     echo
 
-    echo "# === 拥塞控制 / 队列（落盘，避免重启丢失）==="
-    # fq_pie 优先，其次 fq；即使内核不支持也没事，sysctl -e 会忽略不支持项
-    if [ "${ENABLE_FQ_PIE:-1}" = "1" ]; then
-      echo "net.core.default_qdisc = fq_pie"
-    else
-      echo "net.core.default_qdisc = fq"
-    fi
-    echo "net.ipv4.tcp_congestion_control = bbrplus"
+    echo "# === 拥塞控制 / 队列（自适应写入，避免不同内核不一致）==="
+    echo "net.core.default_qdisc = $qdisc"
+    echo "net.ipv4.tcp_congestion_control = $cc"
     echo
 
     echo "# === 基础网络设置 ==="
@@ -466,7 +405,7 @@ write_sysctl_conf() {
     echo "net.ipv4.tcp_syncookies = 1"
     echo
 
-    echo "# === 网卡收包预算（你参考那套里有，确实有用）==="
+    echo "# === 网卡收包预算（你参考那套里有，建议保留）==="
     echo "net.core.netdev_budget = 50000"
     echo "net.core.netdev_budget_usecs = 5000"
     echo
@@ -481,7 +420,7 @@ write_sysctl_conf() {
     echo
 
     echo "# === TCP算法优化 ==="
-    echo "net.ipv4.tcp_mtu_probing = ${ENABLE_MTU_PROBE:-1}"
+    echo "net.ipv4.tcp_mtu_probing = $ENABLE_MTU_PROBE"
     echo "net.ipv4.tcp_slow_start_after_idle = 0"
     echo "net.ipv4.tcp_no_metrics_save = 0"
     echo "net.ipv4.tcp_ecn = 1"
@@ -495,8 +434,6 @@ write_sysctl_conf() {
     echo "net.ipv4.tcp_retries2 = 5"
     echo "net.ipv4.tcp_synack_retries = 1"
     echo "net.ipv4.tcp_rfc1337 = 0"
-    echo
-    echo "# 参考那套里有的细项（建议保留）"
     echo "net.ipv4.tcp_early_retrans = 3"
     echo "net.ipv4.tcp_fack = 1"
     echo "net.ipv4.tcp_frto = 0"
@@ -515,7 +452,7 @@ write_sysctl_conf() {
     echo "net.ipv4.udp_mem = 65536 131072 262144"
     echo
 
-    echo "# === 转发 / rp_filter（你现在这套就是为代理场景准备的）==="
+    echo "# === 路由/转发（按你的需求保留）==="
     echo "net.ipv4.ip_forward = 1"
     echo "net.ipv4.conf.all.forwarding = 1"
     echo "net.ipv4.conf.default.forwarding = 1"
@@ -559,7 +496,7 @@ write_sysctl_conf() {
     echo "net.ipv4.neigh.default.unres_qlen = 10000"
     echo
 
-    echo "# === 内核安全 ==="
+    echo "# === 内核/文件系统安全 ==="
     echo "kernel.kptr_restrict = 1"
     echo "kernel.yama.ptrace_scope = 1"
     echo "kernel.sysrq = 176"
@@ -569,17 +506,15 @@ write_sysctl_conf() {
     echo "vm.overcommit_memory = 1"
     echo "kernel.pid_max = 4194304"
     echo
-
-    echo "# === 文件系统保护 ==="
     echo "fs.protected_fifos = 1"
     echo "fs.protected_hardlinks = 1"
     echo "fs.protected_regular = 2"
     echo "fs.protected_symlinks = 1"
     echo
 
-    if [ "${ENABLE_CONNTRACK_TUNE:-1}" = "1" ]; then
+    if [ "$ENABLE_CONNTRACK_TUNE" = "1" ]; then
       echo "# === 连接跟踪优化 ==="
-      echo "net.netfilter.nf_conntrack_max = ${NFCT_MAX:-262144}"
+      echo "net.netfilter.nf_conntrack_max = $NFCT_MAX"
       echo "net.netfilter.nf_conntrack_udp_timeout = 30"
       echo "net.netfilter.nf_conntrack_udp_timeout_stream = 180"
       echo "net.netfilter.nf_conntrack_tcp_timeout_established = 432000"
@@ -591,7 +526,7 @@ write_sysctl_conf() {
   } >"$sysctl_file"
 
   sysctl -e --system >/dev/null 2>&1 || echo "⚠️ 部分参数不支持，但不影响其他项"
-  echo "✅ sysctl 参数已写入并应用"
+  echo "✅ sysctl 参数已写入并应用：$sysctl_file"
 }
 
 # === 9. 连接跟踪模块加载 ===
