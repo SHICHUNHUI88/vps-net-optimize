@@ -137,7 +137,11 @@ SYSCTL_BACKUP_DIR="/etc/net-optimize/sysctl-backup"
 SYSCTL_AUTH_FILE="/etc/sysctl.d/99-net-optimize.conf"
 
 # 你要强制收敛的关键项（按需加减）
+# ✅ v3.2.2+：把 qdisc / cc 也纳入收敛，否则容易被其它 conf 覆盖
 SYSCTL_KEYS=(
+  net.core.default_qdisc
+  net.ipv4.tcp_congestion_control
+
   net.ipv4.tcp_mtu_probing
   net.core.rmem_default
   net.core.wmem_default
@@ -148,9 +152,17 @@ SYSCTL_KEYS=(
   net.ipv4.udp_rmem_min
   net.ipv4.udp_wmem_min
   net.ipv4.udp_mem
+
   net.netfilter.nf_conntrack_max
   net.netfilter.nf_conntrack_udp_timeout
   net.netfilter.nf_conntrack_udp_timeout_stream
+
+  # ✅ 值得纳入收敛（你参考那套里有、而且确实有意义）
+  net.core.netdev_budget
+  net.core.netdev_budget_usecs
+  net.ipv4.tcp_early_retrans
+  net.ipv4.tcp_fack
+  net.ipv4.tcp_frto
 )
 
 # 判断文件是否包含任何冲突 key（更通用：只要写了我们关心的 key 就算冲突）
@@ -272,19 +284,15 @@ converge_sysctl_authority() {
     echo "👉 但 override 已保证下次 sysctl --system 后以你为准：$override_conf"
   fi
 
-  # 6) bbrplus 权威文件提示
   if [[ -f "$keep2" ]]; then
     echo "✅ 保留 bbrplus 权威文件：$keep2（不做处理）"
-  else
-    echo "⚠️ 未发现 $keep2（如需 fq_pie/bbrplus 兜底请确认 bbrplus 脚本）"
   fi
 }
 
 force_apply_sysctl_runtime() {
   echo "🧷 强制写入 sysctl runtime（防止云镜像/agent 覆盖）"
 
-  # 这里优先跟随权威文件（如果权威文件里有值就用权威文件的）
-  local k rt v
+  local k v
   declare -A want
   for k in "${SYSCTL_KEYS[@]}"; do
     v="$(awk -v kk="$k" '
@@ -297,12 +305,10 @@ force_apply_sysctl_runtime() {
     [[ -n "${v:-}" ]] && want["$k"]="$v"
   done
 
-  # 逐项强写 runtime
   for k in "${SYSCTL_KEYS[@]}"; do
     [[ -n "${want[$k]:-}" ]] && sysctl -w "$k=${want[$k]}" >/dev/null 2>&1 || true
   done
 
-  # 再整体加载一次兜底
   sysctl --system >/dev/null 2>&1 || true
 }
 
@@ -443,11 +449,26 @@ write_sysctl_conf() {
     echo "# ========================================================="
     echo
 
+    echo "# === 拥塞控制 / 队列（落盘，避免重启丢失）==="
+    # fq_pie 优先，其次 fq；即使内核不支持也没事，sysctl -e 会忽略不支持项
+    if [ "${ENABLE_FQ_PIE:-1}" = "1" ]; then
+      echo "net.core.default_qdisc = fq_pie"
+    else
+      echo "net.core.default_qdisc = fq"
+    fi
+    echo "net.ipv4.tcp_congestion_control = bbrplus"
+    echo
+
     echo "# === 基础网络设置 ==="
     echo "net.core.netdev_max_backlog = 250000"
     echo "net.core.somaxconn = 1000000"
     echo "net.ipv4.tcp_max_syn_backlog = 819200"
     echo "net.ipv4.tcp_syncookies = 1"
+    echo
+
+    echo "# === 网卡收包预算（你参考那套里有，确实有用）==="
+    echo "net.core.netdev_budget = 50000"
+    echo "net.core.netdev_budget_usecs = 5000"
     echo
 
     echo "# === 连接生命周期 ==="
@@ -460,7 +481,7 @@ write_sysctl_conf() {
     echo
 
     echo "# === TCP算法优化 ==="
-    echo "net.ipv4.tcp_mtu_probing = $ENABLE_MTU_PROBE"
+    echo "net.ipv4.tcp_mtu_probing = ${ENABLE_MTU_PROBE:-1}"
     echo "net.ipv4.tcp_slow_start_after_idle = 0"
     echo "net.ipv4.tcp_no_metrics_save = 0"
     echo "net.ipv4.tcp_ecn = 1"
@@ -474,6 +495,11 @@ write_sysctl_conf() {
     echo "net.ipv4.tcp_retries2 = 5"
     echo "net.ipv4.tcp_synack_retries = 1"
     echo "net.ipv4.tcp_rfc1337 = 0"
+    echo
+    echo "# 参考那套里有的细项（建议保留）"
+    echo "net.ipv4.tcp_early_retrans = 3"
+    echo "net.ipv4.tcp_fack = 1"
+    echo "net.ipv4.tcp_frto = 0"
     echo
 
     echo "# === 内存缓冲区优化（64MB方案）==="
@@ -489,7 +515,7 @@ write_sysctl_conf() {
     echo "net.ipv4.udp_mem = 65536 131072 262144"
     echo
 
-    echo "# === UDP连接优化 ==="
+    echo "# === 转发 / rp_filter（你现在这套就是为代理场景准备的）==="
     echo "net.ipv4.ip_forward = 1"
     echo "net.ipv4.conf.all.forwarding = 1"
     echo "net.ipv4.conf.default.forwarding = 1"
@@ -551,9 +577,9 @@ write_sysctl_conf() {
     echo "fs.protected_symlinks = 1"
     echo
 
-    if [ "$ENABLE_CONNTRACK_TUNE" = "1" ]; then
+    if [ "${ENABLE_CONNTRACK_TUNE:-1}" = "1" ]; then
       echo "# === 连接跟踪优化 ==="
-      echo "net.netfilter.nf_conntrack_max = $NFCT_MAX"
+      echo "net.netfilter.nf_conntrack_max = ${NFCT_MAX:-262144}"
       echo "net.netfilter.nf_conntrack_udp_timeout = 30"
       echo "net.netfilter.nf_conntrack_udp_timeout_stream = 180"
       echo "net.netfilter.nf_conntrack_tcp_timeout_established = 432000"
