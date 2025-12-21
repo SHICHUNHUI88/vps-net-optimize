@@ -75,12 +75,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimiz
 ⚠️安装前请准备好**域名**托管到CF指向VPS的IP不要开小黄云才能执行代码
 
 **步骤：
-
-1️⃣ 选 1 安装  
-2️⃣ 选 2 安装 Sing-box  
-3️⃣ 输入你自己的域名......
-
-不懂就问AI**
+1️⃣ 选 1 安装 ， 2️⃣ 选 2 安装 Sing-box  ，3️⃣ 输入你自己的域名......，不懂就问AI**
 
 ```bash
 wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-a/v2ray-agent/master/install.sh" && chmod 700 /root/install.sh && /root/install.sh
