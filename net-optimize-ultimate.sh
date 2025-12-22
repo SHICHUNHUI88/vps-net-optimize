@@ -880,6 +880,16 @@ fi
 
 sysctl -e --system >/dev/null 2>&1 || true
 
+if command -v iptables >/dev/null 2>&1; then
+  iptables -t filter -C OUTPUT -m conntrack --ctstate NEW -j ACCEPT 2>/dev/null \
+    || iptables -t filter -I OUTPUT 1 -m conntrack --ctstate NEW -j ACCEPT 2>/dev/null || true
+fi
+if command -v curl >/dev/null 2>&1; then
+  curl -4I https://1.1.1.1 --max-time 3 >/dev/null 2>&1 || true
+  curl -4I https://www.google.com --max-time 3 >/dev/null 2>&1 || true
+fi
+
+
 CONFIG_FILE="/etc/net-optimize/config"
 if [ -f "$CONFIG_FILE" ]; then
   . "$CONFIG_FILE"
