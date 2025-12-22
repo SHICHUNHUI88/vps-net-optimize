@@ -76,6 +76,7 @@ CONFIG_DIR="/etc/net-optimize"
 CONFIG_FILE="$CONFIG_DIR/config"
 MODULES_FILE="$CONFIG_DIR/modules.list"
 APPLY_SCRIPT="/usr/local/sbin/net-optimize-apply"
+CONNTRACK_MODULES_CONF="/etc/modules-load.d/conntrack.conf"
 
 # === 3. 核心工具函数 ===
 require_root() {
