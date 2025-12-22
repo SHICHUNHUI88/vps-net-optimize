@@ -16,6 +16,9 @@ set -euo pipefail
 SCRIPT_PATH="/usr/local/sbin/net-optimize-ultimate.sh"
 REMOTE_URL="https://raw.githubusercontent.com/SHICHUNHUI88/vps-net-optimize/main/net-optimize-ultimate.sh"
 
+# conntrack 模块开机加载（systemd）
+CONNTRACK_MODULES_CONF="/etc/modules-load.d/conntrack.conf"
+
 fetch_raw() {
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$1"
@@ -600,24 +603,48 @@ setup_conntrack() {
     return 0
   fi
 
-  echo "🔗 加载连接跟踪模块..."
+  echo "🔗 连接跟踪（conntrack）初始化..."
 
-  local modules=("nf_conntrack" "nf_conntrack_ipv4" "nf_conntrack_ipv6" "nf_conntrack_ftp")
-  local loaded_modules=()
+  # 需要的模块（ipv4/ipv6 在新内核可能是内建，失败不算错）
+  local modules=(
+    nf_conntrack
+    nf_conntrack_netlink
+    nf_conntrack_ftp
+  )
 
-  for mod in "${modules[@]}"; do
-    if modprobe "$mod" 2>/dev/null; then
-      loaded_modules+=("$mod")
-      echo "  ✅ 加载: $mod"
+  # 1️⃣ 运行时加载（尽力而为，不强制失败）
+  local loaded=()
+  for m in "${modules[@]}"; do
+    if modprobe "$m" 2>/dev/null; then
+      loaded+=("$m")
+      echo "  ✅ 已加载模块: $m"
     fi
   done
 
-  if [ ${#loaded_modules[@]} -gt 0 ]; then
-    install -d /etc/modules-load.d
-    printf "%s\n" "${loaded_modules[@]}" | sort -u > /etc/modules-load.d/net-optimize.conf
+  # 2️⃣ 写入 systemd 开机自动加载（幂等）
+  install -d /etc/modules-load.d
+
+  {
+    echo "# Net-Optimize: conntrack modules"
+    for m in "${modules[@]}"; do
+      echo "$m"
+    done
+  } > "$CONNTRACK_MODULES_CONF"
+
+  chmod 644 "$CONNTRACK_MODULES_CONF"
+  echo "  ✅ 已写入开机模块加载: $CONNTRACK_MODULES_CONF"
+
+  # 3️⃣ 记录到 net-optimize 自己的模块清单（给 apply/调试用）
+  install -d "$(dirname "$MODULES_FILE")"
+  printf "%s\n" "${modules[@]}" | sort -u > "$MODULES_FILE"
+
+  # 4️⃣ 校验提示（不作为失败条件）
+  if [ -r /proc/sys/net/netfilter/nf_conntrack_max ]; then
+    echo "  🔎 conntrack 可用，nf_conntrack_max=$(sysctl -n net.netfilter.nf_conntrack_max 2>/dev/null)"
+  else
+    echo "  ⚠️ 未检测到 conntrack sysctl 接口（可能为内建差异）"
   fi
 
-  printf "%s\n" "${loaded_modules[@]}" | sort -u >"$MODULES_FILE"
   echo "✅ 连接跟踪模块配置完成"
 }
 
