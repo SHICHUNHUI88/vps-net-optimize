@@ -299,9 +299,9 @@ clean_old_config() {
   echo "✅ 旧配置清理完成"
 }
 
-# === 5. 工具安装（可选，含 APT 源自愈）===
+# === 5. 工具安装（可选，含 APT 源自愈：按发行版纠错）===
 maybe_install_tools() {
-  if [ "$SKIP_APT" = "1" ]; then
+  if [ "${SKIP_APT:-0}" = "1" ]; then
     echo "⏭️ 跳过工具安装（SKIP_APT=1）"
     return 0
   fi
@@ -311,20 +311,48 @@ maybe_install_tools() {
     return 0
   fi
 
-  # === APT 源自愈：禁用已知错误的 nginx debian mainline 源 ===
-  if [ -f /etc/apt/sources.list.d/nginx.list ] \
-     && grep -q 'nginx.org/packages/mainline/debian' /etc/apt/sources.list.d/nginx.list; then
-    local ts
-    ts="$(date +%F-%H%M%S)"
-    mv /etc/apt/sources.list.d/nginx.list \
-       "/etc/apt/sources.list.d/nginx.list.disabled.$ts"
-    echo "🧹 已禁用错误 nginx 源（debian mainline）：nginx.list"
+  # --- 识别发行版 ---
+  local os_id os_codename
+  os_id="unknown"; os_codename="unknown"
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    os_id="${ID:-unknown}"
+    os_codename="${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}"
   fi
+
+  # --- APT 源自愈：只修“明显跨发行版/跨代号”的 nginx 源 ---
+  # 目标：Ubuntu 上出现 /debian；Debian 上出现 /ubuntu；或出现 noble 但路径是 debian。
+  local f ts
+  ts="$(date +%F-%H%M%S)"
+
+  for f in /etc/apt/sources.list.d/*nginx*.list /etc/apt/sources.list.d/*nginx*.sources; do
+    [ -e "$f" ] || continue
+
+    # Ubuntu：禁用 nginx.org 的 debian 源
+    if [ "$os_id" = "ubuntu" ] && grep -qE 'nginx\.org/packages(/mainline)?/debian' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] Ubuntu 检测到 nginx Debian 源，已禁用：$(basename "$f")"
+      continue
+    fi
+
+    # Debian：禁用 nginx.org 的 ubuntu 源
+    if [ "$os_id" = "debian" ] && grep -qE 'nginx\.org/packages(/mainline)?/ubuntu' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] Debian 检测到 nginx Ubuntu 源，已禁用：$(basename "$f")"
+      continue
+    fi
+
+    # 额外兜底：出现 noble 但路径是 debian（你这次就是这个）
+    if grep -qE 'nginx\.org/packages(/mainline)?/debian.*\bnoble\b' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] 检测到 debian 路径却使用 noble，已禁用：$(basename "$f")"
+      continue
+    fi
+  done
 
   echo "🧰 安装必要工具..."
   check_dpkg_clean
 
-  # 更新索引（失败不终止主流程）
   DEBIAN_FRONTEND=noninteractive apt-get update -y \
     || echo "⚠️ apt update 失败（已忽略，不影响主流程）"
 
@@ -884,93 +912,74 @@ EOF
   echo "✅ 开机自启服务配置完成"
 }
 
-# === 13. 状态检查（完整/修正版：conntrack 统计不再用 ^tcp/^udp）===
-print_status() {
-  echo ""
-  echo "==================== 优化状态报告 ===================="
-
-  echo "📊 基础状态:"
-  echo "  TCP拥塞算法: $(get_sysctl net.ipv4.tcp_congestion_control)"
-  echo "  默认队列: $(get_sysctl net.core.default_qdisc)"
-  echo "  文件句柄限制: $(ulimit -n)"
-  echo "  内存缓冲区 (rmem_default): $(get_sysctl net.core.rmem_default) bytes"
-  echo ""
-
-  echo "🌐 网络状态:"
-  echo "  IP转发: $(get_sysctl net.ipv4.ip_forward)"
-  echo "  路由过滤 (rp_filter): $(get_sysctl net.ipv4.conf.all.rp_filter)"
-  echo "  IPv6禁用: $(get_sysctl net.ipv6.conf.all.disable_ipv6)"
-  echo "  TCP ECN: $(get_sysctl net.ipv4.tcp_ecn)"
-  echo "  TCP FastOpen: $(get_sysctl net.ipv4.tcp_fastopen)"
-  echo ""
-
-  echo "🔗 连接跟踪 (conntrack / nf_conntrack):"
-  if conntrack_available; then
-    echo "  ✅ conntrack 可用（模块或内建）"
-    echo "  nf_conntrack_max: $(get_sysctl net.netfilter.nf_conntrack_max)"
-    echo "  udp_timeout: $(get_sysctl net.netfilter.nf_conntrack_udp_timeout)"
-    echo "  udp_timeout_stream: $(get_sysctl net.netfilter.nf_conntrack_udp_timeout_stream)"
-    echo "  tcp_timeout_established: $(get_sysctl net.netfilter.nf_conntrack_tcp_timeout_established)"
-
-    # 1) 用 conntrack -C 看内核计数（最可靠）
-    if have_cmd conntrack; then
-      local cc
-      cc="$(conntrack -C 2>/dev/null || echo "N/A")"
-      echo "  总连接数 (内核计数器 conntrack -C): $cc"
-    fi
-
-    # 2) /proc/net/nf_conntrack 明细统计（修正版：按字段匹配 tcp/udp）
-    if [ -f /proc/net/nf_conntrack ]; then
-      local tcp_count udp_count other_count total_count
-      total_count="$(wc -l < /proc/net/nf_conntrack 2>/dev/null || echo 0)"
-
-      # 按字段匹配：行里出现独立字段 tcp/udp
-      tcp_count="$(grep -cE '(^|[[:space:]])tcp([[:space:]]|$)' /proc/net/nf_conntrack 2>/dev/null || true)"
-      udp_count="$(grep -cE '(^|[[:space:]])udp([[:space:]]|$)' /proc/net/nf_conntrack 2>/dev/null || true)"
-
-      tcp_count="${tcp_count%%$'\n'*}"; tcp_count="${tcp_count:-0}"
-      udp_count="${udp_count%%$'\n'*}"; udp_count="${udp_count:-0}"
-      other_count="$(( total_count - tcp_count - udp_count ))"
-      [ "$other_count" -lt 0 ] && other_count=0
-
-      echo "  /proc 表记录数:"
-      echo "    TCP entries = $tcp_count"
-      echo "    UDP entries = $udp_count"
-      echo "    Other       = $other_count"
-      echo "    Total       = $total_count"
-      echo "  ℹ️ 说明：如果你那一刻刚好没新建 TCP/UDP 连接，TCP/UDP 也可能很低；跑个 curl/ping 立刻会变。"
-    else
-      echo "  ℹ️ /proc/net/nf_conntrack 不存在（某些系统暴露路径不同）"
-    fi
-  else
-    echo "  ⚠️ conntrack 不可用（内核未启用 netfilter conntrack）"
+# === 5. 工具安装（可选，含 APT 源自愈：按发行版纠错）===
+maybe_install_tools() {
+  if [ "${SKIP_APT:-0}" = "1" ]; then
+    echo "⏭️ 跳过工具安装（SKIP_APT=1）"
+    return 0
   fi
-  echo ""
 
-  echo "📡 MSS Clamping 规则检查（多后端）："
-  local any=0
-  for cmd in iptables iptables-nft iptables-legacy; do
-    if have_cmd "$cmd"; then
-      if "$cmd" -t mangle -L POSTROUTING -n 2>/dev/null | grep -q TCPMSS; then
-        any=1
-        echo "  ✅ $cmd: 检测到 TCPMSS 规则"
-        "$cmd" -t mangle -L POSTROUTING -n -v 2>/dev/null | grep TCPMSS || true
-      else
-        echo "  ℹ️ $cmd: 未发现 TCPMSS 规则"
-      fi
+  if ! have_cmd apt-get; then
+    echo "ℹ️ 非APT系统，跳过工具安装"
+    return 0
+  fi
+
+  # --- 识别发行版 ---
+  local os_id os_codename
+  os_id="unknown"; os_codename="unknown"
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    os_id="${ID:-unknown}"
+    os_codename="${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}"
+  fi
+
+  # --- APT 源自愈：只修“明显跨发行版/跨代号”的 nginx 源 ---
+  # 目标：Ubuntu 上出现 /debian；Debian 上出现 /ubuntu；或出现 noble 但路径是 debian。
+  local f ts
+  ts="$(date +%F-%H%M%S)"
+
+  for f in /etc/apt/sources.list.d/*nginx*.list /etc/apt/sources.list.d/*nginx*.sources; do
+    [ -e "$f" ] || continue
+
+    # Ubuntu：禁用 nginx.org 的 debian 源
+    if [ "$os_id" = "ubuntu" ] && grep -qE 'nginx\.org/packages(/mainline)?/debian' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] Ubuntu 检测到 nginx Debian 源，已禁用：$(basename "$f")"
+      continue
+    fi
+
+    # Debian：禁用 nginx.org 的 ubuntu 源
+    if [ "$os_id" = "debian" ] && grep -qE 'nginx\.org/packages(/mainline)?/ubuntu' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] Debian 检测到 nginx Ubuntu 源，已禁用：$(basename "$f")"
+      continue
+    fi
+
+    # 额外兜底：出现 noble 但路径是 debian（你这次就是这个）
+    if grep -qE 'nginx\.org/packages(/mainline)?/debian.*\bnoble\b' "$f" 2>/dev/null; then
+      mv "$f" "$f.disabled.$ts"
+      echo "🧹 [APT自愈] 检测到 debian 路径却使用 noble，已禁用：$(basename "$f")"
+      continue
     fi
   done
-  [ "$any" -eq 0 ] && echo "  ⚠️ 未在任何后端发现 MSS 规则（可能被别的服务清掉了）"
-  echo ""
 
-  echo "💻 系统信息:"
-  echo "  内核版本: $(uname -r)"
-  echo "  发行版: $(detect_distro)"
-  echo "  内存: $(free -h | awk '/^Mem:/ {print $2}')"
-  echo "  可用内存: $(free -h | awk '/^Mem:/ {print $7}')"
+  echo "🧰 安装必要工具..."
+  check_dpkg_clean
 
-  echo "======================================================"
-  echo ""
+  DEBIAN_FRONTEND=noninteractive apt-get update -y \
+    || echo "⚠️ apt update 失败（已忽略，不影响主流程）"
+
+  local packages=""
+  packages+=" ca-certificates curl wget gnupg2 lsb-release"
+  packages+=" ethtool iproute2 irqbalance chrony"
+  packages+=" nftables conntrack iptables"
+  packages+=" software-properties-common apt-transport-https"
+
+  # shellcheck disable=SC2086
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $packages \
+    || echo "⚠️ 部分包安装失败（已忽略）"
+
+  systemctl enable --now irqbalance chrony 2>/dev/null || true
 }
 
 # === 14. 主流程 ===
