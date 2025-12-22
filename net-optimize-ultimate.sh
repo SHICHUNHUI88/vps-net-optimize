@@ -363,19 +363,19 @@ setup_tcp_congestion() {
 
   # qdisc：真实尝试写入
   if [ "$ENABLE_FQ_PIE" = "1" ] && try_set_qdisc fq_pie; then
-    :
+    FINAL_QDISC="fq_pie"
   elif try_set_qdisc fq; then
-    :
+    FINAL_QDISC="fq"
   elif try_set_qdisc pie; then
-    :
+    FINAL_QDISC="pie"
   else
-    :
+    FINAL_QDISC="$(sysctl -n net.core.default_qdisc 2>/dev/null || echo unknown)"
   fi
 
   # 拥塞算法：BBRplus > BBR > Cubic
   local target_cc="cubic"
   local available_cc
-  available_cc=$(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null || echo "cubic")
+  available_cc="$(sysctl -n net.ipv4.tcp_available_congestion_control 2>/dev/null || echo cubic)"
 
   if echo "$available_cc" | grep -qw bbrplus; then
     target_cc="bbrplus"
@@ -387,15 +387,13 @@ setup_tcp_congestion() {
     sysctl -w net.ipv4.tcp_congestion_control="$target_cc" >/dev/null 2>&1 || true
   fi
 
-  local current_cc current_qdisc
-  current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
-  current_qdisc=$(sysctl -n net.core.default_qdisc 2>/dev/null || echo "unknown")
+  FINAL_CC="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo unknown)"
 
-  echo "✅ 最终生效拥塞算法: $current_cc"
-  echo "✅ 最终生效队列算法: $current_qdisc"
+  echo "✅ 最终生效拥塞算法: $FINAL_CC"
+  echo "✅ 最终生效队列算法: $FINAL_QDISC"
 
-  if [[ "$target_cc" == "bbr"* ]] && [[ "$current_cc" != "$target_cc" ]]; then
-    echo "⚠️ 提示: 尝试启用 $target_cc 失败，系统自动回退到了 $current_cc"
+  if [[ "$target_cc" == bbr* ]] && [[ "$FINAL_CC" != "$target_cc" ]]; then
+    echo "⚠️ 提示: 尝试启用 $target_cc 失败，系统自动回退到了 $FINAL_CC"
   fi
 }
 
@@ -873,7 +871,7 @@ EOF
   echo "✅ 开机自启服务配置完成"
 }
 
-# === 13. 状态检查（完整）===
+# === 13. 状态检查（增强版：conntrack + MSS 多后端识别）===
 print_status() {
   echo ""
   echo "==================== 优化状态报告 ===================="
@@ -881,54 +879,112 @@ print_status() {
   echo "📊 基础状态:"
   echo "  TCP拥塞算法: $(get_sysctl net.ipv4.tcp_congestion_control)"
   echo "  默认队列: $(get_sysctl net.core.default_qdisc)"
-  echo "  文件句柄限制: $(ulimit -n)"
-  echo "  内存缓冲区: $(get_sysctl net.core.rmem_default) bytes"
+  echo "  文件句柄限制: $(ulimit -n 2>/dev/null || echo N/A)"
+  echo "  内存缓冲区(rmem_default): $(get_sysctl net.core.rmem_default) bytes"
   echo ""
 
   echo "🌐 网络状态:"
   echo "  IP转发: $(get_sysctl net.ipv4.ip_forward)"
-  echo "  路由过滤: $(get_sysctl net.ipv4.conf.all.rp_filter)"
-  echo "  IPv6状态: $(get_sysctl net.ipv6.conf.all.disable_ipv6)"
+  echo "  路由过滤(rp_filter): $(get_sysctl net.ipv4.conf.all.rp_filter)"
+  echo "  IPv6禁用: $(get_sysctl net.ipv6.conf.all.disable_ipv6)"
   echo "  TCP ECN: $(get_sysctl net.ipv4.tcp_ecn)"
   echo "  TCP FastOpen: $(get_sysctl net.ipv4.tcp_fastopen)"
   echo ""
 
-  echo "🔗 连接跟踪:"
+  echo "🔗 连接跟踪(conntrack / nf_conntrack):"
   if conntrack_available; then
     echo "  ✅ conntrack 可用（模块或内建）"
-    echo "  最大连接数: $(get_sysctl net.netfilter.nf_conntrack_max)"
+    echo "  nf_conntrack_max: $(get_sysctl net.netfilter.nf_conntrack_max)"
+    echo "  udp_timeout: $(get_sysctl net.netfilter.nf_conntrack_udp_timeout)"
+    echo "  udp_timeout_stream: $(get_sysctl net.netfilter.nf_conntrack_udp_timeout_stream)"
+    echo "  tcp_timeout_established: $(get_sysctl net.netfilter.nf_conntrack_tcp_timeout_established)"
 
-    if [ -f /proc/net/nf_conntrack ]; then
-      udp_count="$(grep -c '^udp' /proc/net/nf_conntrack 2>/dev/null || true)"
-      tcp_count="$(grep -c '^tcp' /proc/net/nf_conntrack 2>/dev/null || true)"
-
-      udp_count="${udp_count%%$'\n'*}"; udp_count="${udp_count:-0}"
-      tcp_count="${tcp_count%%$'\n'*}"; tcp_count="${tcp_count:-0}"
-
-      echo "  UDP连接: $udp_count"
-      echo "  TCP连接: $tcp_count"
-      echo "  总连接数: $((udp_count + tcp_count))"
+    # 1) 优先用 conntrack 工具的内核计数器（最准）
+    if have_cmd conntrack; then
+      local ct_total
+      ct_total="$(conntrack -C 2>/dev/null || true)"
+      if [[ "$ct_total" =~ ^[0-9]+$ ]]; then
+        echo "  总连接数(内核计数器 conntrack -C): $ct_total"
+      else
+        echo "  ℹ️ conntrack -C 不可用/无权限（已跳过）"
+      fi
     else
-      echo "  ℹ️ /proc/net/nf_conntrack 不存在（可能是 nftables / 内核暴露差异）"
+      echo "  ℹ️ 未安装 conntrack 工具（只用 /proc 兜底）"
+    fi
+
+    # 2) 兜底：读 /proc/net/nf_conntrack（这是“当前表里有多少条记录”，可能会瞬间为 0）
+    if [ -f /proc/net/nf_conntrack ]; then
+      local total_lines tcp_count udp_count other_count
+
+      total_lines="$(wc -l < /proc/net/nf_conntrack 2>/dev/null || echo 0)"
+      tcp_count="$(grep -c '^tcp' /proc/net/nf_conntrack 2>/dev/null || true)"
+      udp_count="$(grep -c '^udp' /proc/net/nf_conntrack 2>/dev/null || true)"
+
+      # 防止出现 "0\n0" 这种奇怪输出
+      total_lines="${total_lines%%$'\n'*}"; total_lines="${total_lines:-0}"
+      tcp_count="${tcp_count%%$'\n'*}"; tcp_count="${tcp_count:-0}"
+      udp_count="${udp_count%%$'\n'*}"; udp_count="${udp_count:-0}"
+
+      other_count=$(( total_lines - tcp_count - udp_count ))
+      [ "$other_count" -lt 0 ] && other_count=0
+
+      echo "  /proc 表记录数:"
+      echo "    TCP entries = $tcp_count"
+      echo "    UDP entries = $udp_count"
+      echo "    Other       = $other_count"
+      echo "    Total       = $total_lines"
+      echo "  ℹ️ 说明：这里的 0 通常表示“你跑检测那一刻表里正好没记录”，不是坏；有流量时会立刻涨（你 curl 1.1.1.1 后变 82 就是这个原因）"
+    else
+      echo "  ℹ️ /proc/net/nf_conntrack 不存在（内核/发行版暴露差异或未启用）"
+    fi
+
+    if have_cmd lsmod; then
+      lsmod 2>/dev/null | grep -q '^nf_conntrack' && echo "  ✅ lsmod: nf_conntrack 已加载" || echo "  ℹ️ lsmod 未显示 nf_conntrack（可能是内建，正常）"
     fi
   else
     echo "  ⚠️ conntrack 不可用（内核未启用 netfilter conntrack）"
   fi
   echo ""
 
-  echo "📡 MSS Clamping规则（默认后端 iptables）:"
-  if have_cmd iptables && iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep -q TCPMSS; then
-    iptables -t mangle -L POSTROUTING -n -v 2>/dev/null | grep TCPMSS || true
-  else
-    echo "  ⚠️ 未找到MSS规则（可能当前默认后端不是 iptables；用 iptables-nft/legacy 看）"
+  echo "📡 MSS Clamping 规则检查（多后端）:"
+  local found_any=0
+  local backends=("iptables" "iptables-nft" "iptables-legacy")
+  local b
+
+  for b in "${backends[@]}"; do
+    if have_cmd "$b"; then
+      # 规则数量（mangle/POSTROUTING）
+      local cnt
+      cnt="$("$b" -t mangle -S POSTROUTING 2>/dev/null | grep -c 'TCPMSS' || true)"
+      cnt="${cnt%%$'\n'*}"; cnt="${cnt:-0}"
+
+      if [ "$cnt" -gt 0 ]; then
+        found_any=1
+        echo "  ✅ $b: 检测到 TCPMSS 规则 $cnt 条"
+        # 打印一条示例（含计数更直观）
+        "$b" -t mangle -L POSTROUTING -n -v 2>/dev/null | grep -E 'TCPMSS|Chain POSTROUTING' || true
+        echo ""
+      else
+        echo "  ℹ️ $b: 未发现 TCPMSS 规则"
+      fi
+    else
+      echo "  ℹ️ $b: 未安装"
+    fi
+  done
+
+  if [ "$found_any" -eq 0 ]; then
+    echo "  ⚠️ 三个后端都没看到 TCPMSS："
+    echo "     - 可能 ENABLE_MSS_CLAMP=0"
+    echo "     - 或规则被别的脚本清掉了"
+    echo "     - 或你实际在用 nft 规则但 iptables 前端没显示（需要看 nft list ruleset）"
   fi
   echo ""
 
   echo "💻 系统信息:"
   echo "  内核版本: $(uname -r)"
   echo "  发行版: $(detect_distro)"
-  echo "  内存: $(free -h | awk '/^Mem:/ {print $2}')"
-  echo "  可用内存: $(free -h | awk '/^Mem:/ {print $7}')"
+  echo "  内存: $(free -h 2>/dev/null | awk '/^Mem:/ {print $2}' || echo N/A)"
+  echo "  可用内存: $(free -h 2>/dev/null | awk '/^Mem:/ {print $7}' || echo N/A)"
 
   echo "======================================================"
   echo ""
