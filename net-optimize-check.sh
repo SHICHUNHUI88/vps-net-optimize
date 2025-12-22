@@ -59,7 +59,7 @@ echo "  🔹 wmem_default  = $(get net.core.wmem_default)"
 sep
 echo "🔗 [2] conntrack / netfilter 状态（兼容内建模块）"
 sep
-if has_key net.netfilter.nf_conntrack_max || [[ -d /proc/sys/net/netfilter ]]; then
+if has_key net.netfilter.nf_conntrack_max || [[ -d /proc/sys/net/netfilter ]] || [[ -f /proc/net/nf_conntrack ]]; then
   green "✅ nf_conntrack 可用（模块或内建）"
   echo "  🔸 nf_conntrack_max                 = $(get net.netfilter.nf_conntrack_max)"
   echo "  🔸 nf_conntrack_udp_timeout         = $(get net.netfilter.nf_conntrack_udp_timeout)"
@@ -69,15 +69,29 @@ else
   yellow "ℹ️ nf_conntrack 未启用或不可用"
 fi
 
+# ✅ /proc 里按协议分组统计：很多时候你看到 TCP/UDP=0，是因为表里还有 other（如 ICMP/unknown）
 if [[ -f /proc/net/nf_conntrack ]]; then
-  udp_c="$(safe_grep_count '^udp' /proc/net/nf_conntrack)"
   tcp_c="$(safe_grep_count '^tcp' /proc/net/nf_conntrack)"
+  udp_c="$(safe_grep_count '^udp' /proc/net/nf_conntrack)"
+  other_c="$(safe_grep_count '^(icmp|gre|sctp|udplite|dccp|unknown|ipv6-icmp|icmpv6|esp|ah|.*)$' /proc/net/nf_conntrack)"
+  total_lines="$(wc -l < /proc/net/nf_conntrack 2>/dev/null | tr -d ' ' || echo 0)"
   green "✅ /proc/net/nf_conntrack 可读"
-  echo "  🔸 UDP entries = $udp_c"
   echo "  🔸 TCP entries = $tcp_c"
-  echo "  🔸 Total       = $((udp_c + tcp_c))"
+  echo "  🔸 UDP entries = $udp_c"
+  echo "  🔸 Total lines = $total_lines"
+  # 解释
+  if [[ "$tcp_c" -eq 0 && "$udp_c" -eq 0 && "$total_lines" -gt 0 ]]; then
+    yellow "  ℹ️ 说明：此刻 conntrack 表里主要是 other/非 TCP/UDP 记录，所以 TCP/UDP 可能为 0，但 Total lines 不为 0（属正常）"
+  fi
 else
   yellow "ℹ️ /proc/net/nf_conntrack 不存在（可能是 nft / 内核暴露差异）"
+fi
+
+# ✅ 更权威：conntrack -C 是“内核计数器”，比 grep 更靠谱（有时表瞬间变化）
+if has conntrack; then
+  ccount="$(conntrack -C 2>/dev/null | tr -d ' ' || true)"
+  ccount="${ccount:-N/A}"
+  echo "  🔸 conntrack -C（内核计数器） = $ccount"
 fi
 
 if has lsmod; then
@@ -190,35 +204,25 @@ sep
 echo "🔧 [8] Nginx 源与服务"
 sep
 
-{
-  if ! has apt-cache; then
-    echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
-    return 0
-  fi
+if ! has apt-cache; then
+  echo "ℹ️ 非 apt 系统，跳过 Nginx 检测"
+else
+  echo "📌 nginx 相关 sources（匹配 *nginx*）："
+  ls -l /etc/apt/sources.list.d/*nginx* 2>/dev/null || echo "  (none)"
 
-  # 1) sources 文件展示（兼容 .list / .sources）
-  if ls /etc/apt/sources.list.d/*nginx* >/dev/null 2>&1; then
-    echo "📌 nginx 相关 sources："
-    ls -l /etc/apt/sources.list.d/*nginx* 2>/dev/null || true
-  else
-    echo "ℹ️ 未发现 /etc/apt/sources.list.d/*nginx* 文件"
-  fi
-
-  # 2) nginx.org 源检测（兼容 Debian/Ubuntu / http/https / list/sources / sources.list）
-  if grep -RIEq 'nginx\.org/(packages|keys)' \
-      /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+  # nginx.org 源检测
+  if grep -RIEq 'nginx\.org/(packages|keys)' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     green "✅ 检测到 nginx.org 源"
   else
     echo "ℹ️ 未检测到 nginx.org 源"
   fi
 
-  # 3) ondrej PPA（Ubuntu 常见，可选）
-  if grep -RIEq 'ppa\.launchpadcontent\.net/ondrej/nginx|ondrej.*nginx' \
-      /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+  # ondrej PPA 检测
+  if grep -RIEq 'ppa\.launchpadcontent\.net/ondrej/nginx|ondrej.*nginx' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     green "✅ 检测到 ondrej/nginx PPA 源"
   fi
 
-  # 4) Nginx 本体状态
+  # nginx 状态
   if has nginx; then
     ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
     green "✅ Nginx 版本：$ver"
@@ -227,11 +231,10 @@ sep
     echo "ℹ️ 未安装 Nginx"
   fi
 
-  # 5) APT 候选版本
   echo ""
   echo "apt-cache policy nginx："
   apt-cache policy nginx || true
-}
+fi
 
 sep
 echo "🔁 [9] Nginx 自动更新（cron）"
