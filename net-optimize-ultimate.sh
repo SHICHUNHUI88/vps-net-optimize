@@ -597,7 +597,7 @@ write_sysctl_conf() {
   echo "✅ sysctl 参数已写入并应用：$sysctl_file"
 }
 
-# === 9. 连接跟踪模块加载 ===
+# === 9. 连接跟踪模块加载 + 强制触发（关键）===
 setup_conntrack() {
   if [ "${ENABLE_CONNTRACK_TUNE:-1}" != "1" ]; then
     echo "⏭️ 跳过连接跟踪调优"
@@ -606,13 +606,16 @@ setup_conntrack() {
 
   echo "🔗 连接跟踪（conntrack）初始化..."
 
-  # ✅ 确保变量存在（避免你忘了在顶部加 CONNTRACK_MODULES_CONF 导致空路径写错）
+  # ✅ 防呆：就算你忘记在顶部定义，也不会写到空路径
   : "${CONNTRACK_MODULES_CONF:=/etc/modules-load.d/conntrack.conf}"
 
+  # 需要的模块（失败不算错：有的内核可能内建）
   local modules=(
     nf_conntrack
     nf_conntrack_netlink
     nf_conntrack_ftp
+    nf_nat
+    xt_MASQUERADE
   )
 
   # 1) 运行时尽力加载
@@ -620,10 +623,10 @@ setup_conntrack() {
     modprobe "$m" 2>/dev/null || true
   done
 
-  # 2) 写入 systemd 模块开机加载
+  # 2) 写入开机自动加载（systemd-modules-load）
   install -d /etc/modules-load.d
   {
-    echo "# Net-Optimize: conntrack modules"
+    echo "# Net-Optimize: conntrack/nat modules"
     for m in "${modules[@]}"; do
       echo "$m"
     done
@@ -635,12 +638,19 @@ setup_conntrack() {
   install -d "$(dirname "$MODULES_FILE")"
   printf "%s\n" "${modules[@]}" | sort -u > "$MODULES_FILE"
 
-  # 4) 立即触发一次 modules-load（不靠重启）
+  # 4) 不等重启，立刻让 systemd 加载一次
   systemctl restart systemd-modules-load 2>/dev/null || true
 
-  # 5) 打印一个“最可信”的计数器（别再只看 -L）
+  # 5) ✅ 关键：加一条“无害但会引用 conntrack”的规则，让 conntrack 真正开始记账
+  # 推荐用 INVALID 丢弃：更安全，也不会把防火墙放开
+  if command -v iptables >/dev/null 2>&1; then
+    iptables -t filter -C OUTPUT -m conntrack --ctstate INVALID -j DROP 2>/dev/null \
+      || iptables -t filter -A OUTPUT -m conntrack --ctstate INVALID -j DROP 2>/dev/null || true
+  fi
+
+  # 6) 打印最可信的计数器
   if [ -r /proc/sys/net/netfilter/nf_conntrack_count ]; then
-    echo "  🔎 nf_conntrack_count=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null)"
+    echo "  🔎 nf_conntrack_count=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null || echo 0)"
   fi
 
   echo "✅ 连接跟踪模块配置完成"
