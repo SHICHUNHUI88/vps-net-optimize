@@ -255,23 +255,48 @@ force_apply_sysctl_runtime() {
 clean_old_config() {
   echo "🧹 清理旧配置..."
 
-  # 清理旧服务
-  systemctl stop net-optimize.service 2>/dev/null || true
-  systemctl disable net-optimize.service 2>/dev/null || true
-  rm -f /etc/systemd/system/net-optimize.service
+  local need_clean=0
 
-  # 清理旧规则（只动当前默认后端的 iptables）
+  # 1) 旧 service 文件/配置目录
+  [[ -f /etc/systemd/system/net-optimize.service ]] && need_clean=1
+  [[ -d "$CONFIG_DIR" ]] && need_clean=1
+
+  # 2) 旧 iptables TCPMSS 规则（加 timeout + -w，避免等锁卡死）
   if have_cmd iptables; then
-    iptables -t mangle -S POSTROUTING 2>/dev/null | grep -E '(^-A POSTROUTING .*TCPMSS| TCPMSS )' | while read -r rule; do
-      del_rule="${rule/-A POSTROUTING/-D POSTROUTING}"
-      # shellcheck disable=SC2086
-      iptables -t mangle $del_rule 2>/dev/null || true
-    done
+    if timeout 2s iptables -w 2 -t mangle -S POSTROUTING 2>/dev/null | grep -q TCPMSS; then
+      need_clean=1
+    fi
   fi
 
-  # 不要 rm -rf 整个目录（否则 sysctl-backup 也会被删）
+  # 没发现旧配置：直接跳过
+  if [[ "$need_clean" -eq 0 ]]; then
+    echo "✅ 未发现旧配置，跳过清理"
+    mkdir -p "$CONFIG_DIR"
+    return 0
+  fi
+
+  echo "🔎 发现旧配置，开始清理..."
+
+  # 清理旧服务（加 timeout 防止 systemctl job 卡死）
+  timeout 5s systemctl stop net-optimize.service 2>/dev/null || true
+  timeout 5s systemctl disable net-optimize.service 2>/dev/null || true
+  rm -f /etc/systemd/system/net-optimize.service
+
+  # 清理旧规则（同样加 timeout + -w）
+  if have_cmd iptables; then
+    timeout 3s iptables -w 2 -t mangle -S POSTROUTING 2>/dev/null \
+      | grep -E '(^-A POSTROUTING .*TCPMSS| TCPMSS )' \
+      | while read -r rule; do
+          del_rule="${rule/-A POSTROUTING/-D POSTROUTING}"
+          iptables -w 2 -t mangle $del_rule 2>/dev/null || true
+        done || true
+  fi
+
+  # 清理旧配置文件（保留目录）
   mkdir -p "$CONFIG_DIR"
   rm -f "$CONFIG_FILE" "$MODULES_FILE"
+
+  echo "✅ 旧配置清理完成"
 }
 
 # === 5. 工具安装（可选）===
