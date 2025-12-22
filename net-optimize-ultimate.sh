@@ -65,7 +65,7 @@ echo "========================================================"
 : "${ENABLE_CONNTRACK_TUNE:=1}"
 : "${NFCT_MAX:=262144}"
 : "${ENABLE_NGINX_REPO:=1}"
-: "${SKIP_APT:=1}"
+: "${SKIP_APT:=0}"
 : "${APPLY_AT_BOOT:=1}"
 
 # 路径定义
@@ -701,80 +701,83 @@ EOF
 
 # === 11. Nginx 安装 + 自动更新（工程幂等版）===
 fix_nginx_repo() {
-    if [ "$ENABLE_NGINX_REPO" != "1" ]; then
-        echo "⏭️ 跳过 Nginx 管理"
-        return 0
-    fi
+  if [ "${ENABLE_NGINX_REPO:-0}" != "1" ]; then
+    echo "⏭️ 跳过 Nginx 管理"
+    return 0
+  fi
 
-    # 1. 永远保证：自动更新 cron 存在
-    local cron_file="/etc/cron.d/net-optimize-nginx-update"
+  # 1) 已安装：创建/保持 cron（幂等）
+  if have_cmd nginx; then
+    local ver cron_file="/etc/cron.d/net-optimize-nginx-update"
+    ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
+    echo "ℹ️ 已检测到 Nginx：$ver（保留现有来源）"
+
     if [ ! -f "$cron_file" ]; then
-        cat > "$cron_file" <<'CRON'
+      cat > "$cron_file" <<'CRON'
 # Net-Optimize: monthly nginx auto upgrade
 0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /var/log/nginx-auto-upgrade.log 2>&1
 CRON
-        chmod 644 "$cron_file"
-        echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+      chmod 644 "$cron_file"
+      echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
     else
-        echo "ℹ️ Nginx 自动更新 cron 已存在"
+      echo "ℹ️ Nginx 自动更新 cron 已存在"
     fi
+    return 0
+  fi
 
-    # 2. 检测 nginx 是否已安装
-    if have_cmd nginx; then
-        local ver
-        ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
-        echo "ℹ️ 已检测到 Nginx：$ver（保留现有来源）"
-        return 0
-    fi
+  # 2) 未安装 & 不允许 APT：跳过（不报错，不中断主流程）
+  if [ "${SKIP_APT:-0}" = "1" ]; then
+    echo "⚠️ 未安装 Nginx 且 SKIP_APT=1：跳过 Nginx 安装与 cron（不影响网络优化主流程）"
+    return 0
+  fi
 
-    # 3. nginx 未安装 → 是否允许 APT？
-    if [ "$SKIP_APT" = "1" ]; then
-        echo "❌ 系统未安装 Nginx，但 SKIP_APT=1"
-        echo "👉 请使用以下方式之一："
-        echo "   1) SKIP_APT=0 bash net-optimize-ultimate.sh"
-        echo "   2) 手动安装 nginx 后重新运行脚本"
-        return 1
-    fi
+  # 3) 允许 APT：安装 nginx，再创建 cron
+  if ! have_cmd apt-get; then
+    echo "⚠️ 非 APT 系统：跳过 Nginx 自动安装"
+    return 0
+  fi
 
-    # 4. 安装 nginx（最新版，来源自适应）
-    if ! have_cmd apt-get; then
-        echo "❌ 非 APT 系统，无法自动安装 nginx"
-        return 1
-    fi
+  echo "📦 未检测到 Nginx，开始安装最新版..."
 
-    echo "📦 未检测到 Nginx，开始安装最新版..."
+  . /etc/os-release
+  local distro="$ID"
+  local codename="${VERSION_CODENAME:-stable}"
+  local base="http://nginx.org/packages"
+  [ "$distro" = "ubuntu" ] && base="$base/ubuntu" || base="$base/debian"
+  echo "📌 使用官方源：$base $codename"
 
-    # ---- 发行版信息 ----
-    . /etc/os-release
-    local distro="$ID"
-    local codename="${VERSION_CODENAME:-stable}"
+  curl -fsSL https://nginx.org/keys/nginx_signing.key \
+    | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
 
-    # ---- nginx.org 官方源 ----
-    local base="http://nginx.org/packages"
-    [ "$distro" = "ubuntu" ] && base="$base/ubuntu" || base="$base/debian"
-
-    echo "📌 使用官方源：$base $codename"
-
-    curl -fsSL https://nginx.org/keys/nginx_signing.key \
-        | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
-
-    cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
+  cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
 deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] $base $codename nginx
 EOF
 
-    cat > /etc/apt/preferences.d/99-nginx-official <<'EOF'
+  cat > /etc/apt/preferences.d/99-nginx-official <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
 
-    apt-get update -y
-    apt-get install -y nginx
+  apt-get update -y
+  apt-get install -y nginx || { echo "⚠️ Nginx 安装失败：跳过（不影响主流程）"; return 0; }
 
-    systemctl enable nginx >/dev/null 2>&1 || true
-    systemctl start nginx >/dev/null 2>&1 || true
+  systemctl enable nginx >/dev/null 2>&1 || true
+  systemctl start nginx  >/dev/null 2>&1 || true
 
-    echo "✅ Nginx 最新版安装完成"
+  # 安装成功后再创建 cron
+  local cron_file="/etc/cron.d/net-optimize-nginx-update"
+  if [ ! -f "$cron_file" ]; then
+    cat > "$cron_file" <<'CRON'
+# Net-Optimize: monthly nginx auto upgrade
+0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /var/log/nginx-auto-upgrade.log 2>&1
+CRON
+    chmod 644 "$cron_file"
+    echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+  fi
+
+  echo "✅ Nginx 安装完成"
+  return 0
 }
 
 # === 12. 开机自启服务（同步三后端 MSS 写入）===
