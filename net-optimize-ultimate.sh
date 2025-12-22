@@ -912,74 +912,92 @@ EOF
   echo "✅ 开机自启服务配置完成"
 }
 
-# === 5. 工具安装（可选，含 APT 源自愈：按发行版纠错）===
-maybe_install_tools() {
-  if [ "${SKIP_APT:-0}" = "1" ]; then
-    echo "⏭️ 跳过工具安装（SKIP_APT=1）"
-    return 0
-  fi
+# === 13. 状态检查（完整）===
+print_status() {
+  echo ""
+  echo "==================== 优 化 状 态 报 告 ===================="
 
-  if ! have_cmd apt-get; then
-    echo "ℹ️ 非APT系统，跳过工具安装"
-    return 0
-  fi
+  echo "📊 基 础 状 态 :"
+  echo "  TCP 拥 塞 算 法 : $(get_sysctl net.ipv4.tcp_congestion_control)"
+  echo "  默 认 队 列     : $(get_sysctl net.core.default_qdisc)"
+  echo "  文 件 句 柄 限 制 : $(ulimit -n)"
+  echo "  rmem_default    : $(get_sysctl net.core.rmem_default) bytes"
+  echo ""
 
-  # --- 识别发行版 ---
-  local os_id os_codename
-  os_id="unknown"; os_codename="unknown"
-  if [ -r /etc/os-release ]; then
-    . /etc/os-release
-    os_id="${ID:-unknown}"
-    os_codename="${VERSION_CODENAME:-${UBUNTU_CODENAME:-unknown}}"
-  fi
+  echo "🌐 网 络 状 态 :"
+  echo "  IP 转 发        : $(get_sysctl net.ipv4.ip_forward)"
+  echo "  rp_filter       : $(get_sysctl net.ipv4.conf.all.rp_filter)"
+  echo "  IPv6 禁 用       : $(get_sysctl net.ipv6.conf.all.disable_ipv6)"
+  echo "  TCP ECN         : $(get_sysctl net.ipv4.tcp_ecn)"
+  echo "  TCP FastOpen    : $(get_sysctl net.ipv4.tcp_fastopen)"
+  echo ""
 
-  # --- APT 源自愈：只修“明显跨发行版/跨代号”的 nginx 源 ---
-  # 目标：Ubuntu 上出现 /debian；Debian 上出现 /ubuntu；或出现 noble 但路径是 debian。
-  local f ts
-  ts="$(date +%F-%H%M%S)"
+  echo "🔗 连 接 跟 踪 (conntrack / nf_conntrack):"
+  if conntrack_available; then
+    echo "  ✅ conntrack 可 用（模块或内建）"
+    echo "  nf_conntrack_max          : $(get_sysctl net.netfilter.nf_conntrack_max)"
+    echo "  udp_timeout               : $(get_sysctl net.netfilter.nf_conntrack_udp_timeout)"
+    echo "  udp_timeout_stream        : $(get_sysctl net.netfilter.nf_conntrack_udp_timeout_stream)"
+    echo "  tcp_timeout_established   : $(get_sysctl net.netfilter.nf_conntrack_tcp_timeout_established)"
 
-  for f in /etc/apt/sources.list.d/*nginx*.list /etc/apt/sources.list.d/*nginx*.sources; do
-    [ -e "$f" ] || continue
-
-    # Ubuntu：禁用 nginx.org 的 debian 源
-    if [ "$os_id" = "ubuntu" ] && grep -qE 'nginx\.org/packages(/mainline)?/debian' "$f" 2>/dev/null; then
-      mv "$f" "$f.disabled.$ts"
-      echo "🧹 [APT自愈] Ubuntu 检测到 nginx Debian 源，已禁用：$(basename "$f")"
-      continue
+    # 1) 内核计数器（最可信）
+    if have_cmd conntrack; then
+      local ct_total
+      ct_total="$(conntrack -C 2>/dev/null || echo "N/A")"
+      echo "  总 连 接 数 (conntrack -C) : $ct_total"
     fi
 
-    # Debian：禁用 nginx.org 的 ubuntu 源
-    if [ "$os_id" = "debian" ] && grep -qE 'nginx\.org/packages(/mainline)?/ubuntu' "$f" 2>/dev/null; then
-      mv "$f" "$f.disabled.$ts"
-      echo "🧹 [APT自愈] Debian 检测到 nginx Ubuntu 源，已禁用：$(basename "$f")"
-      continue
+    # 2) /proc 表（给你看“表里有多少条记录”）
+    if [ -f /proc/net/nf_conntrack ]; then
+      local tcp_c udp_c total_c other_c
+      tcp_c="$(grep -c '^tcp' /proc/net/nf_conntrack 2>/dev/null || true)"
+      udp_c="$(grep -c '^udp' /proc/net/nf_conntrack 2>/dev/null || true)"
+      total_c="$(wc -l /proc/net/nf_conntrack 2>/dev/null | awk '{print $1}' || echo 0)"
+
+      # 清理可能的换行/空值
+      tcp_c="${tcp_c%%$'\n'*}"; tcp_c="${tcp_c:-0}"
+      udp_c="${udp_c%%$'\n'*}"; udp_c="${udp_c:-0}"
+      total_c="${total_c%%$'\n'*}"; total_c="${total_c:-0}"
+      other_c=$(( total_c - tcp_c - udp_c ))
+      [ "$other_c" -lt 0 ] && other_c=0
+
+      echo "  /proc 表 记 录 数 :"
+      echo "    TCP entries = $tcp_c"
+      echo "    UDP entries = $udp_c"
+      echo "    Other       = $other_c"
+      echo "    Total       = $total_c"
+    else
+      echo "  ℹ️ /proc/net/nf_conntrack 不存在（可能是 nft / 内核暴露差异）"
     fi
 
-    # 额外兜底：出现 noble 但路径是 debian（你这次就是这个）
-    if grep -qE 'nginx\.org/packages(/mainline)?/debian.*\bnoble\b' "$f" 2>/dev/null; then
-      mv "$f" "$f.disabled.$ts"
-      echo "🧹 [APT自愈] 检测到 debian 路径却使用 noble，已禁用：$(basename "$f")"
-      continue
+    if have_cmd lsmod; then
+      if lsmod | grep -q '^nf_conntrack'; then
+        echo "  ✅ lsmod 可 见 nf_conntrack（非内建）"
+      else
+        echo "  ℹ️ lsmod 未 显 示 nf_conntrack（可 能 是 内 建 ， 正 常 ）"
+      fi
     fi
-  done
+  else
+    echo "  ⚠️ conntrack 不 可 用（内核未启用 netfilter conntrack）"
+  fi
+  echo ""
 
-  echo "🧰 安装必要工具..."
-  check_dpkg_clean
+  echo "📡 MSS Clamping 规 则（默认后端 iptables）:"
+  if have_cmd iptables && iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep -q TCPMSS; then
+    iptables -t mangle -L POSTROUTING -n -v 2>/dev/null | grep -E 'Chain|pkts|bytes|TCPMSS' || true
+  else
+    echo "  ⚠️ 未 找 到 MSS 规 则（可 用 iptables-nft/iptables-legacy 再 看）"
+  fi
+  echo ""
 
-  DEBIAN_FRONTEND=noninteractive apt-get update -y \
-    || echo "⚠️ apt update 失败（已忽略，不影响主流程）"
+  echo "💻 系 统 信 息 :"
+  echo "  内 核 版 本 : $(uname -r)"
+  echo "  发 行 版     : $(detect_distro)"
+  echo "  内 存       : $(free -h | awk '/^Mem:/ {print $2}')"
+  echo "  可 用 内 存   : $(free -h | awk '/^Mem:/ {print $7}')"
 
-  local packages=""
-  packages+=" ca-certificates curl wget gnupg2 lsb-release"
-  packages+=" ethtool iproute2 irqbalance chrony"
-  packages+=" nftables conntrack iptables"
-  packages+=" software-properties-common apt-transport-https"
-
-  # shellcheck disable=SC2086
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $packages \
-    || echo "⚠️ 部分包安装失败（已忽略）"
-
-  systemctl enable --now irqbalance chrony 2>/dev/null || true
+  echo "========================================================="
+  echo ""
 }
 
 # === 14. 主流程 ===
