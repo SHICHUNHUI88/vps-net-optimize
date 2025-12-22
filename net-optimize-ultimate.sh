@@ -599,51 +599,48 @@ write_sysctl_conf() {
 
 # === 9. 连接跟踪模块加载 ===
 setup_conntrack() {
-  if [ "$ENABLE_CONNTRACK_TUNE" != "1" ]; then
+  if [ "${ENABLE_CONNTRACK_TUNE:-1}" != "1" ]; then
     echo "⏭️ 跳过连接跟踪调优"
     return 0
   fi
 
   echo "🔗 连接跟踪（conntrack）初始化..."
 
-  # 需要的模块（ipv4/ipv6 在新内核可能是内建，失败不算错）
+  # ✅ 确保变量存在（避免你忘了在顶部加 CONNTRACK_MODULES_CONF 导致空路径写错）
+  : "${CONNTRACK_MODULES_CONF:=/etc/modules-load.d/conntrack.conf}"
+
   local modules=(
     nf_conntrack
     nf_conntrack_netlink
     nf_conntrack_ftp
   )
 
-  # 1️⃣ 运行时加载（尽力而为，不强制失败）
-  local loaded=()
+  # 1) 运行时尽力加载
   for m in "${modules[@]}"; do
-    if modprobe "$m" 2>/dev/null; then
-      loaded+=("$m")
-      echo "  ✅ 已加载模块: $m"
-    fi
+    modprobe "$m" 2>/dev/null || true
   done
 
-  # 2️⃣ 写入 systemd 开机自动加载（幂等）
+  # 2) 写入 systemd 模块开机加载
   install -d /etc/modules-load.d
-
   {
     echo "# Net-Optimize: conntrack modules"
     for m in "${modules[@]}"; do
       echo "$m"
     done
   } > "$CONNTRACK_MODULES_CONF"
-
   chmod 644 "$CONNTRACK_MODULES_CONF"
   echo "  ✅ 已写入开机模块加载: $CONNTRACK_MODULES_CONF"
 
-  # 3️⃣ 记录到 net-optimize 自己的模块清单（给 apply/调试用）
+  # 3) 记录到你自己的模块清单（给 apply 用）
   install -d "$(dirname "$MODULES_FILE")"
   printf "%s\n" "${modules[@]}" | sort -u > "$MODULES_FILE"
 
-  # 4️⃣ 校验提示（不作为失败条件）
-  if [ -r /proc/sys/net/netfilter/nf_conntrack_max ]; then
-    echo "  🔎 conntrack 可用，nf_conntrack_max=$(sysctl -n net.netfilter.nf_conntrack_max 2>/dev/null)"
-  else
-    echo "  ⚠️ 未检测到 conntrack sysctl 接口（可能为内建差异）"
+  # 4) 立即触发一次 modules-load（不靠重启）
+  systemctl restart systemd-modules-load 2>/dev/null || true
+
+  # 5) 打印一个“最可信”的计数器（别再只看 -L）
+  if [ -r /proc/sys/net/netfilter/nf_conntrack_count ]; then
+    echo "  🔎 nf_conntrack_count=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null)"
   fi
 
   echo "✅ 连接跟踪模块配置完成"
