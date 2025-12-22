@@ -597,7 +597,7 @@ write_sysctl_conf() {
   echo "✅ sysctl 参数已写入并应用：$sysctl_file"
 }
 
-# === 9. 连接跟踪模块加载 + 强制触发（关键）===
+# === 9. 连接跟踪模块加载 + 触发（关键）===
 setup_conntrack() {
   if [ "${ENABLE_CONNTRACK_TUNE:-1}" != "1" ]; then
     echo "⏭️ 跳过连接跟踪调优"
@@ -606,10 +606,9 @@ setup_conntrack() {
 
   echo "🔗 连接跟踪（conntrack）初始化..."
 
-  # ✅ 防呆：就算你忘记在顶部定义，也不会写到空路径
+  # ✅ 兜底：避免你忘了在顶部定义路径
   : "${CONNTRACK_MODULES_CONF:=/etc/modules-load.d/conntrack.conf}"
 
-  # 需要的模块（失败不算错：有的内核可能内建）
   local modules=(
     nf_conntrack
     nf_conntrack_netlink
@@ -618,12 +617,12 @@ setup_conntrack() {
     xt_MASQUERADE
   )
 
-  # 1) 运行时尽力加载
+  # 1) 运行时尽力加载（失败不报错）
   for m in "${modules[@]}"; do
     modprobe "$m" 2>/dev/null || true
   done
 
-  # 2) 写入开机自动加载（systemd-modules-load）
+  # 2) 写入 systemd 开机自动加载
   install -d /etc/modules-load.d
   {
     echo "# Net-Optimize: conntrack/nat modules"
@@ -634,26 +633,31 @@ setup_conntrack() {
   chmod 644 "$CONNTRACK_MODULES_CONF"
   echo "  ✅ 已写入开机模块加载: $CONNTRACK_MODULES_CONF"
 
-  # 3) 记录到你自己的模块清单（给 apply 用）
+  # 3) 记录到你自己的模块清单（给 apply/调试用）
   install -d "$(dirname "$MODULES_FILE")"
   printf "%s\n" "${modules[@]}" | sort -u > "$MODULES_FILE"
 
-  # 4) 不等重启，立刻让 systemd 加载一次
+  # 4) 不靠重启，立刻让 systemd-modules-load 吃进去
   systemctl restart systemd-modules-load 2>/dev/null || true
 
-  # 5) ✅ 关键：加一条“无害但会引用 conntrack”的规则，让 conntrack 真正开始记账
-  # 推荐用 INVALID 丢弃：更安全，也不会把防火墙放开
+  # 5) ✅ 关键：写入“触发 conntrack”的安全规则（INVALID 丢弃）
+  #    没有这步，你就会重启后又变 0（因为没规则触发跟踪）
   if command -v iptables >/dev/null 2>&1; then
+    iptables -t filter -C INPUT  -m conntrack --ctstate INVALID -j DROP 2>/dev/null \
+      || iptables -t filter -I INPUT 1 -m conntrack --ctstate INVALID -j DROP
+
     iptables -t filter -C OUTPUT -m conntrack --ctstate INVALID -j DROP 2>/dev/null \
-      || iptables -t filter -A OUTPUT -m conntrack --ctstate INVALID -j DROP 2>/dev/null || true
+      || iptables -t filter -I OUTPUT 1 -m conntrack --ctstate INVALID -j DROP
+
+    echo "  ✅ 已写入 conntrack 触发规则（INVALID -> DROP）：INPUT/OUTPUT"
   fi
 
-  # 6) 打印最可信的计数器
+  # 6) 打印最可信计数器（不保证立刻>0，得有流量才会涨）
   if [ -r /proc/sys/net/netfilter/nf_conntrack_count ]; then
-    echo "  🔎 nf_conntrack_count=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null || echo 0)"
+    echo "  🔎 nf_conntrack_count=$(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null)"
   fi
 
-  echo "✅ 连接跟踪模块配置完成"
+  echo "✅ 连接跟踪配置完成"
 }
 
 # === 10. MSS Clamping 依赖：出口接口探测 ===
