@@ -777,73 +777,138 @@ EOF
     echo "✅ MSS Clamping 设置完成"
 }
 
-# === 11. Nginx 安装 + 自动更新（工程幂等版）===
+# === 11. Nginx 安装 + 自动更新（共存双源/工程幂等版）===
 fix_nginx_repo() {
   if [ "${ENABLE_NGINX_REPO:-0}" != "1" ]; then
     echo "⏭️ 跳过 Nginx 管理"
     return 0
   fi
 
-  # 1) 已安装：创建/保持 cron（幂等）
-  if have_cmd nginx; then
-    local ver cron_file="/etc/cron.d/net-optimize-nginx-update"
-    ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
-    echo "ℹ️ 已检测到 Nginx：$ver（保留现有来源）"
+  # 0) 不允许 APT：只做 cron/提示（不影响主流程）
+  if [ "${SKIP_APT:-0}" = "1" ]; then
+    if have_cmd nginx; then
+      local ver cron_file="/etc/cron.d/net-optimize-nginx-update"
+      ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
+      echo "ℹ️ 已检测到 Nginx：$ver（SKIP_APT=1：不改源）"
 
-    if [ ! -f "$cron_file" ]; then
-      cat > "$cron_file" <<'CRON'
+      if [ ! -f "$cron_file" ]; then
+        cat > "$cron_file" <<'CRON'
 # Net-Optimize: monthly nginx auto upgrade
 0 3 1 * * root DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install --only-upgrade -y nginx > /var/log/nginx-auto-upgrade.log 2>&1
 CRON
-      chmod 644 "$cron_file"
-      echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+        chmod 644 "$cron_file"
+        echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+      else
+        echo "ℹ️ Nginx 自动更新 cron 已存在"
+      fi
     else
-      echo "ℹ️ Nginx 自动更新 cron 已存在"
+      echo "⚠️ 未安装 Nginx 且 SKIP_APT=1：跳过安装/源配置/cron（不影响主流程）"
     fi
     return 0
   fi
 
-  # 2) 未安装 & 不允许 APT：跳过（不报错，不中断主流程）
-  if [ "${SKIP_APT:-0}" = "1" ]; then
-    echo "⚠️ 未安装 Nginx 且 SKIP_APT=1：跳过 Nginx 安装与 cron（不影响网络优化主流程）"
-    return 0
-  fi
-
-  # 3) 允许 APT：安装 nginx，再创建 cron
+  # 1) APT 工具检查
   if ! have_cmd apt-get; then
-    echo "⚠️ 非 APT 系统：跳过 Nginx 自动安装"
+    echo "⚠️ 非 APT 系统：跳过 Nginx 管理"
     return 0
   fi
 
-  echo "📦 未检测到 Nginx，开始安装最新版..."
-
-  . /etc/os-release
-  local distro="$ID"
+  # 2) 读取系统信息
+  . /etc/os-release || true
+  local distro="${ID:-}"
   local codename="${VERSION_CODENAME:-stable}"
+
+  # 3) 依赖（add-apt-repository / gpg / curl）
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y >/dev/null 2>&1 || true
+  apt-get install -y ca-certificates curl gnupg lsb-release software-properties-common >/dev/null 2>&1 || true
+
+  # 4) 确保 nginx.org 官方源存在（Deb822 以外：沿用你现在的 list + keyring）
+  local nginx_keyring="/usr/share/keyrings/nginx-archive-keyring.gpg"
+  local nginx_official_list="/etc/apt/sources.list.d/nginx-official.list"
+  local nginx_pin="/etc/apt/preferences.d/99-nginx-official"
+
+  if [ ! -s "$nginx_keyring" ]; then
+    curl -fsSL https://nginx.org/keys/nginx_signing.key \
+      | gpg --dearmor -o "$nginx_keyring"
+    chmod 644 "$nginx_keyring" || true
+    echo "✅ 已写入 nginx.org keyring"
+  fi
+
+  # base url
   local base="http://nginx.org/packages"
-  [ "$distro" = "ubuntu" ] && base="$base/ubuntu" || base="$base/debian"
-  echo "📌 使用官方源：$base $codename"
+  if [ "$distro" = "ubuntu" ]; then
+    base="$base/ubuntu"
+  else
+    base="$base/debian"
+  fi
 
-  curl -fsSL https://nginx.org/keys/nginx_signing.key \
-    | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg
-
-  cat > /etc/apt/sources.list.d/nginx-official.list <<EOF
-deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] $base $codename nginx
+  if [ ! -f "$nginx_official_list" ] || ! grep -q "nginx.org/packages" "$nginx_official_list" 2>/dev/null; then
+    cat > "$nginx_official_list" <<EOF
+deb [signed-by=$nginx_keyring] $base $codename nginx
 EOF
+    echo "✅ 已配置 nginx.org 官方源：$base $codename"
+  else
+    echo "ℹ️ nginx.org 官方源已存在"
+  fi
 
-  cat > /etc/apt/preferences.d/99-nginx-official <<'EOF'
+  # Pin nginx.org 为最高优先级（默认用官方源）
+  if [ ! -f "$nginx_pin" ] || ! grep -q "origin nginx.org" "$nginx_pin" 2>/dev/null; then
+    cat > "$nginx_pin" <<'EOF'
 Package: nginx*
 Pin: origin nginx.org
 Pin-Priority: 1001
 EOF
+    echo "✅ 已设置 nginx.org Pin=1001（默认优先）"
+  else
+    echo "ℹ️ nginx.org Pin 已存在"
+  fi
 
-  apt-get update -y
-  apt-get install -y nginx || { echo "⚠️ Nginx 安装失败：跳过（不影响主流程）"; return 0; }
+  # 5) 确保 ondrej/nginx PPA 共存（Ubuntu 才有意义）
+  #    注意：不做 PPA 的强 Pin，让它作为备胎，避免抢占 nginx.org
+  if [ "$distro" = "ubuntu" ]; then
+    local has_ondrej=0
+    # 常见文件名：ondrej-ubuntu-nginx-noble.sources / .list
+    if ls /etc/apt/sources.list.d/*ondrej*nginx* >/dev/null 2>&1; then
+      has_ondrej=1
+    else
+      # 兜底：在 sources 内容里搜
+      if grep -R "ppa.launchpadcontent.net/ondrej/nginx" /etc/apt/sources.list.d >/dev/null 2>&1; then
+        has_ondrej=1
+      fi
+    fi
 
-  systemctl enable nginx >/dev/null 2>&1 || true
-  systemctl start nginx  >/dev/null 2>&1 || true
+    if [ "$has_ondrej" = "1" ]; then
+      echo "ℹ️ 已检测到 ondrej/nginx PPA 源（共存保留）"
+    else
+      # 幂等添加：add-apt-repository 会自动处理 key/sources
+      add-apt-repository -y ppa:ondrej/nginx >/dev/null 2>&1 || true
+      # 再确认一次
+      if grep -R "ppa.launchpadcontent.net/ondrej/nginx" /etc/apt/sources.list.d >/dev/null 2>&1; then
+        echo "✅ 已添加 ondrej/nginx PPA 源（共存备胎）"
+      else
+        echo "⚠️ ondrej/nginx PPA 添加失败：继续（不影响主流程）"
+      fi
+    fi
+  else
+    echo "ℹ️ 非 Ubuntu：跳过 ondrej/nginx PPA（仍保留 nginx.org 官方源）"
+  fi
 
-  # 安装成功后再创建 cron
+  # 6) 安装/确认 nginx（存在则不重装）
+  if have_cmd nginx; then
+    local ver
+    ver="$(nginx -v 2>&1 | awk -F/ '{print $2}')"
+    echo "ℹ️ 已检测到 Nginx：$ver（双源共存，默认优先 nginx.org）"
+  else
+    echo "📦 未检测到 Nginx，开始安装（默认按 Pin 优先 nginx.org）..."
+    apt-get update -y
+    apt-get install -y nginx || { echo "⚠️ Nginx 安装失败：跳过（不影响主流程）"; return 0; }
+    systemctl enable nginx >/dev/null 2>&1 || true
+    systemctl start nginx  >/dev/null 2>&1 || true
+    echo "✅ Nginx 安装完成"
+  fi
+
+  # 7) cron（幂等）
   local cron_file="/etc/cron.d/net-optimize-nginx-update"
   if [ ! -f "$cron_file" ]; then
     cat > "$cron_file" <<'CRON'
@@ -852,9 +917,10 @@ EOF
 CRON
     chmod 644 "$cron_file"
     echo "✅ 已创建 Nginx 自动更新 cron（每月一次）"
+  else
+    echo "ℹ️ Nginx 自动更新 cron 已存在"
   fi
 
-  echo "✅ Nginx 安装完成"
   return 0
 }
 
