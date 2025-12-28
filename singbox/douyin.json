@@ -1,0 +1,83 @@
+{
+  "version": 3,
+  "rules": [
+    {
+      "package_name": [
+        "com.ss.android.ugc.aweme",
+        "com.ss.android.ugc.aweme.lite",
+        "com.ss.android.ugc.live",
+        "com.ss.android.ugc.aweme.beta",
+        "com.ss.android.ugc.aweme.youth"
+      ]
+    },
+    {
+      "domain_suffix": [
+        "amemv.com",
+        "douyin.com",
+        "douyincdn.com",
+        "douyinfe.com",
+        "douyinlive.com",
+        "douyinpic.com",
+        "douyinstatic.com",
+        "douyinvod.com",
+        "idouyinvod.com",
+        "iesdouyin.com",
+        "pstatp.com",
+        "ipstatp.com",
+        "ixigua.com",
+        "ixiguavideo.com",
+        "toutiao.com",
+        "toutiaocdn.com",
+        "toutiaocloud.com",
+        "toutiaovod.com",
+        "huoshan.com",
+        "huoshanzhibo.com",
+        "ppxvod.com",
+        "ppxcdn.com",
+        "ixgvideo.com",
+        "bytedance.com",
+        "bytedns.net",
+        "bytednsdoc.com",
+        "bytecdn.cn",
+        "byteimg.com",
+        "bytetcc.com",
+        "bytetos.com",
+        "capcut.com",
+        "volccdn.com",
+        "feiliao.com",
+        "fanqienovel.com",
+        "acomic.com",
+        "byteoversea.com",
+        "musical.ly",
+        "goofish.com",
+        "snssdk.com",
+        "ndcpp.com"
+      ]
+    },
+    {
+      "domain": [
+        "lf3-static.bytednsdoc.com",
+        "v5-dy-o-abtest.zjcdn.com"
+      ]
+    },
+    {
+      "domain_keyword": [
+        "ndcpp",
+        "amemv",
+        "douyincdn",
+        "douyin",
+        "toutiao",
+        "bytedance",
+        "bytedns",
+        "bytecdn",
+        "byteimg",
+        "bytetos",
+        "volc",
+        "ppx",
+        "ixigua",
+        "huoshan",
+        "snssdk"
+      ]
+    }
+  ]
+}
