@@ -214,23 +214,40 @@ payload:
   - DOMAIN-KEYWORD,baitiao
   - DOMAIN-KEYWORD,jingdong
 
-  # 中国主要证券类 App 规则集 (ClashMeta)
-  # 📊 同花顺 iFinD / 10jqka
+  # ==== 📊 同花顺 (10jqka / iFinD) ====
+  # 进程分流 (Android)
   - PROCESS-NAME,com.hexin.plat.android
   - PROCESS-NAME,com.hexin.android.stock
   - PROCESS-NAME,com.hexin.passport
+  # 核心业务与 API
   - DOMAIN-SUFFIX,10jqka.com.cn
-  - DOMAIN-SUFFIX,ifind.com.cn
   - DOMAIN-SUFFIX,ths123.com
+  - DOMAIN-SUFFIX,ths123.com.cn
   - DOMAIN-SUFFIX,hexin.cn
-  - DOMAIN-SUFFIX,api.10jqka.com.cn
-  - DOMAIN-SUFFIX,login.10jqka.com.cn
-  - DOMAIN-SUFFIX,upass.10jqka.com.cn
-  - DOMAIN-SUFFIX,push2.eastmoney.com   
+  - DOMAIN-SUFFIX,flush.com.cn
+  - DOMAIN-SUFFIX,ifind.com.cn
+  - DOMAIN-SUFFIX,thsi.cn
+  - DOMAIN-SUFFIX,iwencai.com
+  - DOMAIN-SUFFIX,zijieapi.com
+  # 行情、推送与静态资源 (CDN)
+  - DOMAIN-SUFFIX,thsimg.com
+  - DOMAIN-SUFFIX,thskline.com
+  - DOMAIN-SUFFIX,ths666.com
+  - DOMAIN-SUFFIX,ths8.com
+  - DOMAIN-SUFFIX,ths8.cn
+  - DOMAIN-SUFFIX,my710.com
+  # 子业务 (基金/金融工具)
+  - DOMAIN-SUFFIX,fund123.cn
+  - DOMAIN-SUFFIX,998000.com
+  - DOMAIN-SUFFIX,itdh.com.cn
+  # 自治系统兜底 (ASN)
+  - IP-ASN,58519,no-resolve
+  # 🔑 关键词 (兜底防漏网)
   - DOMAIN-KEYWORD,10jqka
   - DOMAIN-KEYWORD,ifind
   - DOMAIN-KEYWORD,hexin
   - DOMAIN-KEYWORD,ths
+  - DOMAIN-KEYWORD,thskline
 
   # 📈 平安证券 Ping An Securities
   - PROCESS-NAME,com.pingan.securities
