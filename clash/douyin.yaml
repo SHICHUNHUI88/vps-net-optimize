@@ -1,10 +1,11 @@
-payload:
+Payload:
   # ==== 字节跳动系 应用 & 服务 ====
   - PROCESS-NAME,com.ss.android.ugc.aweme
   - PROCESS-NAME,com.ss.android.ugc.aweme.lite
   - PROCESS-NAME,com.ss.android.ugc.live
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
+  
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
@@ -16,12 +17,14 @@ payload:
   - DOMAIN-SUFFIX,idouyinvod.com
   - DOMAIN-SUFFIX,iesdouyin.com
   - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,pstatp.com.cn
   - DOMAIN-SUFFIX,ipstatp.com
   - DOMAIN-SUFFIX,ixigua.com
   - DOMAIN-SUFFIX,ixiguavideo.com
   - DOMAIN-SUFFIX,toutiao.com
   - DOMAIN-SUFFIX,toutiaocdn.com
   - DOMAIN-SUFFIX,toutiaocloud.com
+  - DOMAIN-SUFFIX,toutiaostatic.com
   - DOMAIN-SUFFIX,toutiaovod.com
   - DOMAIN-SUFFIX,huoshan.com
   - DOMAIN-SUFFIX,huoshanzhibo.com
@@ -33,6 +36,7 @@ payload:
   - DOMAIN-SUFFIX,bytednsdoc.com
   - DOMAIN-SUFFIX,bytecdn.cn
   - DOMAIN-SUFFIX,byteimg.com
+  - DOMAIN-SUFFIX,ibyteimg.com
   - DOMAIN-SUFFIX,bytetcc.com
   - DOMAIN-SUFFIX,bytetos.com
   - DOMAIN-SUFFIX,capcut.com
@@ -45,8 +49,8 @@ payload:
   - DOMAIN-SUFFIX,goofish.com
   - DOMAIN-SUFFIX,snssdk.com
   - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com
-  # 火山引擎与基础服务
+  - DOMAIN,v5-dy-o-abtest.zjcdn.com  
+  # 火山引擎与基础服务 (含 AI 组件)
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
   - DOMAIN-SUFFIX,byteicdn.com
@@ -54,10 +58,10 @@ payload:
   - DOMAIN-SUFFIX,zijieapi.com
   - DOMAIN-SUFFIX,feelgood.cn
   - DOMAIN-SUFFIX,bdurl.net
-  - DOMAIN-SUFFIX,vgnrt.com
+  - DOMAIN-SUFFIX,vgnrt.com  
   # ❓ 抖音不知域名
-  - DOMAIN-SUFFIX,ndcpp.com
-  # 🔑 关键词（兜底防漏网）
+  - DOMAIN-SUFFIX,ndcpp.com  
+  # 🔑 关键词全覆盖
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
   - DOMAIN-KEYWORD,douyincdn
@@ -76,6 +80,6 @@ payload:
   - DOMAIN-KEYWORD,zijie
   - DOMAIN-KEYWORD,volcengine
   - DOMAIN-KEYWORD,volces
-  # ==== ASN ====
-  - IP-ASN,138667
-  - IP-ASN,396986
+  # ==== ASN 兜底 ====
+  - IP-ASN,138667,no-resolve
+  - IP-ASN,396986,no-resolve
