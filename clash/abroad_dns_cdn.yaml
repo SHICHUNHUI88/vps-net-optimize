@@ -314,45 +314,49 @@ payload:
   - DOMAIN-SUFFIX,ghstatic.net
   - DOMAIN-SUFFIX,github.community
   - DOMAIN-SUFFIX,github.blog
-  # ==== 🐙 API 与接口 ====
+  - DOMAIN-SUFFIX,githubcloud.com
+  # 🐙 API 与接口 
   - DOMAIN-SUFFIX,api.github.com
   - DOMAIN-SUFFIX,uploads.github.com
   - DOMAIN-SUFFIX,objects.githubusercontent.com
   - DOMAIN-SUFFIX,codeload.github.com
   - DOMAIN-SUFFIX,raw.githubusercontent.com
-  # ==== 🐙 Actions / Packages / CI-CD ====
+  - DOMAIN-SUFFIX,pkg.github.com
+  - DOMAIN-SUFFIX,graphql.github.com
+  # 🐙 Actions / Packages / CI-CD 
   - DOMAIN-SUFFIX,actions.githubusercontent.com
   - DOMAIN-SUFFIX,ghcr.io
   - DOMAIN-SUFFIX,github.dev
   - DOMAIN-SUFFIX,githubnext.com
-  # ==== 🐙 静态资源与镜像 ====
+  # 🐙 静态资源与镜像 (含 AWS 存储重定向) 
   - DOMAIN-SUFFIX,avatars.githubusercontent.com
   - DOMAIN-SUFFIX,favicons.githubusercontent.com
   - DOMAIN-SUFFIX,user-images.githubusercontent.com
   - DOMAIN-SUFFIX,cloud.githubusercontent.com
-  # ==== 🐙 GitHub Copilot / AI / Codespaces ====
+  - DOMAIN,github-cloud.s3.amazonaws.com
+  # 🐙 GitHub Copilot / AI / Codespaces 
   - DOMAIN-SUFFIX,githubcopilot.com
   - DOMAIN-SUFFIX,copilot-proxy.githubusercontent.com
   - DOMAIN-SUFFIX,codespaces.githubusercontent.com
   - DOMAIN-SUFFIX,visualstudio.com
   - DOMAIN-SUFFIX,vsassets.io
-  # ==== 🐙 其他 GitHub 相关服务 ====
+  - DOMAIN-SUFFIX,vscodestatistics.com
+  # 🐙 其他相关服务 
   - DOMAIN-SUFFIX,npmjs.com
   - DOMAIN-SUFFIX,dependabot.com
   - DOMAIN-SUFFIX,git.io
   - DOMAIN-SUFFIX,myoctocat.com
-  - DOMAIN-SUFFIX,graphql.github.com
   - DOMAIN-SUFFIX,education.github.com
   - DOMAIN-SUFFIX,enterprise.github.com
+  # 🐙 关键词与ASN 
   - DOMAIN-KEYWORD,github
+  - IP-ASN,36459,no-resolve
 
   # 📲（Meta）Android / iOS 进程名匹配
-  # === Instagram ===
   - PROCESS-NAME,com.instagram.android
   - PROCESS-NAME,com.instagram.barcelona
   - PROCESS-NAME,com.instagram.direct
   - PROCESS-NAME,com.instagram.lite
-  # === Facebook ===
   - PROCESS-NAME,com.facebook.katana
   - PROCESS-NAME,com.facebook.lite
   - PROCESS-NAME,com.facebook.orca
@@ -360,17 +364,12 @@ payload:
   - PROCESS-NAME,com.facebook.appmanager
   - PROCESS-NAME,com.facebook.services
   - PROCESS-NAME,com.facebook.system
-  # === WhatsApp ===
   - PROCESS-NAME,com.whatsapp
   - PROCESS-NAME,com.whatsapp.w4b
-  # === Messenger Lite ===
-  - PROCESS-NAME,com.facebook.mlite
-  # === Meta VR / AR ===
   - PROCESS-NAME,com.oculus.vrshell
   - PROCESS-NAME,com.oculus.ocms
   - PROCESS-NAME,com.meta.quest
   - PROCESS-NAME,com.meta.oculus
-  # 📲（Meta）域名规则
   # === Instagram ===
   - DOMAIN-SUFFIX,instagram.com
   - DOMAIN-SUFFIX,instagr.am
@@ -382,29 +381,39 @@ payload:
   # === Facebook 核心服务 ===
   - DOMAIN-SUFFIX,facebook.com
   - DOMAIN-SUFFIX,facebook.net
+  - DOMAIN-SUFFIX,facebook.org
+  - DOMAIN-SUFFIX,fb.com
+  - DOMAIN-SUFFIX,fb.me
   - DOMAIN-SUFFIX,fbcdn.net
   - DOMAIN-SUFFIX,fbcdn.com
   - DOMAIN-SUFFIX,fbsbx.com
+  - DOMAIN-SUFFIX,tfbnw.net
   - DOMAIN-SUFFIX,b-graph.facebook.com
   - DOMAIN-SUFFIX,edge-mqtt.facebook.com
   - DOMAIN-SUFFIX,star.c10r.facebook.com
   # === Messenger ===
   - DOMAIN-SUFFIX,messenger.com
   - DOMAIN-SUFFIX,msgr.io
+  - DOMAIN-SUFFIX,m.me
   # === WhatsApp ===
   - DOMAIN-SUFFIX,whatsapp.net
   - DOMAIN-SUFFIX,whatsapp.com
   - DOMAIN-SUFFIX,web.whatsapp.com
-  # === Threads / Instagram 社交扩展 ===
+  - DOMAIN-SUFFIX,wa.me
+  # === Threads & Meta AI ===
   - DOMAIN-SUFFIX,threads.net
   - DOMAIN-SUFFIX,threads.com
-  - DOMAIN-SUFFIX,threads.instagram.com
-  # === 必要的辅助 CDN / 域名 ===
-  - DOMAIN-SUFFIX,xx.fbcdn.net
-  - DOMAIN-SUFFIX,meta.com
-  - DOMAIN-SUFFIX,oculus.com
   - DOMAIN-SUFFIX,meta.ai
+  - DOMAIN-SUFFIX,meta.com
   - DOMAIN-SUFFIX,metacdn.net
+  - DOMAIN-SUFFIX,llm.meta.com
+  # === Oculus / Quest VR ===
+  - DOMAIN-SUFFIX,oculus.com
+  - DOMAIN-SUFFIX,oculuscdn.com
+  - DOMAIN-SUFFIX,facebook.com/quest
+  # ==== 核心 ASN (极其推荐，解决延迟) ====
+  - IP-ASN,32934,no-resolve
+  - IP-ASN,63293,no-resolve
   # === 核心关键词防漏 ===
   - DOMAIN-KEYWORD,instagram
   - DOMAIN-KEYWORD,fbcdn
