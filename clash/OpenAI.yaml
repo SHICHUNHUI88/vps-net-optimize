@@ -32,6 +32,9 @@ payload:
   - DOMAIN,o33249.ingest.sentry.io
   - DOMAIN,rum.browser-intake-datadoghq.com
   - DOMAIN,setup.auth.openai.com
+  - DOMAIN,ab.chatgpt.com
+  - DOMAIN,canary.statsig.com
+  - DOMAIN,files.oaiusercontent.com
 
   # ==== OpenAI 主站 ====
   - DOMAIN-SUFFIX,openai.com
@@ -72,6 +75,9 @@ payload:
   - DOMAIN-SUFFIX,host.livekit.cloud
   - DOMAIN-SUFFIX,turn.livekit.cloud
   - DOMAIN-SUFFIX,livekit.io
+  - DOMAIN-SUFFIX,oaifree.com
+  - DOMAIN-SUFFIX,oai.com             
+  - DOMAIN-SUFFIX,chat.com
 
   # ==== 验证服务 Arkose Labs ====
   - DOMAIN-SUFFIX,client-api.arkoselabs.com
@@ -124,6 +130,7 @@ payload:
   - DOMAIN-KEYWORD,gpt
   - DOMAIN-KEYWORD,chatgpt
   - DOMAIN-KEYWORD,oai
+  - DOMAIN-KEYWORD,livekit
 
   # ========== IP / ASN 规则 ==========
   - IP-CIDR,24.199.123.28/32
