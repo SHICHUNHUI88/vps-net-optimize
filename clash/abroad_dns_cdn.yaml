@@ -142,38 +142,45 @@ payload:
 
   # ==== TikTok （海外业务总表） ====
   - PROCESS-NAME,com.zhiliaoapp.musically
-  - PROCESS-NAME,com.ss.android.ugc.trill
   - PROCESS-NAME,com.zhiliaoapp.musically.go
+  - PROCESS-NAME,com.ss.android.ugc.trill
   - PROCESS-NAME,com.tiktok.tv
   - PROCESS-NAME,com.ss.android.ugc.aweme.now
   - PROCESS-NAME,com.ss.android.ugc.aweme.shop
+  # 🌐 核心业务域名
   - DOMAIN-SUFFIX,tiktok.com
   - DOMAIN-SUFFIX,tiktokv.com
   - DOMAIN-SUFFIX,tiktokv.us
+  - DOMAIN-SUFFIX,tiktok.us
+  - DOMAIN-SUFFIX,tiktokglobal.com
+  - DOMAIN-SUFFIX,tiktok-browser.com
+  - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,ttlive.com
+  # 📦 静态资源与视频流 (CDN)
   - DOMAIN-SUFFIX,tiktokcdn.com
   - DOMAIN-SUFFIX,tiktokcdn-us.com
   - DOMAIN-SUFFIX,tiktoklive.com
-  - DOMAIN-SUFFIX,tiktok-browser.com
-  - DOMAIN-SUFFIX,ttlive.com
   - DOMAIN-SUFFIX,ttwstatic.com
-  - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,muscdn.com
   - DOMAIN-SUFFIX,ibyteimg.com
   - DOMAIN-SUFFIX,ipstatp.com
-  - DOMAIN-SUFFIX,byteoversea.com
-  - DOMAIN-SUFFIX,ibytedtos.com
-  - DOMAIN-SUFFIX,ibytedapm.com
-  - DOMAIN-SUFFIX,tiktokshop.com
-  - DOMAIN-SUFFIX,bytedance.map.fastly.net
-  - DOMAIN-SUFFIX,gettr.com
   - DOMAIN-SUFFIX,vegslb.com
   - DOMAIN-SUFFIX,skytigris.cn
-  # tiktok兜底关键词
-  - DOMAIN-KEYWORD,tiktokcdn
-  - DOMAIN-KEYWORD,ibyteimg
-  - DOMAIN-KEYWORD,ibytedtos  
+  - DOMAIN-SUFFIX,p16-tiktokcdn-com.akamaized.net
+  # 🛠️ 海外后端服务与性能监控
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,byteoversea.net
+  - DOMAIN-SUFFIX,ibytedtos.com
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,bytedapm.com
+  - DOMAIN-SUFFIX,bytegecko.com
+  - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,bytedance.map.fastly.net
+  # 🔑 关键词兜底 (精准化)
   - DOMAIN-KEYWORD,tiktok
   - DOMAIN-KEYWORD,byteoversea
+  - DOMAIN-KEYWORD,ibytedtos
+  # 🛰️ ASN & IP 兜底 (解决区域锁定的核心)
   - IP-ASN,138699,no-resolve
   - IP-CIDR,170.176.0.0/12,no-resolve
   - IP-CIDR,161.117.0.0/16,no-resolve
