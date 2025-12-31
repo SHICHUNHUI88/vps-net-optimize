@@ -174,7 +174,7 @@ payload:
   - DOMAIN-KEYWORD,ibytedtos  
   - DOMAIN-KEYWORD,tiktok
   - DOMAIN-KEYWORD,byteoversea
-  - IP-ASN,138699
+  - IP-ASN,138699,no-resolve
   - IP-CIDR,170.176.0.0/12,no-resolve
   - IP-CIDR,161.117.0.0/16,no-resolve
   - IP-CIDR,47.246.0.0/16,no-resolve
