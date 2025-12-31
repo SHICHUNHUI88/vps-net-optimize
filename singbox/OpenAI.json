@@ -40,7 +40,10 @@
         "o207216.ingest.sentry.io",
         "o33249.ingest.sentry.io",
         "rum.browser-intake-datadoghq.com",
-        "setup.auth.openai.com"
+        "setup.auth.openai.com",
+        "ab.chatgpt.com",
+        "canary.statsig.com",
+        "files.oaiusercontent.com"
       ]
     },
     {
@@ -104,7 +107,10 @@
         "openaiworks.com",
 
         "auth.openai.com",
-        "ct.sendgrid.net"
+        "ct.sendgrid.net",
+        "oaifree.com",
+        "oai.com",
+        "chat.com"        
       ]
     },
     {
@@ -112,7 +118,8 @@
         "openai",
         "gpt",
         "chatgpt",
-        "oai"
+        "oai",
+        "livekit"
       ]
     },
     {
