@@ -33,7 +33,7 @@ Payload:
   - DOMAIN-KEYWORD,riot
   - DOMAIN-KEYWORD,valorant
   - DOMAIN-KEYWORD,glz
-  - IP-ASN,6507,no-resolve
+  - IP-ASN,6507
   # ==== 📌 精准 IP 段 (保留核心) ====
   - IP-CIDR,104.160.128.0/17,no-resolve
   - IP-CIDR,172.65.192.0/18,no-resolve
