@@ -46,6 +46,7 @@
     {
       "domain_suffix": [
         "openai.com",
+        "sora.com",
         "ai.com",
         "chatgpt.com",
         "openai-staging.com",
@@ -118,6 +119,11 @@
       "ip_cidr": [
         "24.199.123.28/32",
         "64.23.132.171/32"
+      ]
+    },
+    {
+      "asn": [
+        20473
       ]
     }
   ]
