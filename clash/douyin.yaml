@@ -81,5 +81,5 @@ Payload:
   - DOMAIN-KEYWORD,volcengine
   - DOMAIN-KEYWORD,volces
   # ==== ASN 兜底 ====
-  - IP-ASN,138667,no-resolve
-  - IP-ASN,396986,no-resolve
+  - IP-ASN,138667
+  - IP-ASN,396986
