@@ -1,63 +1,40 @@
-payload:
-  # ==== Riot Games Core / 游戏核心服务 ====
-  - DOMAIN-SUFFIX,riotgames.com
-  - DOMAIN-SUFFIX,riot.com
-  - DOMAIN-SUFFIX,pvp.net
-  - DOMAIN-SUFFIX,wr.pvp.net
-  - DOMAIN-SUFFIX,a.pvp.net
-  # ==== Riot API / 登录 / Token 服务 ====
-  - DOMAIN-SUFFIX,account.riotgames.com
-  - DOMAIN-SUFFIX,auth.riotgames.com
-  - DOMAIN-SUFFIX,api.riotgames.com
-  - DOMAIN-SUFFIX,entitlements.auth.riotgames.com
-  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
-  - DOMAIN-SUFFIX,riot-client.riotgames.com
-  - DOMAIN-SUFFIX,clientconfig.rpg.riotgames.com
-  - DOMAIN-SUFFIX,mobile-api.riotgames.com
-  - DOMAIN-SUFFIX,chat.riotgames.com
-  - DOMAIN-KEYWORD,glz         
-  # ==== Wild Rift（英雄联盟手游） ====
-  - DOMAIN-SUFFIX,wildrift.riotgames.com
-  - DOMAIN-SUFFIX,jp1.wildrift.riotgames.com
-  - DOMAIN-SUFFIX,sg2.wildrift.riotgames.com
-  - DOMAIN-SUFFIX,sea.wildrift.riotgames.com
-  # ==== 游戏补丁 / 静态资源 CDN ====
-  - DOMAIN-SUFFIX,riotcdn.net
-  - DOMAIN-SUFFIX,wr-assets.riotcdn.net
-  - DOMAIN-SUFFIX,patcher-data.riotgames.com
-  - DOMAIN-SUFFIX,patcher.na.leagueoflegends.com
-  - DOMAIN-SUFFIX,l3cdn.riotgames.com
-  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
-  # ==== Valorant（瓦罗兰特） ====
-  - DOMAIN-SUFFIX,valorant.secure.dyn.riotcdn.net
-  - DOMAIN-SUFFIX,playvalorant.com
-  - DOMAIN-KEYWORD,valorant
-  # ==== Riot Games 进程（安卓 & PC） ====
+Payload:
+  # ==== 🎮 Riot Games Core / 游戏核心服务 ====
   - PROCESS-NAME,com.riotgames.league.wildrift
   - PROCESS-NAME,com.riotgames.league.wildrift.android
+  - PROCESS-NAME,com.riotgames.league.teamfighttactics
   - PROCESS-NAME,RiotClientServices.exe
   - PROCESS-NAME,LeagueClientUx.exe
   - PROCESS-NAME,LeagueClient.exe
-
-  # ==== Riot IP 段（Ping 专用） ====
+  # ==== 🌐 核心域名 (Riot & LOL) ====
+  - DOMAIN-SUFFIX,riotgames.com
+  - DOMAIN-SUFFIX,riot.com
+  - DOMAIN-SUFFIX,pvp.net
+  - DOMAIN-SUFFIX,leagueoflegends.com
+  - DOMAIN-SUFFIX,playvalorant.com
+  # ==== 🎧 语音系统 (Vivox - 没它没语音) ====
+  - DOMAIN-SUFFIX,vivox.com
+  - DOMAIN-SUFFIX,vxe1.vivox.com
+  - DOMAIN-SUFFIX,vxg1.vivox.com
+  # ==== 🛠️ API / 登录 / 防作弊 ====
+  - DOMAIN-SUFFIX,account.riotgames.com
+  - DOMAIN-SUFFIX,auth.riotgames.com
+  - DOMAIN-SUFFIX,api.riotgames.com
+  - DOMAIN-SUFFIX,riot-client.riotgames.com
+  - DOMAIN-SUFFIX,clientconfig.rpg.riotgames.com
+  - DOMAIN-SUFFIX,anticheat.riotgames.com
+  - DOMAIN-SUFFIX,playerpreferences.riotgames.com
+  # ==== 📦 游戏补丁 / CDN ====
+  - DOMAIN-SUFFIX,riotcdn.net
+  - DOMAIN-SUFFIX,wr-assets.riotcdn.net
+  - DOMAIN-SUFFIX,l3cdn.riotgames.com
+  - DOMAIN-SUFFIX,riotgamespatcher-a.akamaized.net
+  # ==== 🔑 关键词与 ASN (最强优化) ====
+  - DOMAIN-KEYWORD,riot
+  - DOMAIN-KEYWORD,valorant
+  - DOMAIN-KEYWORD,glz
+  - IP-ASN,6507,no-resolve
+  # ==== 📌 精准 IP 段 (保留核心) ====
   - IP-CIDR,104.160.128.0/17,no-resolve
   - IP-CIDR,172.65.192.0/18,no-resolve
-  - IP-CIDR,104.160.131.0/24,no-resolve
-  - IP-CIDR,104.160.136.0/23,no-resolve
-  - IP-CIDR,104.160.137.0/24,no-resolve
-  - IP-CIDR,104.160.138.0/23,no-resolve
-  - IP-CIDR,104.160.140.0/24,no-resolve
-  - IP-CIDR,104.160.141.0/24,no-resolve
-  - IP-CIDR,104.160.142.0/23,no-resolve
-  - IP-CIDR,104.160.145.0/24,no-resolve
-  - IP-CIDR,104.160.146.0/23,no-resolve
-  - IP-CIDR,104.160.154.0/23,no-resolve
-  - IP-CIDR,104.160.156.0/23,no-resolve
-  - IP-CIDR,130.176.0.0/18,no-resolve
   - IP-CIDR,15.177.0.0/18,no-resolve
-  - IP-CIDR,52.222.128.0/17,no-resolve
-  - IP-CIDR,13.32.0.0/15,no-resolve
-  - IP-CIDR,13.225.0.0/16,no-resolve
-  - IP-CIDR,99.86.0.0/17,no-resolve
-  - IP-CIDR,34.195.0.0/16,no-resolve
-  - IP-CIDR,3.5.140.0/22,no-resolve
