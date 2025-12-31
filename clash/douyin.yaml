@@ -46,6 +46,15 @@ payload:
   - DOMAIN-SUFFIX,snssdk.com
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
+  # 火山引擎与基础服务
+  - DOMAIN-SUFFIX,volces.com
+  - DOMAIN-SUFFIX,volcengine.com
+  - DOMAIN-SUFFIX,byteicdn.com
+  - DOMAIN-SUFFIX,bytegoofy.com
+  - DOMAIN-SUFFIX,zijieapi.com
+  - DOMAIN-SUFFIX,feelgood.cn
+  - DOMAIN-SUFFIX,bdurl.net
+  - DOMAIN-SUFFIX,vgnrt.com
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
   # 🔑 关键词（兜底防漏网）
@@ -64,3 +73,6 @@ payload:
   - DOMAIN-KEYWORD,ixigua
   - DOMAIN-KEYWORD,huoshan
   - DOMAIN-KEYWORD,snssdk
+  - DOMAIN-KEYWORD,zijie
+  - DOMAIN-KEYWORD,volcengine
+  - DOMAIN-KEYWORD,volces
