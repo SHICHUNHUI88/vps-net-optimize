@@ -1,117 +1,131 @@
 payload:
   # ==== 🧠 APP 进程 ====
-  PROCESS-NAME,com.openai.chatgpt
-  PROCESS-NAME,com.openai.chatgpt.beta
-  PROCESS-NAME,ChatGPT
-  PROCESS-NAME,com.microsoft.bing
+  - PROCESS-NAME,com.openai.chatgpt
+  - PROCESS-NAME,com.openai.chatgpt.beta
+  - PROCESS-NAME,ChatGPT
+  - PROCESS-NAME,com.microsoft.bing
+
   # ========== 精准域名 ==========
-  DOMAIN,browser-intake-datadoghq.com
-  DOMAIN,chat.openai.com.cdn.cloudflare.net
-  DOMAIN,openai-api.arkoselabs.com
-  DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
-  DOMAIN,openaicomproductionae4b.blob.core.windows.net
-  DOMAIN,production-openaicom-storage.azureedge.net
-  DOMAIN,static.cloudflareinsights.com
-  DOMAIN,android.chat.openai.com
-  DOMAIN,auth0.openai.com
-  DOMAIN,cdn.openaimerge.com
-  DOMAIN,challenges.cloudflare.com
-  DOMAIN,chat.openai.com
-  DOMAIN,desktop.chat.openai.com
-  DOMAIN,humb.apple.com
-  DOMAIN,ios.chat.openai.com
-  DOMAIN,tcr9i.chat.openai.com
-  DOMAIN,cdn.workos.com
-  DOMAIN,forwarder.workos.com
-  DOMAIN,images.workoscdn.com
-  DOMAIN,setup.workos.com
-  DOMAIN,js.intercomcdn.com
-  DOMAIN,js.stripe.com
-  DOMAIN,o207216.ingest.sentry.io
-  DOMAIN,o33249.ingest.sentry.io
-  DOMAIN,rum.browser-intake-datadoghq.com
-  DOMAIN,setup.auth.openai.com
+  - DOMAIN,browser-intake-datadoghq.com
+  - DOMAIN,chat.openai.com.cdn.cloudflare.net
+  - DOMAIN,openai-api.arkoselabs.com
+  - DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net
+  - DOMAIN,openaicomproductionae4b.blob.core.windows.net
+  - DOMAIN,production-openaicom-storage.azureedge.net
+  - DOMAIN,static.cloudflareinsights.com
+  - DOMAIN,android.chat.openai.com
+  - DOMAIN,auth0.openai.com
+  - DOMAIN,cdn.openaimerge.com
+  - DOMAIN,challenges.cloudflare.com
+  - DOMAIN,chat.openai.com
+  - DOMAIN,desktop.chat.openai.com
+  - DOMAIN,humb.apple.com
+  - DOMAIN,ios.chat.openai.com
+  - DOMAIN,tcr9i.chat.openai.com
+  - DOMAIN,cdn.workos.com
+  - DOMAIN,forwarder.workos.com
+  - DOMAIN,images.workoscdn.com
+  - DOMAIN,setup.workos.com
+  - DOMAIN,js.intercomcdn.com
+  - DOMAIN,js.stripe.com
+  - DOMAIN,o207216.ingest.sentry.io
+  - DOMAIN,o33249.ingest.sentry.io
+  - DOMAIN,rum.browser-intake-datadoghq.com
+  - DOMAIN,setup.auth.openai.com
+
   # ==== OpenAI 主站 ====
-  DOMAIN-SUFFIX,openai.com
-  DOMAIN-SUFFIX,ai.com
-  DOMAIN-SUFFIX,chatgpt.com
-  DOMAIN-SUFFIX,openai-staging.com
+  - DOMAIN-SUFFIX,openai.com
+  - DOMAIN-SUFFIX,ai.com
+  - DOMAIN-SUFFIX,chatgpt.com
+  - DOMAIN-SUFFIX,openai-staging.com
+
   # ==== GPT / API 服务 ====
-  DOMAIN-SUFFIX,api.openai.com
-  DOMAIN-SUFFIX,api.openai.azure.com
-  DOMAIN-SUFFIX,api.openai-staging.com
-  DOMAIN-SUFFIX,openai.azure.com
+  - DOMAIN-SUFFIX,api.openai.com
+  - DOMAIN-SUFFIX,api.openai.azure.com
+  - DOMAIN-SUFFIX,api.openai-staging.com
+  - DOMAIN-SUFFIX,openai.azure.com
+
   # ==== 静态资源 / CDN / 文件服务 ====
-  DOMAIN-SUFFIX,cdn.openai.com
-  DOMAIN-SUFFIX,openaicdn.com
-  DOMAIN-SUFFIX,oaistatic.com
-  DOMAIN-SUFFIX,oaiusercontent.com
-  DOMAIN-SUFFIX,openaiapi-site.azureedge.net
-  DOMAIN-SUFFIX,openaicom.imgix.net
-  DOMAIN-SUFFIX,azureedge.net
-  DOMAIN-SUFFIX,blob.core.windows.net
-  DOMAIN-SUFFIX,cloudflareclient.com
-  DOMAIN-SUFFIX,cloudflare.com
+  - DOMAIN-SUFFIX,cdn.openai.com
+  - DOMAIN-SUFFIX,openaicdn.com
+  - DOMAIN-SUFFIX,oaistatic.com
+  - DOMAIN-SUFFIX,oaiusercontent.com
+  - DOMAIN-SUFFIX,openaiapi-site.azureedge.net
+  - DOMAIN-SUFFIX,openaicom.imgix.net
+  - DOMAIN-SUFFIX,azureedge.net
+  - DOMAIN-SUFFIX,blob.core.windows.net
+  - DOMAIN-SUFFIX,cloudflareclient.com
+  - DOMAIN-SUFFIX,cloudflare.com
+
   # ==== Sora / 视频模型服务 ====
-  DOMAIN-SUFFIX,sora.openai.com
-  DOMAIN-SUFFIX,video.openai.com
-  DOMAIN-SUFFIX,media.openai.com
-  DOMAIN-SUFFIX,realtime.openai.com
-  DOMAIN-SUFFIX,openai-video.com
-  DOMAIN-SUFFIX,openai-media.com
-  DOMAIN-SUFFIX,livestream.openai.com
+  - DOMAIN-SUFFIX,sora.com
+  - DOMAIN-SUFFIX,sora.openai.com
+  - DOMAIN-SUFFIX,video.openai.com
+  - DOMAIN-SUFFIX,media.openai.com
+  - DOMAIN-SUFFIX,realtime.openai.com
+  - DOMAIN-SUFFIX,openai-video.com
+  - DOMAIN-SUFFIX,openai-media.com
+  - DOMAIN-SUFFIX,livestream.openai.com
+
   # ==== LiveKit（语音 / 实时 API）====
-  DOMAIN-SUFFIX,chatgpt.livekit.cloud
-  DOMAIN-SUFFIX,host.livekit.cloud
-  DOMAIN-SUFFIX,turn.livekit.cloud
-  DOMAIN-SUFFIX,livekit.io
+  - DOMAIN-SUFFIX,chatgpt.livekit.cloud
+  - DOMAIN-SUFFIX,host.livekit.cloud
+  - DOMAIN-SUFFIX,turn.livekit.cloud
+  - DOMAIN-SUFFIX,livekit.io
+
   # ==== 验证服务 Arkose Labs ====
-  DOMAIN-SUFFIX,client-api.arkoselabs.com
-  DOMAIN-SUFFIX,auth0.com
-  DOMAIN-SUFFIX,auth0usercontent.com
+  - DOMAIN-SUFFIX,client-api.arkoselabs.com
+  - DOMAIN-SUFFIX,auth0.com
+  - DOMAIN-SUFFIX,auth0usercontent.com
+
   # ==== 功能开关 / 配置 / 统计分析 ====
-  DOMAIN-SUFFIX,api.statsig.com
-  DOMAIN-SUFFIX,statsig.com
-  DOMAIN-SUFFIX,events.statsigapi.net
-  DOMAIN-SUFFIX,statsigapi.net
-  DOMAIN-SUFFIX,launchdarkly.com
-  DOMAIN-SUFFIX,segment.io
-  DOMAIN-SUFFIX,sentry.io
-  DOMAIN-SUFFIX,stripe.com
-  DOMAIN-SUFFIX,observeit.net
-  DOMAIN-SUFFIX,algolia.net
-  DOMAIN-SUFFIX,featuregates.org
-  DOMAIN-SUFFIX,intercom.io
-  DOMAIN-SUFFIX,intercomcdn.com
-  DOMAIN-SUFFIX,identrust.com
-  DOMAIN-SUFFIX,featureassets.org
-  DOMAIN-SUFFIX,prodregistryv2.org
+  - DOMAIN-SUFFIX,api.statsig.com
+  - DOMAIN-SUFFIX,statsig.com
+  - DOMAIN-SUFFIX,events.statsigapi.net
+  - DOMAIN-SUFFIX,statsigapi.net
+  - DOMAIN-SUFFIX,launchdarkly.com
+  - DOMAIN-SUFFIX,segment.io
+  - DOMAIN-SUFFIX,sentry.io
+  - DOMAIN-SUFFIX,stripe.com
+  - DOMAIN-SUFFIX,observeit.net
+  - DOMAIN-SUFFIX,algolia.net
+  - DOMAIN-SUFFIX,featuregates.org
+  - DOMAIN-SUFFIX,intercom.io
+  - DOMAIN-SUFFIX,intercomcdn.com
+  - DOMAIN-SUFFIX,identrust.com
+  - DOMAIN-SUFFIX,featureassets.org
+  - DOMAIN-SUFFIX,prodregistryv2.org
+
   # ==== 通用云 / CDN 辅助域名 ====
-  DOMAIN-SUFFIX,akamaized.net
-  DOMAIN-SUFFIX,fastly.net
-  DOMAIN-SUFFIX,cloudflareinsights.com
-  DOMAIN-SUFFIX,workos.imgix.net
+  - DOMAIN-SUFFIX,akamaized.net
+  - DOMAIN-SUFFIX,fastly.net
+  - DOMAIN-SUFFIX,cloudflareinsights.com
+  - DOMAIN-SUFFIX,workos.imgix.net
+
   # ==== 后备测试段域名 ====
-  DOMAIN-SUFFIX,openaiapis.com
-  DOMAIN-SUFFIX,openaidev.com
-  DOMAIN-SUFFIX,openaiproxy.com
-  DOMAIN-SUFFIX,openaiworks.com
+  - DOMAIN-SUFFIX,openaiapis.com
+  - DOMAIN-SUFFIX,openaidev.com
+  - DOMAIN-SUFFIX,openaiproxy.com
+  - DOMAIN-SUFFIX,openaiworks.com
+
   # ========== 通配符域名规则 ==========
-  DOMAIN-WILDCARD,*.auth.openai.com
-  DOMAIN-WILDCARD,*.ct.sendgrid.net
-  DOMAIN-WILDCARD,*.featuregates.org
-  DOMAIN-WILDCARD,*.intercom.io
-  DOMAIN-WILDCARD,*.intercomcdn.com
-  DOMAIN-WILDCARD,*.oaistatic.com
-  DOMAIN-WILDCARD,*.oaiusercontent.com
-  DOMAIN-WILDCARD,*.openai.com
-  DOMAIN-WILDCARD,*.statsig.com
+  - DOMAIN-WILDCARD,*.auth.openai.com
+  - DOMAIN-WILDCARD,*.ct.sendgrid.net
+  - DOMAIN-WILDCARD,*.featuregates.org
+  - DOMAIN-WILDCARD,*.intercom.io
+  - DOMAIN-WILDCARD,*.intercomcdn.com
+  - DOMAIN-WILDCARD,*.oaistatic.com
+  - DOMAIN-WILDCARD,*.oaiusercontent.com
+  - DOMAIN-WILDCARD,*.openai.com
+  - DOMAIN-WILDCARD,*.statsig.com
+
   # ========== 关键词兜底规则 ==========
-  DOMAIN-KEYWORD,openai
-  DOMAIN-KEYWORD,gpt
-  DOMAIN-KEYWORD,chatgpt
-  DOMAIN-KEYWORD,oai
+  - DOMAIN-KEYWORD,openai
+  - DOMAIN-KEYWORD,gpt
+  - DOMAIN-KEYWORD,chatgpt
+  - DOMAIN-KEYWORD,oai
+
   # ========== IP / ASN 规则 ==========
-  IP-CIDR,24.199.123.28/32
-  IP-CIDR,64.23.132.171/32
-  IP-ASN,20473
+  - IP-CIDR,24.199.123.28/32
+  - IP-CIDR,64.23.132.171/32
+  - IP-ASN,20473
