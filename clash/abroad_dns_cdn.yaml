@@ -181,41 +181,56 @@ payload:
   - IP-CIDR,52.74.0.0/16,no-resolve
   - IP-CIDR,52.220.0.0/15,no-resolve
  
-  # ==== Telegram / 电报 全面规则 ====
-  - PROCESS-NAME,org.telegram.plus
+  # ==== ✈️ Telegram / 电报 全面规则 ====
+  # 进程分流 (含 Android/Windows/正则)
   - PROCESS-NAME,org.telegram.messenger
+  - PROCESS-NAME,org.telegram.plus
   - PROCESS-NAME,org.thunderdog.challegram
   - PROCESS-NAME,org.telegram.messenger.web
   - PROCESS-NAME,Telegram.exe
   - PROCESS-NAME,TelegramDesktop.exe
+  - PROCESS-NAME,Telegram
   - PROCESS-NAME-REGEX,(?i)telegram
-  # ✈️ 核心域名（官网、注册、登录）
-  - DOMAIN-SUFFIX,telegram.org
+  # ✈️ 核心域名 (官网、注册、登录、API)
   - DOMAIN-SUFFIX,t.me
+  - DOMAIN-SUFFIX,tdesktop.com
+  - DOMAIN-SUFFIX,telegra.ph
+  - DOMAIN-SUFFIX,telegram.me
+  - DOMAIN-SUFFIX,telegram.org
   - DOMAIN-SUFFIX,telegram.com
-  # ✈️ API / 聊天服务
+  - DOMAIN-SUFFIX,telegram.dog
+  - DOMAIN-SUFFIX,telegram.plus
+  - DOMAIN-SUFFIX,telesco.pe
+  - DOMAIN-SUFFIX,tel.onl
+  - DOMAIN-SUFFIX,mtproto.org
   - DOMAIN-SUFFIX,api.telegram.org
   - DOMAIN-SUFFIX,core.telegram.org
-  - DOMAIN-SUFFIX,mtproto.org
-  - DOMAIN-SUFFIX,telegram.me
-  - DOMAIN-SUFFIX,telegram.plus
-  # ✈️ 静态资源 / CDN / 下载文件 / 视频节点
-  - DOMAIN-SUFFIX,telegramcdn.com
-  - DOMAIN-SUFFIX,telegram-cdn.org
+  # ✈️ 静态资源 / CDN / 视频流媒体
   - DOMAIN-SUFFIX,cdn-telegram.org
-  - DOMAIN-SUFFIX,telegra.ph
-  - DOMAIN-SUFFIX,telesco.pe
-  - DOMAIN-SUFFIX,tlgrm.ru
-  - DOMAIN-SUFFIX,media.telegram.org
+  - DOMAIN-SUFFIX,telegram-cdn.org
+  - DOMAIN-SUFFIX,telegramcdn.com
   - DOMAIN-SUFFIX,telegram.video
+  - DOMAIN-SUFFIX,media.telegram.org
   - DOMAIN-SUFFIX,telegram-store.org
-  # ✈️ 关键词兜底（防止新域名漏网）
+  - DOMAIN-SUFFIX,tlgrm.ru
+  # ✈️ 关键词兜底 (防漏网)
   - DOMAIN-KEYWORD,telegram
-  - DOMAIN-KEYWORD,telegramcdn
-  - DOMAIN-KEYWORD,telegram-cdn
-  - DOMAIN-KEYWORD,cdn-telegram
   - DOMAIN-KEYWORD,mtproto
-  - DOMAIN-KEYWORD,t.me
+  # ✈️ 核心 ASN (直连电报全球数据中心，极其稳定)
+  - IP-ASN,62041,no-resolve
+  - IP-ASN,59930,no-resolve
+  - IP-ASN,44907,no-resolve
+  # ✈️ 核心 IP 段 (CIDR)
+  - IP-CIDR,91.108.4.0/22,no-resolve
+  - IP-CIDR,91.108.8.0/22,no-resolve
+  - IP-CIDR,91.108.12.0/22,no-resolve
+  - IP-CIDR,91.108.16.0/22,no-resolve
+  - IP-CIDR,91.108.20.0/22,no-resolve
+  - IP-CIDR,91.108.56.0/22,no-resolve
+  - IP-CIDR,95.161.64.0/18,no-resolve
+  - IP-CIDR,149.154.160.0/20,no-resolve
+  - IP-CIDR,185.76.151.0/24,no-resolve
+
 
   # ==== Google / 谷歌全面规则 ====
   # 🧩 系统进程匹配（安卓）
