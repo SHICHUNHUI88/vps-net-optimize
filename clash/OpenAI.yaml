@@ -4,7 +4,6 @@ payload:
   - PROCESS-NAME,com.openai.chatgpt.beta
   - PROCESS-NAME,ChatGPT
   - PROCESS-NAME,com.microsoft.bing
-
   # ========== 精准域名 ==========
   - DOMAIN,browser-intake-datadoghq.com
   - DOMAIN,chat.openai.com.cdn.cloudflare.net
@@ -35,19 +34,16 @@ payload:
   - DOMAIN,ab.chatgpt.com
   - DOMAIN,canary.statsig.com
   - DOMAIN,files.oaiusercontent.com
-
   # ==== OpenAI 主站 ====
   - DOMAIN-SUFFIX,openai.com
   - DOMAIN-SUFFIX,ai.com
   - DOMAIN-SUFFIX,chatgpt.com
   - DOMAIN-SUFFIX,openai-staging.com
-
   # ==== GPT / API 服务 ====
   - DOMAIN-SUFFIX,api.openai.com
   - DOMAIN-SUFFIX,api.openai.azure.com
   - DOMAIN-SUFFIX,api.openai-staging.com
   - DOMAIN-SUFFIX,openai.azure.com
-
   # ==== 静态资源 / CDN / 文件服务 ====
   - DOMAIN-SUFFIX,cdn.openai.com
   - DOMAIN-SUFFIX,openaicdn.com
@@ -59,7 +55,6 @@ payload:
   - DOMAIN-SUFFIX,blob.core.windows.net
   - DOMAIN-SUFFIX,cloudflareclient.com
   - DOMAIN-SUFFIX,cloudflare.com
-
   # ==== Sora / 视频模型服务 ====
   - DOMAIN-SUFFIX,sora.com
   - DOMAIN-SUFFIX,sora.openai.com
@@ -69,7 +64,6 @@ payload:
   - DOMAIN-SUFFIX,openai-video.com
   - DOMAIN-SUFFIX,openai-media.com
   - DOMAIN-SUFFIX,livestream.openai.com
-
   # ==== LiveKit（语音 / 实时 API）====
   - DOMAIN-SUFFIX,chatgpt.livekit.cloud
   - DOMAIN-SUFFIX,host.livekit.cloud
@@ -78,12 +72,10 @@ payload:
   - DOMAIN-SUFFIX,oaifree.com
   - DOMAIN-SUFFIX,oai.com             
   - DOMAIN-SUFFIX,chat.com
-
   # ==== 验证服务 Arkose Labs ====
   - DOMAIN-SUFFIX,client-api.arkoselabs.com
   - DOMAIN-SUFFIX,auth0.com
   - DOMAIN-SUFFIX,auth0usercontent.com
-
   # ==== 功能开关 / 配置 / 统计分析 ====
   - DOMAIN-SUFFIX,api.statsig.com
   - DOMAIN-SUFFIX,statsig.com
@@ -101,19 +93,16 @@ payload:
   - DOMAIN-SUFFIX,identrust.com
   - DOMAIN-SUFFIX,featureassets.org
   - DOMAIN-SUFFIX,prodregistryv2.org
-
   # ==== 通用云 / CDN 辅助域名 ====
   - DOMAIN-SUFFIX,akamaized.net
   - DOMAIN-SUFFIX,fastly.net
   - DOMAIN-SUFFIX,cloudflareinsights.com
   - DOMAIN-SUFFIX,workos.imgix.net
-
   # ==== 后备测试段域名 ====
   - DOMAIN-SUFFIX,openaiapis.com
   - DOMAIN-SUFFIX,openaidev.com
   - DOMAIN-SUFFIX,openaiproxy.com
   - DOMAIN-SUFFIX,openaiworks.com
-
   # ========== 通配符域名规则 ==========
   - DOMAIN-WILDCARD,*.auth.openai.com
   - DOMAIN-WILDCARD,*.ct.sendgrid.net
@@ -124,15 +113,13 @@ payload:
   - DOMAIN-WILDCARD,*.oaiusercontent.com
   - DOMAIN-WILDCARD,*.openai.com
   - DOMAIN-WILDCARD,*.statsig.com
-
   # ========== 关键词兜底规则 ==========
   - DOMAIN-KEYWORD,openai
   - DOMAIN-KEYWORD,gpt
   - DOMAIN-KEYWORD,chatgpt
   - DOMAIN-KEYWORD,oai
   - DOMAIN-KEYWORD,livekit
-
   # ========== IP / ASN 规则 ==========
   - IP-CIDR,24.199.123.28/32
   - IP-CIDR,64.23.132.171/32
-  - IP-ASN,20473,no-resolve
+  - IP-ASN,20473
