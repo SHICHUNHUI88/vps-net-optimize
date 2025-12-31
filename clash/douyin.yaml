@@ -76,3 +76,6 @@ payload:
   - DOMAIN-KEYWORD,zijie
   - DOMAIN-KEYWORD,volcengine
   - DOMAIN-KEYWORD,volces
+  # ==== ASN ====
+  - IP-ASN,138667
+  - IP-ASN,396986
