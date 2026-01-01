@@ -114,7 +114,9 @@ payload:
   # 关键词
   - DOMAIN-KEYWORD,wechat
   - DOMAIN-KEYWORD,weixin
-  - DOMAIN-KEYWORD,wxapp      
+  - DOMAIN-KEYWORD,wxapp  
+  - IP-ASN,45090
+  - IP-ASN,132203    
 
   # 🎮 英雄联盟手游 国服 (腾讯代理)
   # ==== LOL手游 游戏服务器 ====
@@ -170,6 +172,9 @@ payload:
   - DOMAIN-SUFFIX,tmall.hk
   - DOMAIN-SUFFIX,alipay.com
   - DOMAIN-SUFFIX,xquic.com
+  - IP-ASN,24429
+  - IP-ASN,37963
+  - IP-ASN,45102
 
   # 京东中国 / 京东金融 规则集 (ClashMeta)
   # ==== 进程 ====
@@ -213,6 +218,7 @@ payload:
   - DOMAIN-KEYWORD,jdpay
   - DOMAIN-KEYWORD,baitiao
   - DOMAIN-KEYWORD,jingdong
+  - IP-ASN,133481
 
   # ==== 📊 同花顺 (10jqka / iFinD) ====
   # 进程分流 (Android)
@@ -241,7 +247,7 @@ payload:
   - DOMAIN-SUFFIX,998000.com
   - DOMAIN-SUFFIX,itdh.com.cn
   # 自治系统兜底 (ASN)
-  - IP-ASN,58519,no-resolve
+  - IP-ASN,58519
   # 🔑 关键词 (兜底防漏网)
   - DOMAIN-KEYWORD,10jqka
   - DOMAIN-KEYWORD,ifind
