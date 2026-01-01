@@ -1,0 +1,66 @@
+payload:
+  # 🧩 APP 进程
+  - PROCESS-NAME,com.zhiliaoapp.musically
+  - PROCESS-NAME,com.zhiliaoapp.musically.go
+  - PROCESS-NAME,com.ss.android.ugc.trill
+  - PROCESS-NAME,com.tiktok.tv
+  - PROCESS-NAME,com.ss.android.ugc.aweme.now
+  - PROCESS-NAME,com.ss.android.ugc.aweme.shop
+  # 🌐 核心业务域名
+  - DOMAIN-SUFFIX,tiktok.com
+  - DOMAIN-SUFFIX,tiktokv.com
+  - DOMAIN-SUFFIX,tiktokv.us
+  - DOMAIN-SUFFIX,tiktok.us
+  - DOMAIN-SUFFIX,tiktokglobal.com
+  - DOMAIN-SUFFIX,tiktok-browser.com
+  - DOMAIN-SUFFIX,tik-tokapi.com
+  - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,tiktokmusic.app
+  - DOMAIN-SUFFIX,tiktokd.net
+  - DOMAIN-SUFFIX,tiktokd.org
+  - DOMAIN-SUFFIX,ttwebview.com
+  - DOMAIN-SUFFIX,ttlive.com
+  # 📦 静态资源与视频流 (CDN)
+  - DOMAIN,p16-tiktokcdn-com.akamaized.net
+  - DOMAIN,lf16-effectcdn.byteeffecttos-g.com
+  - DOMAIN,lf16-pkgcdn.pitaya-clientai.com
+  - DOMAIN-SUFFIX,tiktokcdn.com
+  - DOMAIN-SUFFIX,tiktokcdn-us.com
+  - DOMAIN-SUFFIX,tiktoklive.com
+  - DOMAIN-SUFFIX,ttwstatic.com
+  - DOMAIN-SUFFIX,muscdn.com
+  - DOMAIN-SUFFIX,ibyteimg.com
+  - DOMAIN-SUFFIX,ipstatp.com
+  - DOMAIN-SUFFIX,ibytedtos.com
+  - DOMAIN-SUFFIX,vegslb.com
+  - DOMAIN-SUFFIX,skytigris.cn
+  # 🛠️ 海外后端服务 / 监控 / 基建
+  - DOMAIN,trae-api-sg.mchost.guru
+  - DOMAIN-SUFFIX,byteoversea.com
+  - DOMAIN-SUFFIX,byteoversea.net
+  - DOMAIN-SUFFIX,bytedapm.com
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,byteintlapi.com
+  - DOMAIN-SUFFIX,bytegecko.com
+  - DOMAIN-SUFFIX,bytegecko-i18n.com
+  - DOMAIN-SUFFIX,isnssdk.com
+  - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN-SUFFIX,sgpstatp.com
+  - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,bytedance.map.fastly.net
+  # ✂️ 相关生态（可选但常见会一起走）
+  - DOMAIN-SUFFIX,capcut.com
+  - DOMAIN-SUFFIX,marscode.com
+  - DOMAIN-SUFFIX,trae.ai
+  # 🔑 关键词兜底
+  - DOMAIN-KEYWORD,tiktok
+  - DOMAIN-KEYWORD,musical.ly
+  - DOMAIN-KEYWORD,byteoversea
+  - DOMAIN-KEYWORD,ibytedtos
+  # 🛰️ ASN & IP 兜底
+  - IP-ASN,138699
+  - IP-CIDR,170.176.0.0/12,no-resolve
+  - IP-CIDR,161.117.0.0/16,no-resolve
+  - IP-CIDR,47.246.0.0/16,no-resolve
+  - IP-CIDR,52.74.0.0/16,no-resolve
+  - IP-CIDR,52.220.0.0/15,no-resolve
