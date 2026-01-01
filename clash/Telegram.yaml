@@ -1,0 +1,75 @@
+payload:
+  # ==== ✈️ Telegram / 电报进程 ====
+  - PROCESS-NAME,org.telegram.messenger
+  - PROCESS-NAME,org.telegram.plus
+  - PROCESS-NAME,org.thunderdog.challegram
+  - PROCESS-NAME,org.telegram.messenger.web
+  - PROCESS-NAME,nekox.messenger
+  - PROCESS-NAME,tw.nekomimi.nekogram
+  - PROCESS-NAME,xyz.nextalone.nagram
+  - PROCESS-NAME,telegram-desktop
+  - PROCESS-NAME,Telegram.exe
+  - PROCESS-NAME,TelegramDesktop.exe
+  - PROCESS-NAME,Telegram
+  - PROCESS-NAME-REGEX,(?i)telegram
+  # 🌐 核心域名（官网 / 注册 / 登录 / API / 文档）
+  - DOMAIN-SUFFIX,t.me
+  - DOMAIN-SUFFIX,tdesktop.com
+  - DOMAIN-SUFFIX,telegram.me
+  - DOMAIN-SUFFIX,telegram.org
+  - DOMAIN-SUFFIX,telegram.com
+  - DOMAIN-SUFFIX,telegram.dog
+  - DOMAIN-SUFFIX,telegram.space
+  - DOMAIN-SUFFIX,telegramdownload.com
+  - DOMAIN-SUFFIX,telega.one
+  - DOMAIN-SUFFIX,tg.dev
+  - DOMAIN-SUFFIX,tx.me
+  - DOMAIN-SUFFIX,telesco.pe
+  - DOMAIN-SUFFIX,tel.onl
+  - DOMAIN-SUFFIX,mtproto.org
+  - DOMAIN-SUFFIX,api.telegram.org
+  - DOMAIN-SUFFIX,core.telegram.org
+  # 📝 Telegraph / Graph / 生态域名
+  - DOMAIN-SUFFIX,telegra.ph
+  - DOMAIN-SUFFIX,legra.ph
+  - DOMAIN-SUFFIX,graph.org
+  - DOMAIN-SUFFIX,stel.com
+  - DOMAIN-SUFFIX,comments.app
+  - DOMAIN-SUFFIX,contest.com
+  - DOMAIN-SUFFIX,quiz.directory
+  - DOMAIN-SUFFIX,usercontent.dev
+  - DOMAIN-SUFFIX,mbrx.app
+  # 📦 CDN / 媒体资源
+  - DOMAIN-SUFFIX,cdn-telegram.org
+  - DOMAIN-SUFFIX,telegram-cdn.org
+  - DOMAIN-SUFFIX,telegramcdn.com
+  - DOMAIN-SUFFIX,telegram.video
+  - DOMAIN-SUFFIX,media.telegram.org
+  - DOMAIN-SUFFIX,telegram-store.org
+  - DOMAIN-SUFFIX,tlgrm.ru
+  # 🧩 第三方壳 / 客户端 API（可选）
+  - DOMAIN,api.imem.app
+  - DOMAIN,api.swiftgram.app
+  - DOMAIN-KEYWORD,nicegram
+  # 🔑 关键词兜底
+  - DOMAIN-KEYWORD,telegram
+  - DOMAIN-KEYWORD,mtproto
+  # 🛰️ ASN 兜底
+  - IP-ASN,62041
+  - IP-ASN,59930
+  - IP-ASN,44907
+  - IP-ASN,62014
+  - IP-ASN,211157
+  # 🌍 IP 段兜底（CIDR / IPv6）
+  - IP-CIDR,91.108.0.0/16,no-resolve
+  - IP-CIDR,149.154.160.0/20,no-resolve
+  - IP-CIDR,5.28.192.0/18,no-resolve
+  - IP-CIDR,95.161.64.0/18,no-resolve
+  - IP-CIDR,185.76.151.0/24,no-resolve
+  - IP-CIDR,109.239.140.0/24,no-resolve
+  - IP-CIDR,139.59.210.98/32,no-resolve
+  - IP-CIDR,196.55.216.167/32,no-resolve
+  - IP-CIDR6,2001:67c:4e8::/48,no-resolve
+  - IP-CIDR6,2001:b28:f23c::/47,no-resolve
+  - IP-CIDR6,2001:b28:f23f::/48,no-resolve
+  - IP-CIDR6,2a0a:f280::/29,no-resolve
