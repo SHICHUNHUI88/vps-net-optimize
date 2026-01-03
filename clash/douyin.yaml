@@ -1,11 +1,11 @@
-Payload:
+payload:
   # ==== 字节跳动系 应用 & 服务 ====
   - PROCESS-NAME,com.ss.android.ugc.aweme
   - PROCESS-NAME,com.ss.android.ugc.aweme.lite
   - PROCESS-NAME,com.ss.android.ugc.live
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
-  
+  # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
@@ -21,6 +21,7 @@ Payload:
   - DOMAIN-SUFFIX,ipstatp.com
   - DOMAIN-SUFFIX,ixigua.com
   - DOMAIN-SUFFIX,ixiguavideo.com
+  - DOMAIN-SUFFIX,ixgvideo.com
   - DOMAIN-SUFFIX,toutiao.com
   - DOMAIN-SUFFIX,toutiaocdn.com
   - DOMAIN-SUFFIX,toutiaocloud.com
@@ -30,7 +31,6 @@ Payload:
   - DOMAIN-SUFFIX,huoshanzhibo.com
   - DOMAIN-SUFFIX,ppxvod.com
   - DOMAIN-SUFFIX,ppxcdn.com
-  - DOMAIN-SUFFIX,ixgvideo.com
   - DOMAIN-SUFFIX,bytedance.com
   - DOMAIN-SUFFIX,bytedns.net
   - DOMAIN-SUFFIX,bytednsdoc.com
@@ -40,7 +40,6 @@ Payload:
   - DOMAIN-SUFFIX,bytetcc.com
   - DOMAIN-SUFFIX,bytetos.com
   - DOMAIN-SUFFIX,capcut.com
-  - DOMAIN-SUFFIX,volccdn.com
   - DOMAIN-SUFFIX,feiliao.com
   - DOMAIN-SUFFIX,fanqienovel.com
   - DOMAIN-SUFFIX,acomic.com
@@ -48,20 +47,33 @@ Payload:
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
   - DOMAIN-SUFFIX,snssdk.com
-  - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com  
-  # 火山引擎与基础服务 (含 AI 组件)
+  # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
+  - DOMAIN-SUFFIX,volccdn.com
   - DOMAIN-SUFFIX,byteicdn.com
   - DOMAIN-SUFFIX,bytegoofy.com
   - DOMAIN-SUFFIX,zijieapi.com
   - DOMAIN-SUFFIX,feelgood.cn
   - DOMAIN-SUFFIX,bdurl.net
-  - DOMAIN-SUFFIX,vgnrt.com  
+  - DOMAIN-SUFFIX,vgnrt.com
+  # ==== 补全 CDN 与 静态资源 ====
+  - DOMAIN-SUFFIX,zjcdn.com
+  - DOMAIN-SUFFIX,bytev.com
+  - DOMAIN-SUFFIX,bytev.net
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,bytegecko.com
+  - DOMAIN-SUFFIX,bytefcdn.com
+  # ==== 补全 电商、广告与商业化 ====
+  - DOMAIN-SUFFIX,oceanengine.com
+  - DOMAIN-SUFFIX,ad-vance.cn
+  - DOMAIN-SUFFIX,volcvideo.com
+  # ==== 精准域名（单域名）====
+  - DOMAIN,lf3-static.bytednsdoc.com
+  - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # ❓ 抖音不知域名
-  - DOMAIN-SUFFIX,ndcpp.com  
-  # 🔑 关键词全覆盖
+  - DOMAIN-SUFFIX,ndcpp.com
+  # 🔑 关键词全覆盖（去重整合）====
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
   - DOMAIN-KEYWORD,douyincdn
@@ -80,6 +92,9 @@ Payload:
   - DOMAIN-KEYWORD,zijie
   - DOMAIN-KEYWORD,volcengine
   - DOMAIN-KEYWORD,volces
+  - DOMAIN-KEYWORD,zjcdn
+  - DOMAIN-KEYWORD,bytev
+  - DOMAIN-KEYWORD,oceanengine
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
