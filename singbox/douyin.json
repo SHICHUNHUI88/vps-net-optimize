@@ -2,18 +2,12 @@
   "version": 3,
   "rules": [
     {
-      "package_name": [
+      "process_name": [
         "com.ss.android.ugc.aweme",
         "com.ss.android.ugc.aweme.lite",
         "com.ss.android.ugc.live",
         "com.ss.android.ugc.aweme.beta",
         "com.ss.android.ugc.aweme.youth"
-      ]
-    },
-    {
-      "domain": [
-        "lf3-static.bytednsdoc.com",
-        "v5-dy-o-abtest.zjcdn.com"
       ]
     },
     {
@@ -29,27 +23,29 @@
         "idouyinvod.com",
         "iesdouyin.com",
         "pstatp.com",
+        "pstatp.com.cn",
         "ipstatp.com",
         "ixigua.com",
         "ixiguavideo.com",
+        "ixgvideo.com",
         "toutiao.com",
         "toutiaocdn.com",
         "toutiaocloud.com",
+        "toutiaostatic.com",
         "toutiaovod.com",
         "huoshan.com",
         "huoshanzhibo.com",
         "ppxvod.com",
         "ppxcdn.com",
-        "ixgvideo.com",
         "bytedance.com",
         "bytedns.net",
         "bytednsdoc.com",
         "bytecdn.cn",
         "byteimg.com",
+        "ibyteimg.com",
         "bytetcc.com",
         "bytetos.com",
         "capcut.com",
-        "volccdn.com",
         "feiliao.com",
         "fanqienovel.com",
         "acomic.com",
@@ -59,16 +55,29 @@
         "snssdk.com",
         "volces.com",
         "volcengine.com",
+        "volccdn.com",
         "byteicdn.com",
         "bytegoofy.com",
         "zijieapi.com",
         "feelgood.cn",
         "bdurl.net",
         "vgnrt.com",
-        "ndcpp.com",
-        "pstatp.com.cn",
-        "toutiaostatic.com",
-        "ibyteimg.com"
+        "zjcdn.com",
+        "bytev.com",
+        "bytev.net",
+        "ibytedapm.com",
+        "bytegecko.com",
+        "bytefcdn.com",
+        "oceanengine.com",
+        "ad-vance.cn",
+        "volcvideo.com",
+        "ndcpp.com"
+      ]
+    },
+    {
+      "domain": [
+        "lf3-static.bytednsdoc.com",
+        "v5-dy-o-abtest.zjcdn.com"
       ]
     },
     {
@@ -90,11 +99,14 @@
         "snssdk",
         "zijie",
         "volcengine",
-        "volces"
+        "volces",
+        "zjcdn",
+        "bytev",
+        "oceanengine"
       ]
     },
     {
-      "asn": [
+      "ip_asn": [
         138667,
         396986
       ]
