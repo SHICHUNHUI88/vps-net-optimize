@@ -8,6 +8,8 @@ payload:
 
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.com
+  - DOMAIN-SUFFIX,amemv.cn
+  - DOMAIN-SUFFIX,amemv.net
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
   - DOMAIN-SUFFIX,douyinfe.com
@@ -16,6 +18,7 @@ payload:
   - DOMAIN-SUFFIX,douyinstatic.com
   - DOMAIN-SUFFIX,douyinvod.com
   - DOMAIN-SUFFIX,idouyinvod.com
+  - DOMAIN-SUFFIX,iesdouyin.net
   - DOMAIN-SUFFIX,iesdouyin.com
   - DOMAIN-SUFFIX,pstatp.com
   - DOMAIN-SUFFIX,pstatp.com.cn
@@ -59,32 +62,7 @@ payload:
   - DOMAIN-SUFFIX,feelgood.cn
   - DOMAIN-SUFFIX,bdurl.net
   - DOMAIN-SUFFIX,vgnrt.com
-
-  # ==== 补全 CDN 与 静态资源 ====
-  - DOMAIN-SUFFIX,zjcdn.com
-  - DOMAIN-SUFFIX,bytev.com
-  - DOMAIN-SUFFIX,bytev.net
-  - DOMAIN-SUFFIX,ibytedapm.com
-  - DOMAIN-SUFFIX,bytegecko.com
-  - DOMAIN-SUFFIX,bytefcdn.com
-
-  # ==== 补全 电商、广告与商业化 ====
-  - DOMAIN-SUFFIX,oceanengine.com
-  - DOMAIN-SUFFIX,ad-vance.cn
-  - DOMAIN-SUFFIX,volcvideo.com
-
-  # ==== 精准域名（单域名）====
-  - DOMAIN,lf3-static.bytednsdoc.com
-  - DOMAIN,v5-dy-o-abtest.zjcdn.com
-
-  # ❓ 抖音不知域名
-  - DOMAIN-SUFFIX,ndcpp.com
-
-  # ==== 新增补全（与你现有的不重复）====
-  - DOMAIN-SUFFIX,amemv.cn
-  - DOMAIN-SUFFIX,amemv.net
-  - DOMAIN-SUFFIX,iesdouyin.net
-  - DOMAIN-SUFFIX,duoshan.com
+  - DOMAIN-SUFFIX,huoshan.com
   - DOMAIN-SUFFIX,huoshancdn.com
   - DOMAIN-SUFFIX,huoshanimg.com
   - DOMAIN-SUFFIX,huoshanlive.com
@@ -95,10 +73,27 @@ payload:
   - DOMAIN-SUFFIX,idouyinpic.com
   - DOMAIN-SUFFIX,idouyinstatic.com
   - DOMAIN-SUFFIX,idouyinliving.com
+
   - DOMAIN-SUFFIX,qishui.cn
   - DOMAIN-SUFFIX,qishui.com
   - DOMAIN-SUFFIX,qishuimusic.cn
 
+  # ==== 补全 CDN 与 静态资源 ====
+  - DOMAIN-SUFFIX,zjcdn.com
+  - DOMAIN-SUFFIX,bytev.com
+  - DOMAIN-SUFFIX,bytev.net
+  - DOMAIN-SUFFIX,ibytedapm.com
+  - DOMAIN-SUFFIX,bytegecko.com
+  - DOMAIN-SUFFIX,bytefcdn.com
+  # ==== 补全 电商、广告与商业化 ====
+  - DOMAIN-SUFFIX,oceanengine.com
+  - DOMAIN-SUFFIX,ad-vance.cn
+  - DOMAIN-SUFFIX,volcvideo.com
+  # ==== 精准域名（单域名）====
+  - DOMAIN,lf3-static.bytednsdoc.com
+  - DOMAIN,v5-dy-o-abtest.zjcdn.com
+  # ❓ 抖音不知域名
+  - DOMAIN-SUFFIX,ndcpp.com
   # 🔑 关键词全覆盖（去重整合）====
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
