@@ -5,6 +5,7 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.live
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
+
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,douyin.com
@@ -47,6 +48,7 @@ payload:
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
   - DOMAIN-SUFFIX,snssdk.com
+
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
@@ -57,6 +59,7 @@ payload:
   - DOMAIN-SUFFIX,feelgood.cn
   - DOMAIN-SUFFIX,bdurl.net
   - DOMAIN-SUFFIX,vgnrt.com
+
   # ==== 补全 CDN 与 静态资源 ====
   - DOMAIN-SUFFIX,zjcdn.com
   - DOMAIN-SUFFIX,bytev.com
@@ -64,15 +67,38 @@ payload:
   - DOMAIN-SUFFIX,ibytedapm.com
   - DOMAIN-SUFFIX,bytegecko.com
   - DOMAIN-SUFFIX,bytefcdn.com
+
   # ==== 补全 电商、广告与商业化 ====
   - DOMAIN-SUFFIX,oceanengine.com
   - DOMAIN-SUFFIX,ad-vance.cn
   - DOMAIN-SUFFIX,volcvideo.com
+
   # ==== 精准域名（单域名）====
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
+
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
+
+  # ==== 新增补全（与你现有的不重复）====
+  - DOMAIN-SUFFIX,amemv.cn
+  - DOMAIN-SUFFIX,amemv.net
+  - DOMAIN-SUFFIX,iesdouyin.net
+  - DOMAIN-SUFFIX,duoshan.com
+  - DOMAIN-SUFFIX,huoshancdn.com
+  - DOMAIN-SUFFIX,huoshanimg.com
+  - DOMAIN-SUFFIX,huoshanlive.com
+  - DOMAIN-SUFFIX,huoshanstatic.com
+  - DOMAIN-SUFFIX,huoshanvod.com
+  - DOMAIN-SUFFIX,huoshanzhibo.cn
+  - DOMAIN-SUFFIX,huoshanzhibo.net
+  - DOMAIN-SUFFIX,idouyinpic.com
+  - DOMAIN-SUFFIX,idouyinstatic.com
+  - DOMAIN-SUFFIX,idouyinliving.com
+  - DOMAIN-SUFFIX,qishui.cn
+  - DOMAIN-SUFFIX,qishui.com
+  - DOMAIN-SUFFIX,qishuimusic.cn
+
   # 🔑 关键词全覆盖（去重整合）====
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
@@ -95,6 +121,7 @@ payload:
   - DOMAIN-KEYWORD,zjcdn
   - DOMAIN-KEYWORD,bytev
   - DOMAIN-KEYWORD,oceanengine
+
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
