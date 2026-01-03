@@ -116,6 +116,7 @@ payload:
   - DOMAIN-KEYWORD,zjcdn
   - DOMAIN-KEYWORD,bytev
   - DOMAIN-KEYWORD,oceanengine
+  - DOMAIN-KEYWORD,qishui
 
   # ==== ASN 兜底 ====
   - IP-ASN,138667
