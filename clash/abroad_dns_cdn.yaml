@@ -390,6 +390,8 @@ payload:
   - DOMAIN-SUFFIX,suroot.com
 
   # === 📱三星服务 ===
+  - DOMAIN-SUFFIX,getui.com
+  - DOMAIN-SUFFIX,igexin.com
   - PROCESS-NAME,com.sec.spp.push
   - IP-CIDR,54.223.223.92/32,no-resolve
 
