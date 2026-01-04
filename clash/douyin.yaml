@@ -94,6 +94,8 @@ payload:
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
+  - DOMAIN-SUFFIX,getui.com
+  - DOMAIN-SUFFIX,igexin.com
   # 🔑 关键词全覆盖（去重整合）====
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
