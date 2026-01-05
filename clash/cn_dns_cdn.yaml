@@ -1,4 +1,27 @@
 payload:
+  # ==== 国内 DNS ====
+  - DOMAIN,dns.alidns.com
+  - DOMAIN,doh.pub
+  - DOMAIN,dns.pub
+  - DOMAIN,dns.baidu.com
+  - DOMAIN,dns.360.cn
+  - DOMAIN,dns.10086.cn
+  - DOMAIN,dns.10010.com
+  - DOMAIN,dns.189.cn
+  - DOMAIN,dns.cernet.cn
+  - DOMAIN,dns.ctc.edu.cn
+  - DOMAIN,doh.360.cn
+  - DOMAIN,doh.alidns.com
+  - DOMAIN,doh.pubdns.cn
+  - DOMAIN,dns.knet.cn
+  - DOMAIN,dns.114dns.com
+  - DOMAIN,dns.114dns.cn
+  - DOMAIN,dns.tuna.tsinghua.edu.cn
+  - DOMAIN,dns.tencent.com
+  - DOMAIN,dns.wechat.com
+  - DOMAIN,dns.huaweicloud.com
+  - DOMAIN,dns.aliyun.com
+
   ## 🟢 阿里云（Alibaba Cloud）
   - DOMAIN-SUFFIX,alicdn.com
   - DOMAIN-SUFFIX,taobaocdn.com
