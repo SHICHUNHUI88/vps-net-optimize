@@ -84,7 +84,7 @@ wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-
 
 ---
 
-# 📱 ClashMeta 可直接提取的 10 协议模板（移动端可用）
+# 📱 ClashMeta/Clash Mi可直接提取的 10 协议模板，只支持mihomo核心（移动端可用）
 
 适用于 Android 手機 ClashMeta / Mihomo
 支持与 VPS 11协议配合使用：
