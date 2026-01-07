@@ -21,6 +21,11 @@ payload:
   - DOMAIN-SUFFIX,ttwebview.com
   - DOMAIN-SUFFIX,ttlive.com
   - DOMAIN-SUFFIX,tiktokshop.com
+  - DOMAIN-SUFFIX,tlivecdn.com
+  - DOMAIN-SUFFIX,tiktokcdn.com.akahost.net
+  - DOMAIN-SUFFIX,vm.tiktok.com
+  - DOMAIN-SUFFIX,vt.tiktok.com
+  - DOMAIN-SUFFIX,link.tiktok.com
   # 📦 静态资源与视频流 (CDN)
   - DOMAIN-SUFFIX,tiktokcdn-com.akamaized.net
   - DOMAIN,lf16-effectcdn.byteeffecttos-g.com
@@ -55,6 +60,9 @@ payload:
   - DOMAIN-SUFFIX,capcut.com
   - DOMAIN-SUFFIX,marscode.com
   - DOMAIN-SUFFIX,trae.ai
+  - PROCESS-NAME,com.bd.nproject
+  - DOMAIN-SUFFIX,lemon8-app.com
+  - DOMAIN-SUFFIX,bdgslb.com
   # 🔑 关键词兜底
   - DOMAIN-KEYWORD,tiktok
   - DOMAIN-KEYWORD,byteoversea
