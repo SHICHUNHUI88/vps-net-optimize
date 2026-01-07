@@ -257,7 +257,6 @@ payload:
   - DOMAIN-SUFFIX,ifind.com.cn
   - DOMAIN-SUFFIX,thsi.cn
   - DOMAIN-SUFFIX,iwencai.com
-  - DOMAIN-SUFFIX,zijieapi.com
   # 行情、推送与静态资源 (CDN)
   - DOMAIN-SUFFIX,thsimg.com
   - DOMAIN-SUFFIX,thskline.com
