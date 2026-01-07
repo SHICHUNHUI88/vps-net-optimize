@@ -7,6 +7,8 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
 
   # ==== 字节跳动系 核心域名 ====
+  - DOMAIN-SUFFIX,zijieapi.com
+  - DOMAIN-SUFFIX,zjcdn.com
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
   - DOMAIN-SUFFIX,amemv.net
@@ -79,7 +81,6 @@ payload:
   - DOMAIN-SUFFIX,qishuimusic.cn
 
   # ==== 补全 CDN 与 静态资源 ====
-  - DOMAIN-SUFFIX,zjcdn.com
   - DOMAIN-SUFFIX,bytev.com
   - DOMAIN-SUFFIX,bytev.net
   - DOMAIN-SUFFIX,ibytedapm.com
