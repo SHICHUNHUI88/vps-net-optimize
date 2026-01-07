@@ -5,7 +5,6 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.live
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
-
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,zijieapi.com
   - DOMAIN-SUFFIX,zjcdn.com
@@ -53,7 +52,6 @@ payload:
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
   - DOMAIN-SUFFIX,snssdk.com
-
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
@@ -75,11 +73,10 @@ payload:
   - DOMAIN-SUFFIX,idouyinpic.com
   - DOMAIN-SUFFIX,idouyinstatic.com
   - DOMAIN-SUFFIX,idouyinliving.com
-
+  # 汽水音乐
   - DOMAIN-SUFFIX,qishui.cn
   - DOMAIN-SUFFIX,qishui.com
   - DOMAIN-SUFFIX,qishuimusic.cn
-
   # ==== 补全 CDN 与 静态资源 ====
   - DOMAIN-SUFFIX,bytev.com
   - DOMAIN-SUFFIX,bytev.net
@@ -120,7 +117,6 @@ payload:
   - DOMAIN-KEYWORD,bytev
   - DOMAIN-KEYWORD,oceanengine
   - DOMAIN-KEYWORD,qishui
-
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
