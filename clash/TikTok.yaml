@@ -20,8 +20,9 @@ payload:
   - DOMAIN-SUFFIX,tiktokd.org
   - DOMAIN-SUFFIX,ttwebview.com
   - DOMAIN-SUFFIX,ttlive.com
+  - DOMAIN-SUFFIX,tiktokshop.com
   # 📦 静态资源与视频流 (CDN)
-  - DOMAIN,p16-tiktokcdn-com.akamaized.net
+  - DOMAIN-SUFFIX,tiktokcdn-com.akamaized.net
   - DOMAIN,lf16-effectcdn.byteeffecttos-g.com
   - DOMAIN,lf16-pkgcdn.pitaya-clientai.com
   - DOMAIN-SUFFIX,tiktokcdn.com
@@ -30,6 +31,7 @@ payload:
   - DOMAIN-SUFFIX,ttwstatic.com
   - DOMAIN-SUFFIX,muscdn.com
   - DOMAIN-SUFFIX,ibyteimg.com
+  - DOMAIN-SUFFIX,byteimg.com
   - DOMAIN-SUFFIX,ipstatp.com
   - DOMAIN-SUFFIX,ibytedtos.com
   - DOMAIN-SUFFIX,vegslb.com
@@ -46,18 +48,21 @@ payload:
   - DOMAIN-SUFFIX,isnssdk.com
   - DOMAIN-SUFFIX,snssdk.com
   - DOMAIN-SUFFIX,sgpstatp.com
-  - DOMAIN-SUFFIX,tiktokshop.com
   - DOMAIN-SUFFIX,bytedance.map.fastly.net
+  - DOMAIN-SUFFIX,tiktokads.com
+  - DOMAIN-SUFFIX,ads.tiktok.com
   # ✂️ 相关生态（可选但常见会一起走）
   - DOMAIN-SUFFIX,capcut.com
   - DOMAIN-SUFFIX,marscode.com
   - DOMAIN-SUFFIX,trae.ai
   # 🔑 关键词兜底
   - DOMAIN-KEYWORD,tiktok
-  - DOMAIN-KEYWORD,musical.ly
   - DOMAIN-KEYWORD,byteoversea
   - DOMAIN-KEYWORD,ibytedtos
-  # 🛰️ ASN & IP 兜底
+  - DOMAIN-KEYWORD,musical
+  - DOMAIN-KEYWORD,musically
+  - DOMAIN-KEYWORD,capcut
+  # 🛰️ ASN & IP 兜底（放到最后，避免误伤）
   - IP-ASN,138699
   - IP-CIDR,170.176.0.0/12,no-resolve
   - IP-CIDR,161.117.0.0/16,no-resolve
