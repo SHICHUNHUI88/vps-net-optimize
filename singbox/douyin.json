@@ -2,15 +2,6 @@
   "version": 3,
   "rules": [
     {
-      "process_name": [
-        "com.ss.android.ugc.aweme",
-        "com.ss.android.ugc.aweme.lite",
-        "com.ss.android.ugc.live",
-        "com.ss.android.ugc.aweme.beta",
-        "com.ss.android.ugc.aweme.youth"
-      ]
-    },
-    {
       "domain_suffix": [
         "amemv.com",
         "douyin.com",
