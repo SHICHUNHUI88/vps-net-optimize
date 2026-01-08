@@ -2,17 +2,6 @@
   "version": 3,
   "rules": [
     {
-      "process_name": [
-        "com.zhiliaoapp.musically",
-        "com.zhiliaoapp.musically.go",
-        "com.ss.android.ugc.trill",
-        "com.tiktok.tv",
-        "com.ss.android.ugc.aweme.now",
-        "com.ss.android.ugc.aweme.shop",
-        "com.bd.nproject"
-      ]
-    },
-    {
       "domain_suffix": [
         "tiktok.com",
         "tiktokv.com",
