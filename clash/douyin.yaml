@@ -6,8 +6,6 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
   # ==== 字节跳动系 核心域名 ====
-  - DOMAIN-SUFFIX,zijieapi.com
-  - DOMAIN-SUFFIX,zjcdn.com
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
   - DOMAIN-SUFFIX,amemv.net
@@ -58,6 +56,7 @@ payload:
   - DOMAIN-SUFFIX,volccdn.com
   - DOMAIN-SUFFIX,byteicdn.com
   - DOMAIN-SUFFIX,bytegoofy.com
+  - DOMAIN-SUFFIX,zjcdn.com
   - DOMAIN-SUFFIX,zijieapi.com
   - DOMAIN-SUFFIX,feelgood.cn
   - DOMAIN-SUFFIX,bdurl.net
