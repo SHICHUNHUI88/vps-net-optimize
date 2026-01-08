@@ -17,11 +17,6 @@
       ]
     },
     {
-      "process_name_regex": [
-        "(?i)telegram"
-      ]
-    },
-    {
       "domain_suffix": [
         "t.me",
         "tdesktop.com",
