@@ -2,11 +2,6 @@
   "version": 3,
   "rules": [
     {
-      "process_name": [
-        "com.github.android"
-      ]
-    },
-    {
       "domain_suffix": [
         "atom.io",
         "dependabot.com",
