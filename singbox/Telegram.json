@@ -2,21 +2,6 @@
   "version": 3,
   "rules": [
     {
-      "process_name": [
-        "org.telegram.messenger",
-        "org.telegram.plus",
-        "org.thunderdog.challegram",
-        "org.telegram.messenger.web",
-        "nekox.messenger",
-        "tw.nekomimi.nekogram",
-        "xyz.nextalone.nagram",
-        "telegram-desktop",
-        "Telegram.exe",
-        "TelegramDesktop.exe",
-        "Telegram"
-      ]
-    },
-    {
       "domain_suffix": [
         "t.me",
         "tdesktop.com",
