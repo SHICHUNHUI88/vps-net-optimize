@@ -2,13 +2,6 @@
   "version": 3,
   "rules": [
     {
-      "package_name": [
-        "com.openai.chatgpt",
-        "com.openai.chatgpt.beta",
-        "com.microsoft.bing"
-      ]
-    },
-    {
       "process_name": [
         "ChatGPT"
       ]
