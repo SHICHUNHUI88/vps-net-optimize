@@ -90,7 +90,7 @@ wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-
 ）支持与 VPS 11协议配合使用：
 
 👉 一键查看模板：
-https://gist.github.com/SHICHUNHUI88/279cc51c0f53e7739c832492143a3159/raw/Clashmeta.yaml
+https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/279cc51c0f53e7739c832492143a3159/raw/Clashmeta.yaml
 
 可以将此模板全部复制给gpt让他记住，然后把VPS的11个协议全部复制出来给gpt让他按照这个模板来提取连接配置更换就可以了
 
@@ -101,5 +101,5 @@ https://gist.github.com/SHICHUNHUI88/279cc51c0f53e7739c832492143a3159/raw/Clashm
 **✅ 适配Android sing-box 内核 1.12.12以上**
 
 👉 一键查看模板：
-https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json
+https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json
 
