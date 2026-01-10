@@ -17,7 +17,6 @@ payload:
   - PROCESS-NAME,com.oculus.ocms
   - PROCESS-NAME,com.meta.quest
   - PROCESS-NAME,com.meta.oculus
-
   # === 域名后缀规则 ===
   - DOMAIN-SUFFIX,aboutfacebook.com
   - DOMAIN-SUFFIX,accessfacebookfromschool.com
