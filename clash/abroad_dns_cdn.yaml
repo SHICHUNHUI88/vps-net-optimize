@@ -223,76 +223,37 @@ payload:
   - DOMAIN-SUFFIX,cainiao-global.com
   - DOMAIN-SUFFIX,global.cainiao.com
 
-  # 📲（Meta）Android / iOS 进程名匹配
-  - PROCESS-NAME,com.instagram.android
-  - PROCESS-NAME,com.instagram.barcelona
-  - PROCESS-NAME,com.instagram.direct
-  - PROCESS-NAME,com.instagram.lite
-  - PROCESS-NAME,com.facebook.katana
-  - PROCESS-NAME,com.facebook.lite
-  - PROCESS-NAME,com.facebook.orca
-  - PROCESS-NAME,com.facebook.mlite
-  - PROCESS-NAME,com.facebook.appmanager
-  - PROCESS-NAME,com.facebook.services
-  - PROCESS-NAME,com.facebook.system
-  - PROCESS-NAME,com.whatsapp
-  - PROCESS-NAME,com.whatsapp.w4b
-  - PROCESS-NAME,com.oculus.vrshell
-  - PROCESS-NAME,com.oculus.ocms
-  - PROCESS-NAME,com.meta.quest
-  - PROCESS-NAME,com.meta.oculus
-  # === Instagram ===
-  - DOMAIN-SUFFIX,instagram.com
-  - DOMAIN-SUFFIX,instagr.am
-  - DOMAIN-SUFFIX,cdninstagram.com
-  - DOMAIN-SUFFIX,graph.instagram.com
-  - DOMAIN-SUFFIX,i.instagram.com
-  - DOMAIN-SUFFIX,edge-mqtt.instagram.com
-  - DOMAIN-SUFFIX,scontent.cdninstagram.com
-  # === Facebook 核心服务 ===
-  - DOMAIN-SUFFIX,facebook.com
-  - DOMAIN-SUFFIX,facebook.net
-  - DOMAIN-SUFFIX,facebook.org
-  - DOMAIN-SUFFIX,fb.com
-  - DOMAIN-SUFFIX,fb.me
-  - DOMAIN-SUFFIX,fbcdn.net
-  - DOMAIN-SUFFIX,fbcdn.com
-  - DOMAIN-SUFFIX,fbsbx.com
-  - DOMAIN-SUFFIX,tfbnw.net
-  - DOMAIN-SUFFIX,b-graph.facebook.com
-  - DOMAIN-SUFFIX,edge-mqtt.facebook.com
-  - DOMAIN-SUFFIX,star.c10r.facebook.com
-  # === Messenger ===
-  - DOMAIN-SUFFIX,messenger.com
-  - DOMAIN-SUFFIX,msgr.io
-  - DOMAIN-SUFFIX,m.me
-  # === WhatsApp ===
-  - DOMAIN-SUFFIX,whatsapp.net
-  - DOMAIN-SUFFIX,whatsapp.com
-  - DOMAIN-SUFFIX,web.whatsapp.com
-  - DOMAIN-SUFFIX,wa.me
-  # === Threads & Meta AI ===
-  - DOMAIN-SUFFIX,threads.net
-  - DOMAIN-SUFFIX,threads.com
-  - DOMAIN-SUFFIX,meta.ai
-  - DOMAIN-SUFFIX,meta.com
-  - DOMAIN-SUFFIX,metacdn.net
-  - DOMAIN-SUFFIX,llm.meta.com
-  # === Oculus / Quest VR ===
-  - DOMAIN-SUFFIX,oculus.com
-  - DOMAIN-SUFFIX,oculuscdn.com
-  - DOMAIN-SUFFIX,facebook.com/quest
-  # ==== 核心 ASN (极其推荐，解决延迟) ====
-  - IP-ASN,32934
-  - IP-ASN,63293
-  # === 核心关键词防漏 ===
-  - DOMAIN-KEYWORD,instagram
-  - DOMAIN-KEYWORD,fbcdn
-  - DOMAIN-KEYWORD,facebook
-  - DOMAIN-KEYWORD,whatsapp
-  - DOMAIN-KEYWORD,threads
-  - DOMAIN-KEYWORD,meta
-  - DOMAIN-KEYWORD,oculus
+  # ==== 🐦X (Twitter) 全域匹配 ====
+  - DOMAIN-SUFFIX,x.com
+  - DOMAIN-SUFFIX,twitter.com
+  - DOMAIN-SUFFIX,t.co
+  - DOMAIN-SUFFIX,twimg.com
+  - DOMAIN-SUFFIX,twitpic.com
+  - DOMAIN-SUFFIX,periscope.tv
+  - DOMAIN-SUFFIX,pscp.tv
+  - DOMAIN-SUFFIX,video.twimg.com
+  - DOMAIN-SUFFIX,abs.twimg.com
+  - DOMAIN-SUFFIX,pbs.twimg.com
+  # API 接口域名
+  - DOMAIN-SUFFIX,api.twitter.com
+  - DOMAIN-SUFFIX,upload.twitter.com
+  - DOMAIN-SUFFIX,mobile.twitter.com
+  - DOMAIN-SUFFIX,analytics.twitter.com
+  # 登录认证 & 广告
+  - DOMAIN-SUFFIX,ads-twitter.com
+  - DOMAIN-SUFFIX,syndication.twimg.com
+  - DOMAIN-SUFFIX,platform.twitter.com
+  # 图片/视频 CDN
+  - DOMAIN-KEYWORD,twimg
+  - DOMAIN-KEYWORD,video.twimg
+  # 官方应用（Android / iOS）
+  - PROCESS-NAME,com.twitter.android
+  - PROCESS-NAME,com.twitter.android.lite
+  - PROCESS-NAME,com.twitter.android.beta
+  - PROCESS-NAME,com.twitter.android.dev
+  # X / 新版图标应用包名
+  - PROCESS-NAME,com.x.android
+  - PROCESS-NAME,com.xcorp.android
 
   # ==== 💹海外金融证券 ====
   # 💹Tiger Brokers / TradeUP（老虎）
@@ -368,39 +329,6 @@ payload:
   - PROCESS-NAME,com.htsu.hsbcpersonalbanking
   - PROCESS-NAME,com.hsbc.hsbcukmobilebanking
   - PROCESS-NAME,com.hsbc.hsbcchina
-
-  # ==== 🐦X (Twitter) 全域匹配 ====
-  # 官方域名
-  - DOMAIN-SUFFIX,x.com
-  - DOMAIN-SUFFIX,twitter.com
-  - DOMAIN-SUFFIX,t.co
-  - DOMAIN-SUFFIX,twimg.com
-  - DOMAIN-SUFFIX,twitpic.com
-  - DOMAIN-SUFFIX,periscope.tv
-  - DOMAIN-SUFFIX,pscp.tv
-  - DOMAIN-SUFFIX,video.twimg.com
-  - DOMAIN-SUFFIX,abs.twimg.com
-  - DOMAIN-SUFFIX,pbs.twimg.com
-  # API 接口域名
-  - DOMAIN-SUFFIX,api.twitter.com
-  - DOMAIN-SUFFIX,upload.twitter.com
-  - DOMAIN-SUFFIX,mobile.twitter.com
-  - DOMAIN-SUFFIX,analytics.twitter.com
-  # 登录认证 & 广告
-  - DOMAIN-SUFFIX,ads-twitter.com
-  - DOMAIN-SUFFIX,syndication.twimg.com
-  - DOMAIN-SUFFIX,platform.twitter.com
-  # 图片/视频 CDN
-  - DOMAIN-KEYWORD,twimg
-  - DOMAIN-KEYWORD,video.twimg
-  # 官方应用（Android / iOS）
-  - PROCESS-NAME,com.twitter.android
-  - PROCESS-NAME,com.twitter.android.lite
-  - PROCESS-NAME,com.twitter.android.beta
-  - PROCESS-NAME,com.twitter.android.dev
-  # X / 新版图标应用包名
-  - PROCESS-NAME,com.x.android
-  - PROCESS-NAME,com.xcorp.android
 
   # ==== 动态域名 ====
   - DOMAIN-SUFFIX,blogdns.org
