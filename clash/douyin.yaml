@@ -53,6 +53,8 @@ payload:
   - DOMAIN-SUFFIX,xdrtc.com
   - DOMAIN-SUFFIX,cdnbuild.net
   - DOMAIN-SUFFIX,kuiniuca.com
+  - DOMAIN-SUFFIX,ecombdimg.com
+  - DOMAIN-SUFFIX,ecombdstatic.com
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
