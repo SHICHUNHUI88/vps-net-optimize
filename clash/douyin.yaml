@@ -6,7 +6,6 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
   # ==== 字节跳动系 核心域名 ====
-  - DOMAIN-SUFFIX,xdrtc.com
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
   - DOMAIN-SUFFIX,amemv.net
@@ -51,6 +50,9 @@ payload:
   - DOMAIN-SUFFIX,musical.ly
   - DOMAIN-SUFFIX,goofish.com
   - DOMAIN-SUFFIX,snssdk.com
+  - DOMAIN-SUFFIX,xdrtc.com
+  - DOMAIN-SUFFIX,cdnbuild.net
+  - DOMAIN-SUFFIX,kuiniuca.com
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
