@@ -6,6 +6,7 @@ payload:
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
   # ==== 字节跳动系 核心域名 ====
+  - DOMAIN-SUFFIX,xdrtc.com
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
   - DOMAIN-SUFFIX,amemv.net
@@ -87,6 +88,7 @@ payload:
   - DOMAIN-SUFFIX,ad-vance.cn
   - DOMAIN-SUFFIX,volcvideo.com
   # ==== 精准域名（单域名）====
+  - DOMAIN,ice-stunserver.xdrtc.com.gtm.xdrtc.com
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
   # ❓ 抖音不知域名
