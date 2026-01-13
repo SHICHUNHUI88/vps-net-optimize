@@ -388,15 +388,6 @@ payload:
   - DOMAIN-KEYWORD,cmblife
   - DOMAIN-KEYWORD,cmb
 
-  # ==== 抖音国内 CDN / 加速 IP ====
-  - IP-CIDR,101.227.0.0/16,no-resolve
-  - IP-CIDR,101.32.0.0/16,no-resolve
-  - IP-CIDR,183.60.0.0/16,no-resolve
-  - IP-CIDR,106.75.0.0/16,no-resolve
-  - IP-CIDR,123.125.0.0/16,no-resolve
-  - IP-CIDR,140.205.0.0/16,no-resolve
-  - IP-CIDR,182.140.0.0/16,no-resolve
-
   # ==== 阿里 / 淘宝 IP 段（保留 no-resolve）====
   - IP-CIDR,39.97.204.0/22,no-resolve
   - IP-CIDR,39.97.204.0/23,no-resolve
