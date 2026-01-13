@@ -123,6 +123,7 @@
         "oceanengine",
         "qishui"
       ],
+      "ip_asn": [138667, 396986],
       "domain_regex": [
         "^lf\\d+-.*\\.byteimg\\.com$",
         "^p\\d+-.*\\.byteimg\\.com$",
