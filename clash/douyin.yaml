@@ -122,6 +122,14 @@ payload:
   - DOMAIN-KEYWORD,bytev
   - DOMAIN-KEYWORD,oceanengine
   - DOMAIN-KEYWORD,qishui
+  # ==== 抖音国内 CDN / 加速 IP ====
+  - IP-CIDR,101.227.0.0/16,no-resolve
+  - IP-CIDR,101.32.0.0/16,no-resolve
+  - IP-CIDR,183.60.0.0/16,no-resolve
+  - IP-CIDR,106.75.0.0/16,no-resolve
+  - IP-CIDR,123.125.0.0/16,no-resolve
+  - IP-CIDR,140.205.0.0/16,no-resolve
+  - IP-CIDR,182.140.0.0/16,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
