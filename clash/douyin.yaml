@@ -2,9 +2,18 @@ payload:
   # ==== 字节跳动系 应用 & 服务 ====
   - PROCESS-NAME,com.ss.android.ugc.aweme
   - PROCESS-NAME,com.ss.android.ugc.aweme.lite
-  - PROCESS-NAME,com.ss.android.ugc.live
   - PROCESS-NAME,com.ss.android.ugc.aweme.beta
   - PROCESS-NAME,com.ss.android.ugc.aweme.youth
+  - PROCESS-NAME,com.ss.android.ugc.live
+  - PROCESS-NAME,com.ss.android.article.video
+  - PROCESS-NAME,com.ss.android.article.news
+  - PROCESS-NAME,com.ss.android.article.lite
+  - PROCESS-NAME,com.ss.android.ugc.live.lite
+  - PROCESS-NAME,com.ss.android.ugc.video
+  - PROCESS-NAME,com.lemon.lv
+  - PROCESS-NAME,com.vega.edit
+  - PROCESS-NAME,com.dragon.read
+  - PROCESS-NAME,com.ss.android.auto
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
