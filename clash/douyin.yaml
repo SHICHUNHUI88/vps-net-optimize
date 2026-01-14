@@ -109,6 +109,8 @@ payload:
   - DOMAIN-SUFFIX,getui.com
   - DOMAIN-SUFFIX,igexin.com
   # 🔑 关键词全覆盖（去重整合）====
+  - DOMAIN-KEYWORD,xdrtc
+  - DOMAIN-KEYWORD,cdnbuild
   - DOMAIN-KEYWORD,ndcpp
   - DOMAIN-KEYWORD,amemv
   - DOMAIN-KEYWORD,douyincdn
