@@ -142,6 +142,13 @@ payload:
   - IP-CIDR,123.125.0.0/16,no-resolve
   - IP-CIDR,140.205.0.0/16,no-resolve
   - IP-CIDR,182.140.0.0/16,no-resolve
+  # ==== IPv6 ====
+  - IP-CIDR6,2409:8c04:1002:8::2021/128,no-resolve
+  - IP-CIDR6,240e:940:a03:1200:8922::102/128,no-resolve
+  - IP-CIDR6,240e:964:1003:30a:3::27/128,no-resolve
+  - IP-CIDR6,240e:964:1004:203::31/128,no-resolve
+  - IP-CIDR6,240e:964:1004:203::34/128,no-resolve
+  - IP-CIDR6,240e:965:801:104::b00:104/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
