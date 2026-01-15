@@ -65,6 +65,8 @@ payload:
   - DOMAIN-SUFFIX,kuiniuca.com
   - DOMAIN-SUFFIX,ecombdimg.com
   - DOMAIN-SUFFIX,ecombdstatic.com
+  - DOMAIN-SUFFIX,doubao.com
+  - DOMAIN-SUFFIX,kuiniuca.com
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
@@ -149,6 +151,7 @@ payload:
   - IP-CIDR6,240e:964:1004:203::31/128,no-resolve
   - IP-CIDR6,240e:964:1004:203::34/128,no-resolve
   - IP-CIDR6,240e:965:801:104::b00:104/128,no-resolve
+  - IP-CIDR6,2409:8c04:1002:8::2001/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   - IP-ASN,396986
