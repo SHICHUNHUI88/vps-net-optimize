@@ -1,4 +1,33 @@
 payload:
+  # 📱 进程名匹配（Google 全家桶）
+  - PROCESS-NAME,BackupandSync
+  - PROCESS-NAME,GoogleDriveFS.exe
+  - PROCESS-NAME,com.android.chrome
+  - PROCESS-NAME,com.android.vending
+  - PROCESS-NAME,com.google.android.apps.docs
+  - PROCESS-NAME,com.google.android.apps.photos
+  - PROCESS-NAME,com.google.android.apps.translate
+  - PROCESS-NAME,com.google.android.gm
+  - PROCESS-NAME,com.google.android.gms
+  - PROCESS-NAME,com.google.android.gms.persistent
+  - PROCESS-NAME,com.google.android.gsf
+  - PROCESS-NAME,com.google.android.googlequicksearchbox
+  - PROCESS-NAME,com.google.android.inputmethod.latin
+  - PROCESS-NAME,com.google.android.play.games
+  - PROCESS-NAME,com.google.android.tts
+  - PROCESS-NAME,com.google.android.youtube
+  - PROCESS-NAME,com.google.android.gms.unstable
+  - PROCESS-NAME,com.google.android.gms.ui
+  - PROCESS-NAME,com.google.android.gsf.login
+  - PROCESS-NAME,com.google.android.apps.maps
+  - PROCESS-NAME,com.google.android.apps.assistant
+  - PROCESS-NAME,com.google.android.as
+  - PROCESS-NAME,com.google.android.apps.tachyon
+  - PROCESS-NAME,com.google.android.calendar
+  - PROCESS-NAME,com.google.android.apps.subscriptions.red
+  - PROCESS-NAME,chrome.exe
+  - PROCESS-NAME,GoogleUpdate.exe
+  - PROCESS-NAME,GoogleCrashHandler.exe
   # 🌐 域名规则
   - DOMAIN,voice.telephony.goog  
   # 🌐 域名后缀匹配（核心服务）
@@ -737,20 +766,4 @@ payload:
   - IP-CIDR,216.73.80.0/20
   - IP-CIDR,74.125.0.0/16
   - IP-CIDR6,2620:120:e000::/40  
-  # 📱 进程名匹配
-  - PROCESS-NAME,BackupandSync
-  - PROCESS-NAME,GoogleDriveFS.exe
-  - PROCESS-NAME,com.android.chrome
-  - PROCESS-NAME,com.android.vending
-  - PROCESS-NAME,com.google.android.apps.docs
-  - PROCESS-NAME,com.google.android.apps.photos
-  - PROCESS-NAME,com.google.android.apps.translate
-  - PROCESS-NAME,com.google.android.gm
-  - PROCESS-NAME,com.google.android.gms
-  - PROCESS-NAME,com.google.android.gms.persistent
-  - PROCESS-NAME,com.google.android.gsf
-  - PROCESS-NAME,com.google.android.googlequicksearchbox
-  - PROCESS-NAME,com.google.android.inputmethod.latin
-  - PROCESS-NAME,com.google.android.play.games
-  - PROCESS-NAME,com.google.android.tts
-  - PROCESS-NAME,com.google.android.youtube
+  
