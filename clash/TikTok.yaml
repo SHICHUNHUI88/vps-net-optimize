@@ -26,6 +26,15 @@ payload:
   - DOMAIN-SUFFIX,vm.tiktok.com
   - DOMAIN-SUFFIX,vt.tiktok.com
   - DOMAIN-SUFFIX,link.tiktok.com
+  - DOMAIN-SUFFIX,tiktokrow.com
+  - DOMAIN-SUFFIX,ttoversea.com
+  - DOMAIN-SUFFIX,ttoversea.net
+  - DOMAIN-SUFFIX,bytednsdoc.com
+  - DOMAIN-SUFFIX,bytedns.net
+  - DOMAIN-SUFFIX,pstatp.com
+  - DOMAIN-SUFFIX,tiktok-sso.com
+  - DOMAIN-SUFFIX,pangleglobal.com
+  - DOMAIN-SUFFIX,pangleglobal.net
   # 📦 静态资源与视频流 (CDN)
   - DOMAIN-SUFFIX,tiktokcdn-com.akamaized.net
   - DOMAIN,lf16-effectcdn.byteeffecttos-g.com
@@ -70,6 +79,9 @@ payload:
   - DOMAIN-KEYWORD,musical
   - DOMAIN-KEYWORD,musically
   - DOMAIN-KEYWORD,capcut
+  - DOMAIN-KEYWORD,ttlive
+  - DOMAIN-KEYWORD,webcast
+  - DOMAIN-KEYWORD,tiktokcdn
   # 🛰️ ASN & IP 兜底（放到最后，避免误伤）
   - IP-ASN,138699
   - IP-CIDR,170.176.0.0/12,no-resolve
