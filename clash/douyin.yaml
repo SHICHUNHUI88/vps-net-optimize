@@ -154,4 +154,3 @@ payload:
   - IP-CIDR6,2409:8c04:1002:8::2001/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
-  - IP-ASN,396986
