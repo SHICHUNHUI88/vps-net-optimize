@@ -154,3 +154,29 @@ payload:
   - IP-CIDR6,2409:8c04:1002:8::2001/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
+  # ✅ 进程正则兜底（防止变体包名 / 新后缀）
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.ugc\.aweme(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.ugc\.live(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.article(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.ugc\.video(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.auto(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.lemon\.lv(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.vega\.edit(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.dragon\.read(\..+)?$
+  # ✅ 域名正则兜底（多级子域 / 变体域名，稳不误伤）
+  - DOMAIN-REGEX,(?i)(^|\.)douyin([a-z0-9-]*)\.(com|cn)$
+  - DOMAIN-REGEX,(?i)(^|\.)iesdouyin([a-z0-9-]*)\.(com|net)$
+  - DOMAIN-REGEX,(?i)(^|\.)amemv\.(com|cn|net)$
+  - DOMAIN-REGEX,(?i)(^|\.)doubao([a-z0-9-]*)\.com$
+
+  - DOMAIN-REGEX,(?i)(^|\.)toutiao([a-z0-9-]*)\.(com|cn)$
+  - DOMAIN-REGEX,(?i)(^|\.)ixigua([a-z0-9-]*)\.(com|cn)$
+  - DOMAIN-REGEX,(?i)(^|\.)huoshan([a-z0-9-]*)\.(com|cn|net)$
+
+  - DOMAIN-REGEX,(?i)(^|\.)bytedns(doc)?\.(com|net)$
+  - DOMAIN-REGEX,(?i)(^|\.)p?ipstatp(\.com(\.cn)?)?$
+  - DOMAIN-REGEX,(?i)(^|\.)snssdk\.com$
+  # ✅ 直播 / RTC / STUN 兜底
+  - DOMAIN-REGEX,(?i)(^|\.)xdrtc\.com$
+  - DOMAIN-REGEX,(?i)(^|\.).*stun.*xdrtc\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)cdnbuild\.net$
