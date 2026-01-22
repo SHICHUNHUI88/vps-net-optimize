@@ -74,3 +74,32 @@ payload:
   - IP-CIDR6,2001:b28:f23c::/47,no-resolve
   - IP-CIDR6,2001:b28:f23f::/48,no-resolve
   - IP-CIDR6,2a0a:f280::/32,no-resolve
+  # ✅ 进程正则兜底（更精准，不乱杀）
+  - PROCESS-NAME-REGEX,(?i)^org\.telegram(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^org\.thunderdog\.challegram(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^nekox\.messenger(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^tw\.nekomimi\.nekogram(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^xyz\.nextalone\.nagram(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^nicegram(\..+)?$
+  # ✅ 域名正则兜底（多级子域 / 变体）
+  - DOMAIN-REGEX,(?i)(^|\.)t(me|g)\b
+  - DOMAIN-REGEX,(?i)(^|\.)telegram(\.org|\.me)$
+  - DOMAIN-REGEX,(?i)(^|\.)web\.telegram\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)desktop\.telegram\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)api\.telegram\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)core\.telegram\.org$
+  # ✅ Telegraph / Graph 生态正则兜底
+  - DOMAIN-REGEX,(?i)(^|\.)telegra\.ph$
+  - DOMAIN-REGEX,(?i)(^|\.)legra\.ph$
+  - DOMAIN-REGEX,(?i)(^|\.)graph\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)comments\.app$
+  - DOMAIN-REGEX,(?i)(^|\.)contest\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)telesco\.pe$
+  # ✅ CDN / 媒体资源兜底（防漏图、视频、文件）
+  - DOMAIN-REGEX,(?i)(^|\.)telegramusercontent\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)cdn-telegram\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)telegram-?cdn\.org$
+  - DOMAIN-REGEX,(?i)(^|\.)telegramcdn\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)media\.telegram\.org$
+  # ✅ 第三方客户端 API 兜底
+  - DOMAIN-REGEX,(?i)^api\.(imem|swiftgram)\.app$
