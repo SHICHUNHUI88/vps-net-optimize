@@ -91,3 +91,21 @@ payload:
   - IP-CIDR,47.246.0.0/16,no-resolve
   - IP-CIDR,52.74.0.0/16,no-resolve
   - IP-CIDR,52.220.0.0/15,no-resolve
+  # ✅ 进程正则兜底（防止变体包名）
+  - PROCESS-NAME-REGEX,(?i)^com\.zhiliaoapp\.musically(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.ugc\.trill(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.tiktok(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.tiktok\.tv(\..+)?$
+  - PROCESS-NAME-REGEX,(?i)^com\.rezvorck\.tiktokplugin(\..+)?$
+  # ✅ 域名正则兜底（变体域名 / 多级子域名）
+  - DOMAIN-REGEX,(?i)(^|\.)tiktok([a-z0-9-]*)\.(com|us|app)$
+  - DOMAIN-REGEX,(?i)(^|\.)tiktok(v|cdn|live|shop)([a-z0-9-]*)\.(com|us)$
+  - DOMAIN-REGEX,(?i)(^|\.)tt(webview|live|wstatic)([a-z0-9-]*)\.(com|net)$
+  - DOMAIN-REGEX,(?i)(^|\.)ttoversea(\.com|\.net)$
+  - DOMAIN-REGEX,(?i)(^|\.)byteoversea(\.com|\.net)$
+  - DOMAIN-REGEX,(?i)(^|\.)((i)?bytedapm|byteintlapi|bytegecko(-i18n)?)\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)((isnssdk|snssdk|sgpstatp|pstatp|ipstatp))\.com$
+  # ✅ Windows 程序路径兜底（可选）
+  - PROCESS-PATH-REGEX,(?i).*\\TikTok.*\.exe$
+  - PROCESS-PATH-REGEX,(?i).*\\TikTok.*Live.*Studio.*\.exe$
+  - PROCESS-PATH-REGEX,(?i).*\\CapCut.*\.exe$
