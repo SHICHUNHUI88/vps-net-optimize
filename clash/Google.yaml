@@ -766,4 +766,18 @@ payload:
   - IP-CIDR,216.73.80.0/20
   - IP-CIDR,74.125.0.0/16
   - IP-CIDR6,2620:120:e000::/40  
-  
+
+  # 🌐 Google 正则兜底（少而精，避免误伤）
+  - DOMAIN-REGEX,(?i)(^|\.)accounts\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)oauth2\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)gstatic\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)googleusercontent\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)recaptcha\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)recaptcha\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)googlevideo\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)ytimg\.com$
+  # 📱 Android Google 全家桶进程兜底
+  - PROCESS-NAME-REGEX,(?i)^com\.google\.android\..+$
+  - PROCESS-NAME-REGEX,(?i)^com\.android\.vending$
+  - PROCESS-NAME-REGEX,(?i)^com\.google\.android\.gms(\..+)?$
