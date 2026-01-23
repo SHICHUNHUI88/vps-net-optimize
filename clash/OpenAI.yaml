@@ -123,3 +123,55 @@ payload:
   - IP-CIDR,24.199.123.28/32
   - IP-CIDR,64.23.132.171/32
   - IP-ASN,20473
+
+  # 🧠 App / Web 入口（动态子域）
+  - PROCESS-NAME-REGEX,(?i)^(com\.openai\.chatgpt(\..+)?)$
+  - DOMAIN-REGEX,(?i)(^|\.)chatgpt\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)chat\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)android\.chat\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)ios\.chat\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)desktop\.chat\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)[a-z0-9-]+\.chat\.openai\.com$
+  # 🔐 登录/授权（Auth0 / OpenAI Auth）
+  - DOMAIN-REGEX,(?i)(^|\.)auth0\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)setup\.auth\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)[a-z0-9-]+\.auth\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)auth0\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)auth0usercontent\.com$
+  # 🧩 验证/风控（Arkose / Cloudflare Challenge）
+  - DOMAIN-REGEX,(?i)(^|\.)openai-api\.arkoselabs\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)client-api\.arkoselabs\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)arkoselabs\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)challenges\.cloudflare\.com$
+  # 📦 文件 / CDN / 静态资源（动态子域）
+  - DOMAIN-REGEX,(?i)(^|\.)oaiusercontent\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)[a-z0-9-]+\.oaiusercontent\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)oaistatic\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)[a-z0-9-]+\.oaistatic\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)openaicdn\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)cdn\.openai\.com$
+  # 🎥 Sora / 视频 / Realtime（动态子域）
+  - DOMAIN-REGEX,(?i)(^|\.)sora\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)video\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)media\.openai\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)realtime\.openai\.com$
+  # 🎙️ LiveKit（实时语音/turn）
+  - DOMAIN-REGEX,(?i)(^|\.)chatgpt\.livekit\.cloud$
+  - DOMAIN-REGEX,(?i)(^|\.)host\.livekit\.cloud$
+  - DOMAIN-REGEX,(?i)(^|\.)turn\.livekit\.cloud$
+  - DOMAIN-REGEX,(?i)(^|\.)livekit\.io$
+  # ⚙️ 功能开关/配置/统计（Statsig / Sentry / Datadog）
+  - DOMAIN-REGEX,(?i)(^|\.)statsig\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)api\.statsig\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)statsigapi\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)events\.statsigapi\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)sentry\.io$
+  - DOMAIN-REGEX,(?i)(^|\.)browser-intake-datadoghq\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)rum\.browser-intake-datadoghq\.com$
+  # 💳 支付/客服（Stripe / Intercom / WorkOS）
+  - DOMAIN-REGEX,(?i)(^|\.)stripe\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)js\.stripe\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)intercom\.io$
+  - DOMAIN-REGEX,(?i)(^|\.)intercomcdn\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)workos\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)workoscdn\.com$
