@@ -1,4 +1,4 @@
-Payload:
+payload:
   # ==== 🎮 Wildrift/ 游戏核心服务 ====
   - PROCESS-NAME,com.riotgames.league.wildrift
   - PROCESS-NAME,com.riotgames.league.wildrift.android
