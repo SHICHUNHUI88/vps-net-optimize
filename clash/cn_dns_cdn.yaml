@@ -388,6 +388,24 @@ payload:
   - DOMAIN-KEYWORD,cmblife
   - DOMAIN-KEYWORD,cmb
 
+  # ==== 👮交管12123 ====
+  - PROCESS-NAME,com.tmri.app.main
+  - PROCESS-NAME,com.tmri.app
+  - PROCESS-NAME,com.tmri.android
+  - PROCESS-NAME,com.tmri
+  - DOMAIN-SUFFIX,122.gov.cn
+  - DOMAIN-SUFFIX,12123.gov.cn
+  - DOMAIN-SUFFIX,tmri.gov.cn
+  - DOMAIN-SUFFIX,mps.gov.cn
+  - DOMAIN-SUFFIX,gongan.gov.cn
+  - DOMAIN-SUFFIX,ga.gov.cn
+  - DOMAIN-KEYWORD,12123
+  - DOMAIN-KEYWORD,tmri
+  - DOMAIN-KEYWORD,jiaoguan
+  - DOMAIN-KEYWORD,jtgj
+  - DOMAIN-KEYWORD,gongan
+  - DOMAIN-KEYWORD,mps
+
   # ==== 阿里 / 淘宝 IP 段（保留 no-resolve）====
   - IP-CIDR,39.97.204.0/22,no-resolve
   - IP-CIDR,39.97.204.0/23,no-resolve
