@@ -3,7 +3,6 @@
 这是一个用于 **VPS/Linux 服务器初始化** 的工具安装脚本，支持一键安装常用的软件和系统工具，智能跳过已安装的包。
 
 ## 功能
-- 🔹 自动更新系统
 - 🔹 安装常用编辑器和基础工具（nano、vim、git、wget、curl 等）
 - 🔹 安装网络调试和监控工具（htop、iftop、mtr、tcpdump、netcat-openbsd 等）
 - 🔹 安装并启用 `cron`
