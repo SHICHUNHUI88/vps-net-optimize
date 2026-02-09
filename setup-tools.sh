@@ -30,7 +30,6 @@ install_one() {
     echo "✅ $pkg 已安装，跳过"
     return 0
   fi
-
   echo "🔹 安装 $pkg ..."
   if $APT install -y "$pkg"; then
     return 0
@@ -50,16 +49,8 @@ install_if_missing() {
 echo "🔹 更新软件包索引..."
 $APT update -y || { echo "❌ apt update 失败，退出"; exit 1; }
 
-if [ "$DO_UPGRADE" -eq 1 ]; then
-  echo "🔹 执行系统升级（upgrade）..."
-  $APT upgrade -y || echo "⚠️ upgrade 失败（继续执行）"
-else
-  echo "ℹ️ 默认不执行 upgrade（更稳）。如需升级：./setup-tools.sh --upgrade"
-fi
-
-# ==== 显式安装：iputils-ping（支持 -M do 测 MTU） ====
+# ==== 先确保 ping 支持 -M do（你要求显式加入） ====
 echo "🔹 安装 iputils-ping（支持 -M do 测 MTU）..."
-$SUDO apt-get update -y || true
 $SUDO apt-get install -y iputils-ping || FAILED_PKGS+=("iputils-ping")
 # ================================================
 
@@ -74,7 +65,6 @@ if [ -n "$SUDO" ]; then
 fi
 
 echo "🔹 安装网络和监控工具（原有 + 增强）..."
-# netcat 指定 openbsd 实现，避免虚拟包报错
 install_if_missing \
   iptables iproute2 net-tools traceroute htop iftop nload \
   netcat-openbsd tcpdump mtr bmon conntrack \
@@ -82,7 +72,8 @@ install_if_missing \
   dnsutils bind9-host jq socat nmap whois ipset wireguard-tools
 
 echo "🔹 安装系统排障/磁盘/性能工具..."
-install_if_missing iotop ncdu tree bash-completion time logrotate \
+install_if_missing \
+  iotop ncdu tree bash-completion time logrotate \
   ethtool sysstat lsof unattended-upgrades \
   p7zip-full xz-utils zstd openssl rclone fail2ban
 
@@ -113,15 +104,25 @@ echo "🔹 清理缓存..."
 $APT autoremove -y || true
 $APT clean || true
 
+# ===== 最后再做升级（可选） =====
+if [ "$DO_UPGRADE" -eq 1 ]; then
+  echo "🔹 最后执行系统升级（upgrade）..."
+  $APT upgrade -y || echo "⚠️ upgrade 失败（继续执行）"
+  echo "ℹ️ 如提示需要重启：建议你手动择时重启（reboot）"
+else
+  echo "ℹ️ 工具已安装完成；默认未 upgrade。需要升级请运行：./setup-tools.sh --upgrade"
+fi
+# ===============================
+
 echo "✅ VPS 工具安装流程结束！"
 echo "   - 已智能跳过已安装的软件"
 echo "   - netcat 使用 netcat-openbsd"
-echo "   - 默认不 upgrade；需要升级请加参数：--upgrade"
+echo "   - dool 若不可用会自动装 dstat"
 
 if [ "${#FAILED_PKGS[@]}" -gt 0 ]; then
   echo "⚠️ 以下软件包安装失败（不影响脚本跑完）："
   printf '   - %s\n' "${FAILED_PKGS[@]}"
-  echo "   你把这段失败列表发我，我帮你逐个适配/替换包名。"
+  echo "   你把失败列表发我，我帮你逐个适配/替换包名。"
 fi
 EOF
 
