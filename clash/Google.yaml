@@ -767,8 +767,22 @@ payload:
   - IP-CIDR,74.125.0.0/16
   - IP-CIDR6,2620:120:e000::/40  
 
-  # 🌐 Google 正则兜底（少而精，避免误伤）
+  # ==== 🤖 Gemini / Bard (Google AI) ====
+  - PROCESS-NAME,com.google.android.apps.bard
+  - DOMAIN,gemini.google.com
+  - DOMAIN-SUFFIX,gemini.google
+  - DOMAIN,generativelanguage.googleapis.com
+  - DOMAIN-KEYWORD,generativelanguage
+  - DOMAIN-KEYWORD,gemini
+  - DOMAIN-REGEX,(?i)(^|\.)gemini\.google$
+  - DOMAIN-REGEX,(?i)(^|\.)gemini\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)generativelanguage\.googleapis\.com$
+
+  # ==== 🌐 Google 正则兜底 ====
   - DOMAIN-REGEX,(?i)(^|\.)accounts\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)myaccount\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)clients\d+\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)apis\.google\.com$
   - DOMAIN-REGEX,(?i)(^|\.)oauth2\.googleapis\.com$
   - DOMAIN-REGEX,(?i)(^|\.)googleapis\.com$
   - DOMAIN-REGEX,(?i)(^|\.)gstatic\.com$
@@ -777,7 +791,21 @@ payload:
   - DOMAIN-REGEX,(?i)(^|\.)recaptcha\.google\.com$
   - DOMAIN-REGEX,(?i)(^|\.)googlevideo\.com$
   - DOMAIN-REGEX,(?i)(^|\.)ytimg\.com$
-  # 📱 Android Google 全家桶进程兜底
+  - DOMAIN-REGEX,(?i)(^|\.)play\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)play\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)android\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)drive\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)docs\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)sheets\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)slides\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)maps\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)lh\d+\.googleusercontent\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)firebaseinstallations\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)firebaseremoteconfig\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)fcm\.googleapis\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)dl\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)dl\.l\.google\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)update\.googleapis\.com$
   - PROCESS-NAME-REGEX,(?i)^com\.google\.android\..+$
   - PROCESS-NAME-REGEX,(?i)^com\.android\.vending$
   - PROCESS-NAME-REGEX,(?i)^com\.google\.android\.gms(\..+)?$
