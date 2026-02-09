@@ -2,11 +2,6 @@ cat > setup-tools.sh <<'EOF'
 #!/bin/bash
 set -uo pipefail
 
-DO_UPGRADE=0
-if [ "${1:-}" = "--upgrade" ]; then
-  DO_UPGRADE=1
-fi
-
 # ==== 基础环境检测（root / sudo） ====
 if [ "$(id -u)" -eq 0 ]; then
   SUDO=""
@@ -46,13 +41,25 @@ install_if_missing() {
   done
 }
 
+ask_yn() {
+  local prompt="$1"
+  local ans
+  while true; do
+    read -r -p "$prompt (y/n): " ans || ans=""
+    case "${ans,,}" in
+      y|yes) return 0 ;;
+      n|no)  return 1 ;;
+      *) echo "请输入 y 或 n" ;;
+    esac
+  done
+}
+
 echo "🔹 更新软件包索引..."
 $APT update -y || { echo "❌ apt update 失败，退出"; exit 1; }
 
-# ==== 先确保 ping 支持 -M do（你要求显式加入） ====
+# ==== 显式安装：iputils-ping（支持 -M do 测 MTU） ====
 echo "🔹 安装 iputils-ping（支持 -M do 测 MTU）..."
 $SUDO apt-get install -y iputils-ping || FAILED_PKGS+=("iputils-ping")
-# ================================================
 
 echo "🔹 安装编辑器和基础工具..."
 install_if_missing \
@@ -77,7 +84,6 @@ install_if_missing \
   ethtool sysstat lsof unattended-upgrades \
   p7zip-full xz-utils zstd openssl rclone fail2ban
 
-# dool / dstat 自动兼容（Debian bookworm 常见没有 dool）
 echo "🔹 安装 dool/dstat（自动兼容）..."
 if apt-cache show dool >/dev/null 2>&1; then
   install_if_missing dool
@@ -104,25 +110,45 @@ echo "🔹 清理缓存..."
 $APT autoremove -y || true
 $APT clean || true
 
-# ===== 最后再做升级（可选） =====
-if [ "$DO_UPGRADE" -eq 1 ]; then
-  echo "🔹 最后执行系统升级（upgrade）..."
-  $APT upgrade -y || echo "⚠️ upgrade 失败（继续执行）"
-  echo "ℹ️ 如提示需要重启：建议你手动择时重启（reboot）"
-else
-  echo "ℹ️ 工具已安装完成；默认未 upgrade。需要升级请运行：./setup-tools.sh --upgrade"
-fi
-# ===============================
+echo "✅ 工具安装已完成。"
 
-echo "✅ VPS 工具安装流程结束！"
-echo "   - 已智能跳过已安装的软件"
+# ===== 工具装完后：询问是否升级 =====
+if ask_yn "是否现在进行系统升级（apt upgrade）？"; then
+  echo "🔹 执行系统升级（upgrade）..."
+  if $APT upgrade -y; then
+    echo "✅ 系统升级完成。"
+  else
+    echo "⚠️ 系统升级失败（继续往下）。"
+  fi
+else
+  echo "ℹ️ 已跳过系统升级。"
+fi
+
+# ===== 升级后：如需要重启则询问 =====
+REBOOT_FLAG=0
+if [ -f /var/run/reboot-required ] || [ -f /run/reboot-required ]; then
+  REBOOT_FLAG=1
+fi
+
+if [ "$REBOOT_FLAG" -eq 1 ]; then
+  echo "⚠️ 检测到系统提示需要重启（reboot-required）。"
+  if ask_yn "是否现在重启系统？"; then
+    echo "🔁 正在重启..."
+    $SUDO reboot
+  else
+    echo "ℹ️ 已选择不重启。你可以稍后手动执行：reboot"
+  fi
+else
+  echo "✅ 未检测到必须重启的标记。"
+fi
+
+echo "✅ VPS 工具脚本执行结束！"
 echo "   - netcat 使用 netcat-openbsd"
 echo "   - dool 若不可用会自动装 dstat"
 
 if [ "${#FAILED_PKGS[@]}" -gt 0 ]; then
   echo "⚠️ 以下软件包安装失败（不影响脚本跑完）："
   printf '   - %s\n' "${FAILED_PKGS[@]}"
-  echo "   你把失败列表发我，我帮你逐个适配/替换包名。"
 fi
 EOF
 
