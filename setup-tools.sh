@@ -1,6 +1,6 @@
 cat > setup-tools.sh <<'EOF'
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 DO_UPGRADE=0
 if [ "${1:-}" = "--upgrade" ]; then
@@ -22,31 +22,45 @@ fi
 APT="$SUDO apt-get"
 export DEBIAN_FRONTEND=noninteractive
 
+FAILED_PKGS=()
+
+install_one() {
+  local pkg="$1"
+  if dpkg -s "$pkg" >/dev/null 2>&1; then
+    echo "✅ $pkg 已安装，跳过"
+    return 0
+  fi
+
+  echo "🔹 安装 $pkg ..."
+  if $APT install -y "$pkg"; then
+    return 0
+  else
+    echo "⚠️  安装失败：$pkg（继续执行）"
+    FAILED_PKGS+=("$pkg")
+    return 1
+  fi
+}
+
 install_if_missing() {
   for pkg in "$@"; do
-    if dpkg -s "$pkg" >/dev/null 2>&1; then
-      echo "✅ $pkg 已安装，跳过"
-    else
-      echo "🔹 安装 $pkg ..."
-      $APT install -y "$pkg"
-    fi
+    install_one "$pkg" || true
   done
 }
 
 echo "🔹 更新软件包索引..."
-$APT update -y
+$APT update -y || { echo "❌ apt update 失败，退出"; exit 1; }
 
 if [ "$DO_UPGRADE" -eq 1 ]; then
   echo "🔹 执行系统升级（upgrade）..."
-  $APT upgrade -y
+  $APT upgrade -y || echo "⚠️ upgrade 失败（继续执行）"
 else
   echo "ℹ️ 默认不执行 upgrade（更稳）。如需升级：./setup-tools.sh --upgrade"
 fi
 
-# ==== 你要求显式加的两行（确保 ping 支持 -M do） ====
+# ==== 显式安装：iputils-ping（支持 -M do 测 MTU） ====
 echo "🔹 安装 iputils-ping（支持 -M do 测 MTU）..."
-$SUDO apt-get update -y
-$SUDO apt-get install -y iputils-ping
+$SUDO apt-get update -y || true
+$SUDO apt-get install -y iputils-ping || FAILED_PKGS+=("iputils-ping")
 # ================================================
 
 echo "🔹 安装编辑器和基础工具..."
@@ -68,10 +82,17 @@ install_if_missing \
   dnsutils bind9-host jq socat nmap whois ipset wireguard-tools
 
 echo "🔹 安装系统排障/磁盘/性能工具..."
-install_if_missing \
-  iotop dool ncdu tree bash-completion time logrotate \
+install_if_missing iotop ncdu tree bash-completion time logrotate \
   ethtool sysstat lsof unattended-upgrades \
   p7zip-full xz-utils zstd openssl rclone fail2ban
+
+# dool / dstat 自动兼容（Debian bookworm 常见没有 dool）
+echo "🔹 安装 dool/dstat（自动兼容）..."
+if apt-cache show dool >/dev/null 2>&1; then
+  install_if_missing dool
+else
+  install_if_missing dstat
+fi
 
 echo "🔹 安装 cron 和 systemd 工具..."
 install_if_missing cron
@@ -82,20 +103,26 @@ echo "🔹 安装 Python 环境..."
 install_if_missing python3 python3-pip
 
 echo "🔹 配置 unattended-upgrades 自动安全更新..."
-$SUDO dpkg-reconfigure --priority=low unattended-upgrades || true
+$SUDO dpkg-reconfigure --priority=low unattended-upgrades >/dev/null 2>&1 || true
 
 # fail2ban 装了就尽量启用（失败不影响脚本）
 $SUDO systemctl enable fail2ban >/dev/null 2>&1 || true
 $SUDO systemctl start fail2ban >/dev/null 2>&1 || true
 
 echo "🔹 清理缓存..."
-$APT autoremove -y
-$APT clean
+$APT autoremove -y || true
+$APT clean || true
 
-echo "✅ VPS 工具安装完成！"
+echo "✅ VPS 工具安装流程结束！"
 echo "   - 已智能跳过已安装的软件"
-echo "   - netcat 已指定为 openbsd 版本（netcat-openbsd）"
+echo "   - netcat 使用 netcat-openbsd"
 echo "   - 默认不 upgrade；需要升级请加参数：--upgrade"
+
+if [ "${#FAILED_PKGS[@]}" -gt 0 ]; then
+  echo "⚠️ 以下软件包安装失败（不影响脚本跑完）："
+  printf '   - %s\n' "${FAILED_PKGS[@]}"
+  echo "   你把这段失败列表发我，我帮你逐个适配/替换包名。"
+fi
 EOF
 
 chmod +x setup-tools.sh
