@@ -24,7 +24,6 @@ payload:
   - DOMAIN,dns-unfiltered.adguard.com
   - DOMAIN,dns.aa.net.uk
   - DOMAIN,dns.aaflalo.me
-  - DOMAIN,dns.cfiec.net
   - DOMAIN,dns.containerpi.com
   - DOMAIN,dns.dns-over-https.com
   - DOMAIN,dns.dnsoverhttps.net
@@ -32,7 +31,6 @@ payload:
   - DOMAIN,dns.hostux.net
   - DOMAIN,dns.ipv6dns.com
   - DOMAIN,dns.keweon.center
-  - DOMAIN,dns.rubyfish.cn
   - DOMAIN,dns.sb
   - DOMAIN,dns.surfshark.com
   - DOMAIN,dns.twnic.tw
@@ -55,7 +53,6 @@ payload:
   - DOMAIN,doh.northeu.pi-dns.com
   - DOMAIN,doh.onedns.net
   - DOMAIN,doh.powerdns.org
-  - DOMAIN,doh.pub
   - DOMAIN,doh.sb
   - DOMAIN,doh.seby.io
   - DOMAIN,doh.securedns.eu
@@ -81,10 +78,8 @@ payload:
   - DOMAIN,private.canadianshield.cira.ca
   - DOMAIN,protected.canadianshield.cira.ca
   - DOMAIN,rdns.faelix.net
-  - DOMAIN,rubyfish.cn
   - DOMAIN,security-filter-dns.cleanbrowsing.org
   - DOMAIN,security.cloudflare-dns.com
-  - DOMAIN,sm2.doh.pub
   - DOMAIN,unfiltered.adguard-dns.com
   - DOMAIN,dns.securedns.eu
 
