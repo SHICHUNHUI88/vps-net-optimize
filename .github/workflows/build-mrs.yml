@@ -1,0 +1,45 @@
+name: build-mrs
+
+on:
+  push:
+    paths:
+      - "ruleset-src/**.yaml"
+      - ".github/workflows/build-mrs.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download mihomo
+        run: |
+          set -eux
+          curl -L -o mihomo.gz https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64.gz
+          gunzip -f mihomo.gz
+          chmod +x mihomo
+          ./mihomo -v
+
+      - name: Build mrs
+        run: |
+          set -eux
+          mkdir -p ruleset
+          ./mihomo convert-ruleset domain yaml ruleset-src/douyin.yaml ruleset/douyin.mrs
+
+      - name: Commit & push
+        run: |
+          set -eux
+          if git status --porcelain | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add ruleset/douyin.mrs
+            git commit -m "build: update douyin.mrs"
+            git push
+          else
+            echo "No changes."
+          fi
