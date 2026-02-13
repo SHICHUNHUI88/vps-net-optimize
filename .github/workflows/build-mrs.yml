@@ -27,7 +27,7 @@ jobs:
       - name: Download mihomo (robust)
         shell: bash
         env:
-          MIHOMO_VERSION: "1.19.20"   # 改成 latest 就永远拉最新
+          MIHOMO_VERSION: "latest"   # 固定版本就写 "1.19.20"
         run: |
           set -euxo pipefail
 
@@ -51,7 +51,7 @@ jobs:
 
           echo "Download URL: ${url:-}"
           if [ -z "${url:-}" ]; then
-            echo "❌ 找不到 linux-amd64 资产，release assets 如下："
+            echo "❌ 找不到 linux-amd64 资产，assets："
             curl -fsSL "$api" | jq -r '.assets[].name'
             exit 1
           fi
@@ -74,15 +74,22 @@ jobs:
             gzip -d -f mihomo.gz
           fi
 
+          # 找到解压出来的二进制（通常就叫 mihomo）
           bin="$(find . -maxdepth 1 -type f -size +5M | head -n 1 | sed 's|^\./||')"
+          echo "Detected binary: ${bin:-}"
           if [ -z "${bin:-}" ]; then
             echo "❌ 解压后没找到可执行文件："
             ls -lah
             exit 1
           fi
 
-          mv -f "$bin" /tmp/mihomo
-          chmod +x /tmp/mihomo
+          # 如果不是 mihomo 才改名，避免 mv mihomo mihomo 报错
+          if [ "$bin" != "mihomo" ]; then
+            mv -f "$bin" mihomo
+          fi
+
+          chmod +x mihomo
+          mv -f mihomo /tmp/mihomo
           /tmp/mihomo -v
 
       - name: Build mrs for all yaml
@@ -91,7 +98,6 @@ jobs:
           set -euxo pipefail
           mkdir -p ruleset
 
-          # 全量：ruleset-src 里所有 yaml 都生成
           while IFS= read -r -d '' yaml_file; do
             base="$(basename "$yaml_file" .yaml)"
             out="ruleset/${base}.mrs"
@@ -103,15 +109,11 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-
-          # 只管 ruleset 目录，别把 /tmp/mihomo 这种东西带进去
           git add ruleset/
-
           if git diff --cached --quiet; then
             echo "✅ 无变化，无需提交"
             exit 0
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "build: update MRS files"
