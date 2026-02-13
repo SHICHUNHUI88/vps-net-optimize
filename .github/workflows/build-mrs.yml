@@ -17,25 +17,69 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download mihomo
+      - name: Download mihomo (auto-detect asset)
+        shell: bash
         run: |
-          set -eux
-          sudo apt-get update -y
-          sudo apt-get install -y jq
+          set -euo pipefail
 
+          # 1) 取 latest release 的 assets 列表（用 python 解析，避免 jq/apt）
+          python3 - <<'PY'
+          import json, re, urllib.request
+
+          api = "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+          req = urllib.request.Request(api, headers={"User-Agent": "github-actions"})
+          data = json.load(urllib.request.urlopen(req))
+
+          assets = data.get("assets", [])
+          # 允许 .gz 或 .tar.gz（两者选一个存在的）
+          pat = re.compile(r"mihomo-linux-amd64\.(tar\.gz|gz)$")
+
+          url = ""
+          for a in assets:
+              name = a.get("name","")
+              if pat.search(name):
+                  url = a.get("browser_download_url","")
+                  break
+
+          if not url:
+              raise SystemExit("No matching asset found in latest release assets!")
+
+          print(url)
+          PY
+
+          URL="$(python3 - <<'PY'
+          import json, re, urllib.request
           api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-          url=$(curl -fsSL "$api" | jq -r '.assets[] | select(.name | test("mihomo-linux-amd64\\.(gz|tar\\.gz)$")) | .browser_download_url' | head -n 1)
+          req=urllib.request.Request(api, headers={"User-Agent":"github-actions"})
+          data=json.load(urllib.request.urlopen(req))
+          pat=re.compile(r"mihomo-linux-amd64\.(tar\.gz|gz)$")
+          for a in data.get("assets", []):
+              n=a.get("name","")
+              if pat.search(n):
+                  print(a.get("browser_download_url",""))
+                  break
+          PY
+          )"
 
-          echo "Download URL: $url"
-          test -n "$url"
+          echo "Download URL: $URL"
 
-          curl -L -o mihomo.bin "$url"
+          # 2) 下载：-f 让 404 直接失败（不会再下到 9 字节）
+          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$URL"
 
-          # 如果是 tar.gz 就解包；如果是 gz 就 gunzip
-          if echo "$url" | grep -qE '\.tar\.gz$'; then
-            tar -xzf mihomo.bin
+          # 3) 简单校验：文件太小直接判失败
+          SIZE=$(stat -c%s mihomo.pkg)
+          echo "Downloaded size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "File too small, likely not a real binary package."
+            head -c 200 mihomo.pkg || true
+            exit 1
+          fi
+
+          # 4) 解包：tar.gz 或 gz
+          if echo "$URL" | grep -qE '\.tar\.gz$'; then
+            tar -xzf mihomo.pkg
           else
-            mv mihomo.bin mihomo.gz
+            mv mihomo.pkg mihomo.gz
             gunzip -f mihomo.gz
           fi
 
