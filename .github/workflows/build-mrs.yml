@@ -20,10 +20,25 @@ jobs:
       - name: Download mihomo
         run: |
           set -eux
-          VER=$(curl -sI https://github.com/MetaCubeX/mihomo/releases/latest | grep -i '^location:' | tail -n 1 | sed 's/.*\/tag\///' | tr -d '\r')
-          echo "Latest: $VER"
-          curl -L -o mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/${VER}/mihomo-linux-amd64.gz"
-          gunzip -f mihomo.gz
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+          api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+          url=$(curl -fsSL "$api" | jq -r '.assets[] | select(.name | test("mihomo-linux-amd64\\.(gz|tar\\.gz)$")) | .browser_download_url' | head -n 1)
+
+          echo "Download URL: $url"
+          test -n "$url"
+
+          curl -L -o mihomo.bin "$url"
+
+          # 如果是 tar.gz 就解包；如果是 gz 就 gunzip
+          if echo "$url" | grep -qE '\.tar\.gz$'; then
+            tar -xzf mihomo.bin
+          else
+            mv mihomo.bin mihomo.gz
+            gunzip -f mihomo.gz
+          fi
+
           chmod +x mihomo
           ./mihomo -v
 
