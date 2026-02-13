@@ -19,75 +19,159 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ------------------------------------------------------------
+      # Download mihomo (auto-detect linux-amd64 asset from latest release)
+      # ------------------------------------------------------------
       - name: Download mihomo
         shell: bash
         run: |
           set -euo pipefail
+
           API_URL="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
           echo "Fetching latest release info from $API_URL ..."
-          DOWNLOAD_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" "$API_URL" | \
-            grep -E '"browser_download_url":.*linux-amd64.*\.(gz|tar\.gz)"' | \
-            head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+
+          # Use python to parse JSON (no jq dependency)
+          DOWNLOAD_URL="$(python3 - <<'PY'
+import json, re, urllib.request
+
+api = "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+req = urllib.request.Request(api, headers={"User-Agent": "github-actions"})
+data = json.load(urllib.request.urlopen(req))
+
+pat = re.compile(r"mihomo-linux-amd64\.(tar\.gz|gz)$")
+for a in data.get("assets", []):
+    name = a.get("name", "")
+    if pat.search(name):
+        print(a.get("browser_download_url", ""))
+        break
+PY
+)"
+
           if [ -z "$DOWNLOAD_URL" ]; then
-            echo "❌ 未找到匹配的 asset，当前 release 中的实际 asset 名称如下："
-            curl -s "$API_URL" | grep '"name":' || echo "无法获取 asset 列表"
+            echo "❌ 未找到匹配的 asset（mihomo-linux-amd64.gz 或 .tar.gz）。"
+            echo "当前 release assets："
+            curl -s "$API_URL" | grep '"name":' || true
             exit 1
           fi
-          echo "✅ 找到下载链接: $DOWNLOAD_URL"
-          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$DOWNLOAD_URL"
-          SIZE=$(stat -c%s mihomo.pkg)
+
+          echo "✅ 下载链接: $DOWNLOAD_URL"
+
+          # Download (fail fast on 404)
+          curl -fL --retry 3 --retry-delay 2 -o /tmp/mihomo.pkg "$DOWNLOAD_URL"
+
+          # Basic sanity check: too small = likely error page
+          SIZE=$(stat -c%s /tmp/mihomo.pkg)
           echo "下载大小: $SIZE bytes"
           if [ "$SIZE" -lt 1000000 ]; then
-            echo "❌ 文件太小，可能不是有效的二进制包"
-            head -c 200 mihomo.pkg || true
+            echo "❌ 文件太小，可能不是有效二进制包，内容预览："
+            head -c 200 /tmp/mihomo.pkg || true
             exit 1
           fi
-          if [[ "$DOWNLOAD_URL" =~ \.tar\.gz$ ]]; then
-            tar -xzf mihomo.pkg
-          else
-            mv mihomo.pkg mihomo.gz
-            gunzip -f mihomo.gz
-          fi
-          chmod +x mihomo
-          ./mihomo -v
 
+          # Extract to /tmp/mihomo (avoid untracked file in repo)
+          cd /tmp
+          if [[ "$DOWNLOAD_URL" =~ \.tar\.gz$ ]]; then
+            tar -xzf /tmp/mihomo.pkg
+          else
+            mv /tmp/mihomo.pkg /tmp/mihomo.gz
+            gunzip -f /tmp/mihomo.gz
+          fi
+
+          chmod +x /tmp/mihomo
+          /tmp/mihomo -v
+
+      # ------------------------------------------------------------
+      # Get changed YAML files in this push
+      # Output: JSON array in steps.changed-files.outputs.changed
+      # ------------------------------------------------------------
       - name: Get changed YAML files
         id: changed-files
+        shell: bash
         run: |
-          set -eux
-          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~ HEAD -- ruleset-src/ '*.yaml' || true)
-          else
-            CHANGED=$(git diff --name-only --diff-filter=ACMR ${{ github.event.before }} ${{ github.event.after }} -- ruleset-src/ '*.yaml' || true)
-          fi
-          echo "changed=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+          set -euo pipefail
 
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
+
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            # First push on new branch: compare HEAD~1..HEAD if possible
+            CHANGED="$(git diff --name-only --diff-filter=ACMR HEAD~1 HEAD -- 'ruleset-src/' '*.yaml' || true)"
+          else
+            CHANGED="$(git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" -- 'ruleset-src/' '*.yaml' || true)"
+          fi
+
+          echo "Changed YAML files:"
+          echo "$CHANGED"
+
+          # Convert newline-separated list to JSON array without jq
+          JSON="$(python3 - <<'PY'
+import os, json
+changed = os.environ.get("CHANGED","").splitlines()
+changed = [x.strip() for x in changed if x.strip()]
+print(json.dumps(changed, ensure_ascii=False))
+PY
+)"
+          echo "changed=$JSON" >> "$GITHUB_OUTPUT"
+        env:
+          CHANGED: ${{ steps.changed-files.outputs.changed }}
+
+      # ------------------------------------------------------------
+      # Build .mrs for each changed YAML
+      # ------------------------------------------------------------
       - name: Build mrs
+        shell: bash
         run: |
-          set -eux
+          set -euo pipefail
           mkdir -p ruleset
-          echo '${{ steps.changed-files.outputs.changed }}' | jq -r '.[]' | while read -r yaml_file; do
-            if [ -f "$yaml_file" ]; then
-              base=$(basename "$yaml_file" .yaml)
-              output="ruleset/${base}.mrs"
-              echo "🔨 构建 $yaml_file -> $output"
-              ./mihomo convert-ruleset domain yaml "$yaml_file" "$output"
-            else
-              echo "⚠️ 文件 $yaml_file 不存在，跳过"
-            fi
-          done
 
+          JSON='${{ steps.changed-files.outputs.changed }}'
+
+          # Iterate JSON array with python (no jq)
+          python3 - <<'PY'
+import json, os, subprocess, pathlib
+
+json_text = os.environ["JSON"]
+files = json.loads(json_text) if json_text else []
+mihomo = "/tmp/mihomo"
+
+if not files:
+    print("✅ 没有变更的 YAML，跳过构建")
+    raise SystemExit(0)
+
+pathlib.Path("ruleset").mkdir(parents=True, exist_ok=True)
+
+for yaml_file in files:
+    p = pathlib.Path(yaml_file)
+    if not p.exists():
+        print(f"⚠️ 文件不存在，跳过: {yaml_file}")
+        continue
+
+    base = p.stem
+    out = pathlib.Path("ruleset") / f"{base}.mrs"
+    print(f"🔨 构建 {yaml_file} -> {out}")
+
+    subprocess.check_call([mihomo, "convert-ruleset", "domain", "yaml", str(p), str(out)])
+PY
+        env:
+          JSON: ${{ steps.changed-files.outputs.changed }}
+
+      # ------------------------------------------------------------
+      # Commit & push only if ruleset/ has staged changes
+      # ------------------------------------------------------------
       - name: Commit & push
+        shell: bash
         run: |
-          set -eux
-          # 删除下载的二进制文件，避免干扰提交
-          rm -f mihomo
-          if git status --porcelain | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add ruleset/
-            git commit -m "build: update MRS files"
-            git push
-          else
-            echo "✅ 无变化，无需提交"
+          set -euo pipefail
+
+          git add ruleset/
+
+          # Only commit when ruleset/ actually changed
+          if git diff --cached --quiet; then
+            echo "✅ ruleset/ 没有变化，无需提交"
+            exit 0
           fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: update MRS files"
+          git push
