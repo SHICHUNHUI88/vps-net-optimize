@@ -1,25 +1,19 @@
 name: build-mrs
 
 on:
-  workflow_dispatch: {}
   push:
-    branches: [ "main" ]
     paths:
-      - "ruleset-src/**.yaml"
+      - "ruleset-src/**/*.yaml"
       - ".github/workflows/build-mrs.yml"
+  workflow_dispatch: {}
 
 permissions:
   contents: write
 
-env:
-  TZ: Asia/Shanghai
-  SRC_DIR: ruleset-src
-  OUT_DIR: ruleset
-  MIHOMO_VERSION: "1.19.10"   # 你也可以改成你要的版本
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,45 +24,83 @@ jobs:
         run: |
           set -eux
           sudo apt-get update -y
-          sudo apt-get install -y wget gzip
-          sudo timedatectl set-timezone "$TZ" || true
+          sudo apt-get install -y wget gzip findutils coreutils
 
-      - name: Download mihomo (fixed version)
+      # -----------------------------
+      # 下载 mihomo（固定版本）+ 自动识别解压后的文件名
+      # -----------------------------
+      - name: Download mihomo
+        shell: bash
+        env:
+          MIHOMO_VERSION: "1.19.10"   # 你要固定哪个版本就改这里（比如 1.19.20）
         run: |
-          set -eux
+          set -euxo pipefail
+
+          # 记录解压前目录内容
+          before="$(ls -1A)"
+
           url="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          echo "Downloading: $url"
+
           wget -O mihomo.gz "$url"
           gzip -d -f mihomo.gz
-          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+
+          # 解压后新增的那个文件名（不写死）
+          after="$(ls -1A)"
+          bin="$(comm -13 <(printf "%s\n" $before | sort) <(printf "%s\n" $after | sort) | head -n 1)"
+
+          # 兜底：如果没找到，就找当前目录最大的普通文件
+          if [ -z "${bin:-}" ]; then
+            bin="$(find . -maxdepth 1 -type f -printf "%s %p\n" | sort -nr | head -n 1 | awk '{print $2}' | sed 's|^\./||')"
+          fi
+
+          echo "Detected binary: $bin"
+          mv -f "$bin" mihomo
           chmod +x mihomo
           ./mihomo -v
 
+      # -----------------------------
+      # 全量把 ruleset-src/*.yaml 转成 ruleset/*.mrs
+      # -----------------------------
       - name: Build mrs for all yaml
+        shell: bash
         run: |
-          set -eux
-          mkdir -p "${OUT_DIR}"
+          set -euxo pipefail
+          mkdir -p ruleset
 
-          # 遍历所有 yaml（你说你肯定要改很多文件，直接全量生成最省事）
-          for yaml in ${SRC_DIR}/*.yaml; do
-            [ -f "$yaml" ] || continue
-            base=$(basename "$yaml" .yaml)
-            ./mihomo convert-ruleset domain yaml "$yaml" "${OUT_DIR}/${base}.mrs"
-          done
-
-          # 清理 mihomo，避免被当成未跟踪文件影响提交
-          rm -f mihomo
-
-      - name: Commit & push
-        run: |
-          set -eux
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add "${OUT_DIR}/"
-          if git diff --cached --quiet; then
-            echo "No changes."
+          # 找到所有 yaml
+          mapfile -t files < <(find ruleset-src -type f -name "*.yaml" | sort)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No yaml files found in ruleset-src/"
             exit 0
           fi
 
-          git commit -m "build: update mrs"
+          for yaml_file in "${files[@]}"; do
+            base="$(basename "$yaml_file" .yaml)"
+            out="ruleset/${base}.mrs"
+            echo "Build: $yaml_file -> $out"
+            ./mihomo convert-ruleset domain yaml "$yaml_file" "$out"
+          done
+
+          # 清理临时二进制，防止被误 add
+          rm -f mihomo mihomo.gz || true
+
+      # -----------------------------
+      # Commit & push（只提交 ruleset/）
+      # -----------------------------
+      - name: Commit & push
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          git add ruleset/
+
+          if git diff --cached --quiet; then
+            echo "✅ No changes in ruleset/, skip commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: update MRS files"
           git push
