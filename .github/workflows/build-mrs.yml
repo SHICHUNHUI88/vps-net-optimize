@@ -22,45 +22,68 @@ jobs:
         run: |
           set -eux
           sudo apt-get update -y
-          sudo apt-get install -y curl gzip findutils
+          sudo apt-get install -y curl jq gzip tar findutils
 
       - name: Download mihomo (robust)
         shell: bash
         env:
-          MIHOMO_VERSION: "1.19.10"   # 你要固定哪个版本就改这里，比如 1.19.20
+          MIHOMO_VERSION: "1.19.20"   # 改成 latest 就永远拉最新
         run: |
           set -euxo pipefail
 
           mkdir -p /tmp/mihomo-bin
           cd /tmp/mihomo-bin
 
-          url="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64.gz"
-          echo "Downloading: $url"
+          if [ "$MIHOMO_VERSION" = "latest" ]; then
+            api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+          else
+            api="https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/v${MIHOMO_VERSION}"
+          fi
 
-          # 下载（失败就直接退出）
-          curl -fL --retry 3 --retry-delay 2 -o mihomo.gz "$url"
+          echo "API: $api"
 
-          # 校验是不是 gzip（如果是 HTML/404，这里会立刻报错）
-          gzip -t mihomo.gz || { echo "❌ Not a valid gzip. First 200 bytes:"; head -c 200 mihomo.gz; exit 1; }
+          url="$(curl -fsSL "$api" | jq -r '
+            .assets[]
+            | select(.name | test("linux-amd64"))
+            | select(.name | test("\\.(gz|tar\\.gz)$"))
+            | .browser_download_url
+          ' | head -n 1)"
 
-          # 解压
-          gzip -d -f mihomo.gz
+          echo "Download URL: ${url:-}"
+          if [ -z "${url:-}" ]; then
+            echo "❌ 找不到 linux-amd64 资产，release assets 如下："
+            curl -fsSL "$api" | jq -r '.assets[].name'
+            exit 1
+          fi
 
-          # 自动找到解压出来的二进制（通常 > 5MB）
+          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$url"
+
+          size="$(stat -c%s mihomo.pkg)"
+          echo "Downloaded size: $size"
+          if [ "$size" -lt 1000000 ]; then
+            echo "❌ 文件太小，可能不是二进制。前200字节："
+            head -c 200 mihomo.pkg || true
+            exit 1
+          fi
+
+          if echo "$url" | grep -qE '\.tar\.gz$'; then
+            tar -xzf mihomo.pkg
+          else
+            mv mihomo.pkg mihomo.gz
+            gzip -t mihomo.gz
+            gzip -d -f mihomo.gz
+          fi
+
           bin="$(find . -maxdepth 1 -type f -size +5M | head -n 1 | sed 's|^\./||')"
           if [ -z "${bin:-}" ]; then
-            echo "❌ Cannot find extracted binary in /tmp/mihomo-bin"
+            echo "❌ 解压后没找到可执行文件："
             ls -lah
             exit 1
           fi
 
-          # 统一命名为 mihomo
-          if [ "$bin" != "mihomo" ]; then
-            mv -f "$bin" mihomo
-          fi
-
-          chmod +x mihomo
-          ./mihomo -v
+          mv -f "$bin" /tmp/mihomo
+          chmod +x /tmp/mihomo
+          /tmp/mihomo -v
 
       - name: Build mrs for all yaml
         shell: bash
@@ -68,23 +91,24 @@ jobs:
           set -euxo pipefail
           mkdir -p ruleset
 
-          # 全量生成（你说你会改很多文件，干脆每次都全量最稳）
-          for yaml_file in $(find ruleset-src -type f -name "*.yaml" | sort); do
+          # 全量：ruleset-src 里所有 yaml 都生成
+          while IFS= read -r -d '' yaml_file; do
             base="$(basename "$yaml_file" .yaml)"
             out="ruleset/${base}.mrs"
-            echo "Build: $yaml_file -> $out"
-            /tmp/mihomo-bin/mihomo convert-ruleset domain yaml "$yaml_file" "$out"
-          done
+            echo "🔨 $yaml_file -> $out"
+            /tmp/mihomo convert-ruleset domain yaml "$yaml_file" "$out"
+          done < <(find ruleset-src -type f -name '*.yaml' -print0)
 
-      - name: Commit & push (only ruleset/)
+      - name: Commit & push
         shell: bash
         run: |
           set -euxo pipefail
 
+          # 只管 ruleset 目录，别把 /tmp/mihomo 这种东西带进去
           git add ruleset/
 
           if git diff --cached --quiet; then
-            echo "✅ No changes, skip commit."
+            echo "✅ 无变化，无需提交"
             exit 0
           fi
 
