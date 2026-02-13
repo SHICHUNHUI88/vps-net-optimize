@@ -17,78 +17,66 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install deps
         run: |
           set -eux
           sudo apt-get update -y
-          sudo apt-get install -y wget gzip findutils coreutils
+          sudo apt-get install -y curl gzip findutils
 
-      # -----------------------------
-      # 下载 mihomo（固定版本）+ 自动识别解压后的文件名
-      # -----------------------------
-      - name: Download mihomo
+      - name: Download mihomo (robust)
         shell: bash
         env:
-          MIHOMO_VERSION: "1.19.10"   # 你要固定哪个版本就改这里（比如 1.19.20）
+          MIHOMO_VERSION: "1.19.10"   # 你要固定哪个版本就改这里，比如 1.19.20
         run: |
           set -euxo pipefail
 
-          # 记录解压前目录内容
-          before="$(ls -1A)"
+          mkdir -p /tmp/mihomo-bin
+          cd /tmp/mihomo-bin
 
-          url="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          url="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64.gz"
           echo "Downloading: $url"
 
-          wget -O mihomo.gz "$url"
+          # 下载（失败就直接退出）
+          curl -fL --retry 3 --retry-delay 2 -o mihomo.gz "$url"
+
+          # 校验是不是 gzip（如果是 HTML/404，这里会立刻报错）
+          gzip -t mihomo.gz || { echo "❌ Not a valid gzip. First 200 bytes:"; head -c 200 mihomo.gz; exit 1; }
+
+          # 解压
           gzip -d -f mihomo.gz
 
-          # 解压后新增的那个文件名（不写死）
-          after="$(ls -1A)"
-          bin="$(comm -13 <(printf "%s\n" $before | sort) <(printf "%s\n" $after | sort) | head -n 1)"
-
-          # 兜底：如果没找到，就找当前目录最大的普通文件
+          # 自动找到解压出来的二进制（通常 > 5MB）
+          bin="$(find . -maxdepth 1 -type f -size +5M | head -n 1 | sed 's|^\./||')"
           if [ -z "${bin:-}" ]; then
-            bin="$(find . -maxdepth 1 -type f -printf "%s %p\n" | sort -nr | head -n 1 | awk '{print $2}' | sed 's|^\./||')"
+            echo "❌ Cannot find extracted binary in /tmp/mihomo-bin"
+            ls -lah
+            exit 1
           fi
 
-          echo "Detected binary: $bin"
-          mv -f "$bin" mihomo
+          # 统一命名为 mihomo
+          if [ "$bin" != "mihomo" ]; then
+            mv -f "$bin" mihomo
+          fi
+
           chmod +x mihomo
           ./mihomo -v
 
-      # -----------------------------
-      # 全量把 ruleset-src/*.yaml 转成 ruleset/*.mrs
-      # -----------------------------
       - name: Build mrs for all yaml
         shell: bash
         run: |
           set -euxo pipefail
           mkdir -p ruleset
 
-          # 找到所有 yaml
-          mapfile -t files < <(find ruleset-src -type f -name "*.yaml" | sort)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No yaml files found in ruleset-src/"
-            exit 0
-          fi
-
-          for yaml_file in "${files[@]}"; do
+          # 全量生成（你说你会改很多文件，干脆每次都全量最稳）
+          for yaml_file in $(find ruleset-src -type f -name "*.yaml" | sort); do
             base="$(basename "$yaml_file" .yaml)"
             out="ruleset/${base}.mrs"
             echo "Build: $yaml_file -> $out"
-            ./mihomo convert-ruleset domain yaml "$yaml_file" "$out"
+            /tmp/mihomo-bin/mihomo convert-ruleset domain yaml "$yaml_file" "$out"
           done
 
-          # 清理临时二进制，防止被误 add
-          rm -f mihomo mihomo.gz || true
-
-      # -----------------------------
-      # Commit & push（只提交 ruleset/）
-      # -----------------------------
-      - name: Commit & push
+      - name: Commit & push (only ruleset/)
         shell: bash
         run: |
           set -euxo pipefail
@@ -96,7 +84,7 @@ jobs:
           git add ruleset/
 
           if git diff --cached --quiet; then
-            echo "✅ No changes in ruleset/, skip commit."
+            echo "✅ No changes, skip commit."
             exit 0
           fi
 
