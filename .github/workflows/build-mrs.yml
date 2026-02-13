@@ -20,7 +20,9 @@ jobs:
       - name: Download mihomo
         run: |
           set -eux
-          curl -L -o mihomo.gz https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64.gz
+          VER=$(curl -sI https://github.com/MetaCubeX/mihomo/releases/latest | grep -i '^location:' | tail -n 1 | sed 's/.*\/tag\///' | tr -d '\r')
+          echo "Latest: $VER"
+          curl -L -o mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/${VER}/mihomo-linux-amd64.gz"
           gunzip -f mihomo.gz
           chmod +x mihomo
           ./mihomo -v
