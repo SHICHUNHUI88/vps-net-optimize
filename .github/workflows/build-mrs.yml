@@ -19,105 +19,113 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ------------------------------------------------------------
-      # 下载 mihomo（使用 bash + grep，稳定且易于调试）
-      # ------------------------------------------------------------
+      # -------------------------
+      # Download mihomo -> /tmp/mihomo
+      # -------------------------
       - name: Download mihomo
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y jq
 
-          API_URL="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-          echo "🔍 获取最新 release 信息：$API_URL"
+          API="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
 
-          # 获取所有 asset 的下载链接和名称（用于调试）
-          ASSET_JSON=$(curl -s -H "Accept: application/vnd.github.v3+json" "$API_URL")
+          echo "Assets list:"
+          curl -fsSL "$API" | jq -r '.assets[].name' | sed 's/^/ - /'
 
-          echo "📦 当前 release 中的 asset 名称："
-          echo "$ASSET_JSON" | grep -E '"name":' | sed -E 's/.*"name": "([^"]+)".*/\1/' || echo "无"
+          URL="$(curl -fsSL "$API" | jq -r '
+            .assets[]
+            | select(.name | test("linux"; "i"))
+            | select(.name | test("(amd64|x86_64)"; "i"))
+            | select(.name | test("\\.(gz|tar\\.gz)$"; "i"))
+            | .browser_download_url
+          ' | head -n 1)"
 
-          # 提取包含 linux-amd64 且以 .gz 或 .tar.gz 结尾的下载链接
-          DOWNLOAD_URL=$(echo "$ASSET_JSON" | \
-            grep -E '"browser_download_url":.*mihomo-linux-amd64.*\.(gz|tar\.gz)"' | \
-            head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "Chosen URL: $URL"
+          test -n "$URL"
 
-          if [ -z "$DOWNLOAD_URL" ]; then
-            echo "❌ 未找到匹配的 asset！请检查上面的名称列表，并调整正则表达式。"
-            exit 1
-          fi
+          curl -fL --retry 3 --retry-delay 2 -o /tmp/mihomo.pkg "$URL"
 
-          echo "✅ 找到下载链接: $DOWNLOAD_URL"
-
-          # 下载（-f 使 404 直接失败）
-          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$DOWNLOAD_URL"
-
-          # 简单校验：小于 1MB 则失败
-          SIZE=$(stat -c%s mihomo.pkg)
-          echo "下载大小: $SIZE bytes"
-          if [ "$SIZE" -lt 1000000 ]; then
-            echo "❌ 文件太小，可能不是有效的二进制包"
-            head -c 200 mihomo.pkg || true
-            exit 1
-          fi
-
-          # 根据 URL 后缀解压
-          if [[ "$DOWNLOAD_URL" =~ \.tar\.gz$ ]]; then
-            tar -xzf mihomo.pkg
+          cd /tmp
+          if echo "$URL" | grep -qiE '\.tar\.gz$'; then
+            tar -xzf /tmp/mihomo.pkg
           else
-            mv mihomo.pkg mihomo.gz
-            gunzip -f mihomo.gz
+            mv /tmp/mihomo.pkg /tmp/mihomo.gz
+            gunzip -f /tmp/mihomo.gz
           fi
 
-          chmod +x mihomo
-          ./mihomo -v
+          chmod +x /tmp/mihomo
+          /tmp/mihomo -v
 
-      # ------------------------------------------------------------
-      # 获取本次 push 中变更的 YAML 文件
-      # ------------------------------------------------------------
+      # -------------------------
+      # Find changed yaml files in this push
+      # -------------------------
       - name: Get changed YAML files
-        id: changed-files
+        id: changed
+        shell: bash
         run: |
-          set -eux
-          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~ HEAD -- ruleset-src/ '*.yaml' || true)
-          else
-            CHANGED=$(git diff --name-only --diff-filter=ACMR ${{ github.event.before }} ${{ github.event.after }} -- ruleset-src/ '*.yaml' || true)
-          fi
-          echo "changed=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
 
-      # ------------------------------------------------------------
-      # 对每个变更的 YAML 生成对应的 .mrs 文件
-      # ------------------------------------------------------------
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED="$(git diff --name-only --diff-filter=ACMR HEAD~1 HEAD -- 'ruleset-src/' '*.yaml' || true)"
+          else
+            CHANGED="$(git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" -- 'ruleset-src/' '*.yaml' || true)"
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          # output as newline list
+          {
+            echo "files<<EOF"
+            echo "$CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # -------------------------
+      # Build mrs for each changed yaml
+      # -------------------------
       - name: Build mrs
+        shell: bash
         run: |
-          set -eux
+          set -euo pipefail
           mkdir -p ruleset
-          echo '${{ steps.changed-files.outputs.changed }}' | jq -r '.[]' | while read -r yaml_file; do
-            if [ -f "$yaml_file" ]; then
-              base=$(basename "$yaml_file" .yaml)
-              output="ruleset/${base}.mrs"
-              echo "🔨 构建 $yaml_file -> $output"
-              ./mihomo convert-ruleset domain yaml "$yaml_file" "$output"
-            else
-              echo "⚠️ 文件 $yaml_file 不存在，跳过"
-            fi
-          done
 
-      # ------------------------------------------------------------
-      # 提交并推送生成的 .mrs 文件（同时清理二进制文件）
-      # ------------------------------------------------------------
-      - name: Commit & push
-        run: |
-          set -eux
-          # 删除下载的 mihomo 二进制文件，避免干扰 git 提交
-          rm -f mihomo
-
-          if git status --porcelain | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add ruleset/
-            git commit -m "build: update MRS files"
-            git push
-          else
-            echo "✅ 无变化，无需提交"
+          # 如果这次 push 没改 yaml，就直接跳过
+          if [ -z "${{ steps.changed.outputs.files }}" ]; then
+            echo "✅ 没有变更的 YAML，跳过构建"
+            exit 0
           fi
+
+          while IFS= read -r yaml_file; do
+            [ -z "$yaml_file" ] && continue
+            if [ -f "$yaml_file" ]; then
+              base="$(basename "$yaml_file" .yaml)"
+              out="ruleset/${base}.mrs"
+              echo "🔨 $yaml_file -> $out"
+              /tmp/mihomo convert-ruleset domain yaml "$yaml_file" "$out"
+            fi
+          done <<< "${{ steps.changed.outputs.files }}"
+
+      # -------------------------
+      # Commit only if ruleset/ changed
+      # -------------------------
+      - name: Commit & push
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git add ruleset/
+
+          if git diff --cached --quiet; then
+            echo "✅ ruleset/ 没有变化，无需提交"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: update MRS files"
+          git push
