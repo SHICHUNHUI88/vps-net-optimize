@@ -17,36 +17,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 获取全部历史，用于准确比较变更文件
+          fetch-depth: 0
 
-      # ------------------------------------------------------------
-      # 下载 mihomo 核心（使用 bash 解析 API，更稳定）
-      # ------------------------------------------------------------
       - name: Download mihomo
         shell: bash
         run: |
           set -euo pipefail
-
           API_URL="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
           echo "Fetching latest release info from $API_URL ..."
-
-          # 提取包含 linux-amd64 且以 .gz 或 .tar.gz 结尾的 browser_download_url
           DOWNLOAD_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" "$API_URL" | \
             grep -E '"browser_download_url":.*linux-amd64.*\.(gz|tar\.gz)"' | \
             head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-
           if [ -z "$DOWNLOAD_URL" ]; then
             echo "❌ 未找到匹配的 asset，当前 release 中的实际 asset 名称如下："
             curl -s "$API_URL" | grep '"name":' || echo "无法获取 asset 列表"
             exit 1
           fi
-
           echo "✅ 找到下载链接: $DOWNLOAD_URL"
-
-          # 下载（-f 使 404 直接失败）
           curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$DOWNLOAD_URL"
-
-          # 简单校验：小于 1MB 则失败
           SIZE=$(stat -c%s mihomo.pkg)
           echo "下载大小: $SIZE bytes"
           if [ "$SIZE" -lt 1000000 ]; then
@@ -54,44 +42,30 @@ jobs:
             head -c 200 mihomo.pkg || true
             exit 1
           fi
-
-          # 根据 URL 后缀解压
           if [[ "$DOWNLOAD_URL" =~ \.tar\.gz$ ]]; then
             tar -xzf mihomo.pkg
           else
             mv mihomo.pkg mihomo.gz
             gunzip -f mihomo.gz
           fi
-
           chmod +x mihomo
           ./mihomo -v
 
-      # ------------------------------------------------------------
-      # 获取本次 push 中变更的 YAML 文件（新增、修改、重命名）
-      # ------------------------------------------------------------
       - name: Get changed YAML files
         id: changed-files
         run: |
           set -eux
           if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            # 首次 push（新分支），与 HEAD~ 比较
             CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~ HEAD -- ruleset-src/ '*.yaml' || true)
           else
             CHANGED=$(git diff --name-only --diff-filter=ACMR ${{ github.event.before }} ${{ github.event.after }} -- ruleset-src/ '*.yaml' || true)
           fi
-
-          # 转换为 JSON 数组，存入输出
           echo "changed=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
 
-      # ------------------------------------------------------------
-      # 对每一个变更的 YAML 生成对应的 .mrs 文件
-      # ------------------------------------------------------------
       - name: Build mrs
         run: |
           set -eux
           mkdir -p ruleset
-
-          # 遍历变更文件列表
           echo '${{ steps.changed-files.outputs.changed }}' | jq -r '.[]' | while read -r yaml_file; do
             if [ -f "$yaml_file" ]; then
               base=$(basename "$yaml_file" .yaml)
@@ -103,12 +77,11 @@ jobs:
             fi
           done
 
-      # ------------------------------------------------------------
-      # 提交并推送生成的 .mrs 文件
-      # ------------------------------------------------------------
       - name: Commit & push
         run: |
           set -eux
+          # 删除下载的二进制文件，避免干扰提交
+          rm -f mihomo
           if git status --porcelain | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
