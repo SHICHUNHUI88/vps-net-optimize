@@ -16,57 +16,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取全部历史，便于获取变更文件列表
 
       - name: Download mihomo (auto-detect asset)
         shell: bash
         run: |
           set -euo pipefail
 
-          # 1) 取 latest release 的 assets 列表（用 python 解析，避免 jq/apt）
-          python3 - <<'PY'
-          import json, re, urllib.request
-
-          api = "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-          req = urllib.request.Request(api, headers={"User-Agent": "github-actions"})
-          data = json.load(urllib.request.urlopen(req))
-
-          assets = data.get("assets", [])
-          # 允许 .gz 或 .tar.gz（两者选一个存在的）
-          pat = re.compile(r"mihomo-linux-amd64\.(tar\.gz|gz)$")
-
-          url = ""
-          for a in assets:
-              name = a.get("name","")
-              if pat.search(name):
-                  url = a.get("browser_download_url","")
-                  break
-
-          if not url:
-              raise SystemExit("No matching asset found in latest release assets!")
-
-          print(url)
-          PY
-
+          # 使用 Python 从 latest release 中获取匹配的 asset URL
           URL="$(python3 - <<'PY'
-          import json, re, urllib.request
-          api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-          req=urllib.request.Request(api, headers={"User-Agent":"github-actions"})
-          data=json.load(urllib.request.urlopen(req))
-          pat=re.compile(r"mihomo-linux-amd64\.(tar\.gz|gz)$")
-          for a in data.get("assets", []):
-              n=a.get("name","")
-              if pat.search(n):
-                  print(a.get("browser_download_url",""))
-                  break
-          PY
+import json, re, urllib.request
+
+api = "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+req = urllib.request.Request(api, headers={"User-Agent": "github-actions"})
+data = json.load(urllib.request.urlopen(req))
+
+# 允许匹配带版本号的 linux-amd64 压缩包，如 mihomo-linux-amd64-v1.18.0.gz 或 .tar.gz
+pat = re.compile(r"mihomo-linux-amd64.*\.(tar\.gz|gz)$")
+
+for asset in data.get("assets", []):
+    name = asset.get("name", "")
+    if pat.search(name):
+        print(asset.get("browser_download_url", ""))
+        break
+else:
+    raise SystemExit("No matching asset found in latest release assets!")
+PY
           )"
 
           echo "Download URL: $URL"
 
-          # 2) 下载：-f 让 404 直接失败（不会再下到 9 字节）
+          # 下载，-f 使 curl 在 HTTP 404 时失败
           curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$URL"
 
-          # 3) 简单校验：文件太小直接判失败
+          # 简单校验大小（小于 1MB 认为失败）
           SIZE=$(stat -c%s mihomo.pkg)
           echo "Downloaded size: $SIZE bytes"
           if [ "$SIZE" -lt 1000000 ]; then
@@ -75,8 +59,8 @@ jobs:
             exit 1
           fi
 
-          # 4) 解包：tar.gz 或 gz
-          if echo "$URL" | grep -qE '\.tar\.gz$'; then
+          # 根据 URL 后缀决定解压方式
+          if [[ "$URL" =~ \.tar\.gz$ ]]; then
             tar -xzf mihomo.pkg
           else
             mv mihomo.pkg mihomo.gz
@@ -86,21 +70,45 @@ jobs:
           chmod +x mihomo
           ./mihomo -v
 
+      - name: Get changed YAML files
+        id: changed-files
+        run: |
+          set -eux
+          # 获取本次 push 中变更的 ruleset-src 下的 .yaml 文件（包括新增、修改、重命名）
+          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # 首次 push（新分支），使用 HEAD~ 比较
+            CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~ HEAD -- ruleset-src/ '*.yaml' || true)
+          else
+            CHANGED=$(git diff --name-only --diff-filter=ACMR ${{ github.event.before }} ${{ github.event.after }} -- ruleset-src/ '*.yaml' || true)
+          fi
+
+          # 将多行输出转为 JSON 数组，方便后续处理
+          echo "changed=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+
       - name: Build mrs
         run: |
           set -eux
           mkdir -p ruleset
-          ./mihomo convert-ruleset domain yaml ruleset-src/douyin.yaml ruleset/douyin.mrs
+
+          # 循环处理每个变更的文件
+          echo '${{ steps.changed-files.outputs.changed }}' | jq -r '.[]' | while read -r yaml_file; do
+            # 提取不带路径和扩展名的文件名作为输出名称
+            base=$(basename "$yaml_file" .yaml)
+            output="ruleset/${base}.mrs"
+            echo "Building $yaml_file -> $output"
+            ./mihomo convert-ruleset domain yaml "$yaml_file" "$output"
+          done
 
       - name: Commit & push
         run: |
           set -eux
+          # 检查是否有任何更改（包括新生成的 .mrs 文件）
           if git status --porcelain | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add ruleset/douyin.mrs
-            git commit -m "build: update douyin.mrs"
+            git add ruleset/
+            git commit -m "build: update MRS files"
             git push
           else
-            echo "No changes."
+            echo "No changes to commit."
           fi
