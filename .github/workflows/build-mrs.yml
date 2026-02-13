@@ -2,45 +2,77 @@ name: build-mrs
 
 on:
   push:
+    branches: [ "main" ]
     paths:
-      - "ruleset-src/**/*.yaml"
+      - "ruleset-src/douyin.yaml"
       - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
+  schedule:
+    - cron: "0 4 * * *"   # UTC 04:00 = 北京时间 12:00
+
+env:
+  TZ: Asia/Shanghai
+  TOOLS_DIR: data/tools
+  OUT_DIR: ruleset
+  SRC_FILE: ruleset-src/douyin.yaml
 
 permissions:
   contents: write
 
 jobs:
   build:
+    name: Build & Commit douyin.mrs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Install deps
+      - name: Set timezone
+        run: |
+          set -eux
+          sudo timedatectl set-timezone "$TZ" || true
+          date
+
+      - name: Install dependencies
         run: |
           set -eux
           sudo apt-get update -y
-          sudo apt-get install -y curl jq gzip tar findutils
+          sudo apt-get install -y curl jq gzip tar
 
-      - name: Download mihomo (robust)
-        shell: bash
-        env:
-          MIHOMO_VERSION: "latest"   # 固定版本就写 "1.19.20"
+      - name: Create tools directory
         run: |
-          set -euxo pipefail
+          set -eux
+          mkdir -p "${TOOLS_DIR}"
+          echo "✓ Tools dir: ${TOOLS_DIR}"
 
-          mkdir -p /tmp/mihomo-bin
-          cd /tmp/mihomo-bin
-
-          if [ "$MIHOMO_VERSION" = "latest" ]; then
-            api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+      - name: Check if mihomo exists
+        id: check_tools
+        run: |
+          set -eux
+          if [ -f "${TOOLS_DIR}/mihomo" ]; then
+            echo "mihomo_exist=true" >> $GITHUB_OUTPUT
+            echo "✓ mihomo already exists"
+            "${TOOLS_DIR}/mihomo" -v || true
           else
-            api="https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/v${MIHOMO_VERSION}"
+            echo "mihomo_exist=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ mihomo not found, will download"
           fi
 
-          echo "API: $api"
+      - name: Download mihomo (robust)
+        if: steps.check_tools.outputs.mihomo_exist == 'false'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "${TOOLS_DIR}"
+
+          api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+
+          echo "Fetching latest assets list..."
+          curl -fsSL "$api" | jq -r '.assets[].name' | sed 's/^/ - /'
 
           url="$(curl -fsSL "$api" | jq -r '
             .assets[]
@@ -51,8 +83,7 @@ jobs:
 
           echo "Download URL: ${url:-}"
           if [ -z "${url:-}" ]; then
-            echo "❌ 找不到 linux-amd64 资产，assets："
-            curl -fsSL "$api" | jq -r '.assets[].name'
+            echo "❌ No linux-amd64 asset found."
             exit 1
           fi
 
@@ -61,7 +92,7 @@ jobs:
           size="$(stat -c%s mihomo.pkg)"
           echo "Downloaded size: $size"
           if [ "$size" -lt 1000000 ]; then
-            echo "❌ 文件太小，可能不是二进制。前200字节："
+            echo "❌ File too small, likely not a binary. First 200 bytes:"
             head -c 200 mihomo.pkg || true
             exit 1
           fi
@@ -74,47 +105,60 @@ jobs:
             gzip -d -f mihomo.gz
           fi
 
-          # 找到解压出来的二进制（通常就叫 mihomo）
-          bin="$(find . -maxdepth 1 -type f -size +5M | head -n 1 | sed 's|^\./||')"
+          bin="$(find . -maxdepth 2 -type f -name 'mihomo*' -size +5M | head -n 1)"
           echo "Detected binary: ${bin:-}"
           if [ -z "${bin:-}" ]; then
-            echo "❌ 解压后没找到可执行文件："
+            echo "❌ Cannot find mihomo binary after extract."
             ls -lah
             exit 1
           fi
 
-          # 如果不是 mihomo 才改名，避免 mv mihomo mihomo 报错
-          if [ "$bin" != "mihomo" ]; then
-            mv -f "$bin" mihomo
-          fi
-
+          cp -f "$bin" mihomo
           chmod +x mihomo
-          mv -f mihomo /tmp/mihomo
-          /tmp/mihomo -v
+          ./mihomo -v
+          rm -f mihomo.pkg mihomo.gz || true
+          echo "✓ mihomo ready in ${TOOLS_DIR}/mihomo"
 
-      - name: Build mrs for all yaml
+      - name: Sanity check source file
+        run: |
+          set -eux
+          test -f "${SRC_FILE}"
+          echo "✓ Source exists: ${SRC_FILE}"
+          head -n 20 "${SRC_FILE}" || true
+
+      - name: Build douyin.mrs
         shell: bash
         run: |
           set -euxo pipefail
-          mkdir -p ruleset
+          mkdir -p "${OUT_DIR}"
 
-          while IFS= read -r -d '' yaml_file; do
-            base="$(basename "$yaml_file" .yaml)"
-            out="ruleset/${base}.mrs"
-            echo "🔨 $yaml_file -> $out"
-            /tmp/mihomo convert-ruleset domain yaml "$yaml_file" "$out"
-          done < <(find ruleset-src -type f -name '*.yaml' -print0)
+          "${TOOLS_DIR}/mihomo" convert-ruleset domain yaml "${SRC_FILE}" "${OUT_DIR}/douyin.mrs"
 
-      - name: Commit & push
+          echo "✓ Output:"
+          ls -lah "${OUT_DIR}/douyin.mrs"
+
+      - name: Check for changes
+        id: check_changes
         shell: bash
         run: |
           set -euxo pipefail
-          git add ruleset/
+          git add "${OUT_DIR}/douyin.mrs"
+
           if git diff --cached --quiet; then
-            echo "✅ 无变化，无需提交"
-            exit 0
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No changes detected"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✓ Changes detected"
           fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "build: update MRS files"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: update douyin.mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
+          echo "✓ Pushed"
