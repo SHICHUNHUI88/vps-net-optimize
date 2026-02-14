@@ -3,13 +3,14 @@
 
 import json
 import os
-import subprocess
 import sys
+import subprocess
+import ipaddress
 from pathlib import Path
 from urllib.request import Request, urlopen
 
 try:
-    import yaml  # pyyaml
+    import yaml
 except Exception:
     print("❌ Missing dependency: pyyaml (pip install pyyaml).", flush=True)
     sys.exit(1)
@@ -37,25 +38,19 @@ def http_get(url: str) -> str:
 
 def run(cmd: list[str], timeout: int = 120) -> str:
     log(f"    ▶ Run: {' '.join(cmd)}")
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    out_lines = []
-    try:
-        for line in iter(p.stdout.readline, ''):
-            if not line:
-                break
-            line = line.rstrip()
-            if line:
-                log(line)
-                out_lines.append(line)
-        p.wait(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        p.kill()
-        raise RuntimeError(f"Timeout after {timeout}s: {' '.join(cmd)}")
-
+    p = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=timeout,
+    )
+    out = (p.stdout or "").rstrip()
+    if out:
+        log(out)
     if p.returncode != 0:
-        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}\n" + "\n".join(out_lines))
-
-    return "\n".join(out_lines)
+        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}\n{out}")
+    return out
 
 
 def safe_load_struct(text: str):
@@ -76,9 +71,10 @@ def safe_load_struct(text: str):
 def parse_rule_lines(raw_text: str) -> list[str]:
     """
     支持：
-    - YAML dict: payload / rules
-    - YAML list
-    - txt lines
+      - YAML dict: payload / rules
+      - YAML list
+      - txt lines
+    输出：原始规则行（可能含 action/no-resolve）
     """
     txt = (raw_text or "").strip()
     data = safe_load_struct(txt)
@@ -116,6 +112,9 @@ def parse_rule_lines(raw_text: str) -> list[str]:
 
 
 def strip_action(rule_line: str) -> str:
+    """
+    只保留 TYPE,VALUE
+    """
     parts = [p.strip() for p in (rule_line or "").split(",")]
     if len(parts) >= 2:
         return f"{parts[0]},{parts[1]}"
@@ -124,7 +123,7 @@ def strip_action(rule_line: str) -> str:
 
 def extract_supported(rule_lines: list[str]) -> dict:
     """
-    当前支持（可提取/可编译）：
+    只提取远程里“可提取”的常用规则（保持你现在的范围，不乱扩展）：
     DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-REGEX / IP-CIDR / IP-CIDR6 / PROCESS-NAME
     """
     b = {
@@ -155,9 +154,18 @@ def extract_supported(rule_lines: list[str]) -> dict:
         elif t == "DOMAIN-REGEX":
             b["domain_regex"].add(v)
         elif t == "IP-CIDR":
-            b["ip_cidr"].add(v)
+            # 校验 CIDR
+            try:
+                ipaddress.ip_network(v, strict=False)
+                b["ip_cidr"].add(v)
+            except ValueError:
+                pass
         elif t == "IP-CIDR6":
-            b["ip_cidr6"].add(v)
+            try:
+                ipaddress.ip_network(v, strict=False)
+                b["ip_cidr6"].add(v)
+            except ValueError:
+                pass
         elif t == "PROCESS-NAME":
             b["process_name"].add(v)
 
@@ -186,29 +194,35 @@ def build_singbox_source_json(b: dict) -> dict:
     return {"version": 1, "rules": [rule]}
 
 
-def build_mihomo_payload_yaml(b: dict) -> dict:
-    payload: list[str] = []
-    for v in sorted(b["domain"]):
-        payload.append(f"DOMAIN,{v}")
-    for v in sorted(b["domain_suffix"]):
-        payload.append(f"DOMAIN-SUFFIX,{v}")
-    for v in sorted(b["domain_keyword"]):
-        payload.append(f"DOMAIN-KEYWORD,{v}")
-    for v in sorted(b["domain_regex"]):
-        payload.append(f"DOMAIN-REGEX,{v}")
-    for v in sorted(b["ip_cidr"]):
-        payload.append(f"IP-CIDR,{v}")
-    for v in sorted(b["ip_cidr6"]):
-        payload.append(f"IP-CIDR6,{v}")
-    for v in sorted(b["process_name"]):
-        payload.append(f"PROCESS-NAME,{v}")
-    return {"payload": payload}
+def write_mihomo_domain_yaml(domains: list[str], path: Path) -> None:
+    # mihomo convert-ruleset(domain) 需要 “payload: - xxx” 的纯域名列表
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("payload:\n")
+        for d in domains:
+            f.write(f"  - {d}\n")
 
 
-def fsize(path: Path) -> str:
-    if not path.exists():
-        return "missing"
-    return f"{path.stat().st_size} bytes"
+def write_mihomo_ip_yaml(cidrs: list[str], path: Path) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("payload:\n")
+        for c in cidrs:
+            f.write(f"  - {c}\n")
+
+
+def convert_with_mihomo(behavior: str, src_yaml: Path, dst_mrs: Path) -> None:
+    """
+    用你老脚本的稳定命令：
+      mihomo convert-ruleset <behavior> yaml <src_yaml> <dst_mrs>
+    behavior: domain / ipcidr
+    """
+    cmd = [MIHOMO_BIN, "convert-ruleset", behavior, "yaml", str(src_yaml), str(dst_mrs)]
+    run(cmd, timeout=120)
+
+
+def ensure_dirs():
+    REMOTE_TMP.mkdir(parents=True, exist_ok=True)
+    REMOTE_SRS.mkdir(parents=True, exist_ok=True)
+    REMOTE_MRS.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
@@ -216,9 +230,7 @@ def main() -> None:
         log(f"❌ Missing manifest: {MANIFEST}")
         sys.exit(1)
 
-    REMOTE_TMP.mkdir(parents=True, exist_ok=True)
-    REMOTE_SRS.mkdir(parents=True, exist_ok=True)
-    REMOTE_MRS.mkdir(parents=True, exist_ok=True)
+    ensure_dirs()
 
     items = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if not isinstance(items, list) or not items:
@@ -244,6 +256,7 @@ def main() -> None:
         rule_lines = parse_rule_lines(raw)
         b = extract_supported(rule_lines)
 
+        # 统计
         cnt = (
             len(b["domain"]) + len(b["domain_suffix"]) + len(b["domain_keyword"]) +
             len(b["domain_regex"]) + len(b["ip_cidr"]) + len(b["ip_cidr6"]) +
@@ -254,32 +267,46 @@ def main() -> None:
             f"cidr={len(b['ip_cidr'])}, cidr6={len(b['ip_cidr6'])}, process={len(b['process_name'])})")
 
         if cnt == 0:
-            log("    ⚠️ extracted 0 supported rules, skip compiling")
+            log("    ⚠️ extracted 0 supported rules, skip")
             continue
 
-        # ---- sing-box -> srs ----
+        # ---- sing-box: json -> srs ----
         sbox_src = build_singbox_source_json(b)
         sbox_json_path = REMOTE_TMP / f"{name}.json"
         sbox_json_path.write_text(json.dumps(sbox_src, ensure_ascii=False, indent=2), encoding="utf-8")
-        log(f"    ✅ write sing-box source: {sbox_json_path} ({fsize(sbox_json_path)})")
+        log(f"    ✅ write sing-box source: {sbox_json_path}")
 
         srs_path = REMOTE_SRS / f"{name}.srs"
         run([SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(srs_path)], timeout=180)
-        log(f"    ✅ SRS: {srs_path} ({fsize(srs_path)})")
+        log(f"    ✅ SRS: {srs_path} ({srs_path.stat().st_size} bytes)")
 
-        # ---- mihomo -> mrs ----
-        mh_src = build_mihomo_payload_yaml(b)
-        mh_yaml_path = REMOTE_TMP / f"{name}.yaml"
-        mh_yaml_path.write_text(
-            yaml.safe_dump(mh_src, allow_unicode=True, sort_keys=False),
-            encoding="utf-8",
-        )
-        log(f"    ✅ write mihomo source: {mh_yaml_path} ({fsize(mh_yaml_path)})")
+        # ---- mihomo: 用 convert-ruleset 生成 mrs（domain/ipcidr 分开）----
+        # 把可提取的域名项合并成“纯域名列表”
+        # 规则类型不乱扩展：DOMAIN+SUFFIX+KEYWORD+REGEX+PROCESS-NAME 里只有 DOMAIN/SUFFIX/KEYWORD 能转为 domain 行为
+        domain_entries = sorted(set(list(b["domain"]) + list(b["domain_suffix"]) + list(b["domain_keyword"])))
+        ip_entries = sorted(set(list(b["ip_cidr"]) + list(b["ip_cidr6"])))
 
-        mrs_path = REMOTE_MRS / f"{name}.mrs"
-        # 关键：给更长 timeout，并且必打印输出
-        run([MIHOMO_BIN, "rule-set", "compile", str(mh_yaml_path), "-o", str(mrs_path)], timeout=300)
-        log(f"    ✅ MRS: {mrs_path} ({fsize(mrs_path)})")
+        # domain mrs
+        if domain_entries:
+            tmp_domain_yaml = REMOTE_TMP / f"{name}_domain.yaml"
+            out_domain_mrs = REMOTE_MRS / f"{name}_domain.mrs"
+            write_mihomo_domain_yaml(domain_entries, tmp_domain_yaml)
+            log(f"    ✅ write mihomo domain source: {tmp_domain_yaml}")
+            convert_with_mihomo("domain", tmp_domain_yaml, out_domain_mrs)
+            log(f"    ✅ MRS(domain): {out_domain_mrs} ({out_domain_mrs.stat().st_size} bytes)")
+        else:
+            log("    ℹ️ no domain entries, skip domain.mrs")
+
+        # ipcidr mrs
+        if ip_entries:
+            tmp_ip_yaml = REMOTE_TMP / f"{name}_ipcidr.yaml"
+            out_ip_mrs = REMOTE_MRS / f"{name}_ipcidr.mrs"
+            write_mihomo_ip_yaml(ip_entries, tmp_ip_yaml)
+            log(f"    ✅ write mihomo ipcidr source: {tmp_ip_yaml}")
+            convert_with_mihomo("ipcidr", tmp_ip_yaml, out_ip_mrs)
+            log(f"    ✅ MRS(ipcidr): {out_ip_mrs} ({out_ip_mrs.stat().st_size} bytes)")
+        else:
+            log("    ℹ️ no ipcidr entries, skip ipcidr.mrs")
 
     log("\n✅ Done.")
 
