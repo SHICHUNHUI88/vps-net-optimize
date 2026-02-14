@@ -46,14 +46,19 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def run(cmd: list[str]) -> None:
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    if p.returncode != 0:
-        if p.stdout.strip():
-            log(p.stdout.rstrip())
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}")
-    if p.stdout.strip():
+def run(cmd, timeout=120):
+    log(f"    ▶ Run: {' '.join(cmd)}")
+    p = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=timeout
+    )
+    if p.stdout and p.stdout.strip():
         log(p.stdout.rstrip())
+    if p.returncode != 0:
+        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}")
 
 
 def http_get(url: str) -> str:
