@@ -1,0 +1,58 @@
+name: Build Remote Rules to MRS
+
+on:
+  schedule:
+    - cron: "0 4 * * *"  # UTC 04:00 = 北京时间 12:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Install sing-box
+        run: |
+          set -eux
+          # 这里用官方预编译（linux amd64）
+          # 你也可以改成你固定的版本/来源
+          SB_VER="1.11.0"
+          curl -L -o sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SB_VER}/sing-box-${SB_VER}-linux-amd64.tar.gz"
+          tar -xzf sing-box.tar.gz
+          mv "sing-box-${SB_VER}-linux-amd64/sing-box" /usr/local/bin/sing-box
+          sing-box version
+
+      - name: Build MRS
+        env:
+          SINGBOX_BIN: sing-box
+        run: |
+          python scripts/Diversion_Conversion.py
+
+      - name: Commit & Push
+        run: |
+          set -eux
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist .work || true
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git commit -m "chore: update remote mrs"
+          git push
