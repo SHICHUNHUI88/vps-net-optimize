@@ -11,58 +11,40 @@ from urllib.request import Request, urlopen
 try:
     import yaml  # pip install pyyaml
 except Exception:
-    print("❌ Missing dependency: pyyaml. Please install it (pip install pyyaml).", flush=True)
+    print("❌ Missing dependency: pyyaml (pip install pyyaml)", flush=True)
     sys.exit(1)
 
-# =========================
-# Paths (HARD ISOLATION)
-# =========================
 ROOT = Path(__file__).resolve().parents[1]
-
-# 远程规则清单（放仓库根目录）
 MANIFEST = ROOT / "remote-rules.json"
 
-# 中间产物：sing-box 源 JSON（独立文件夹）
-WORK = ROOT / "remote-src"
+# ======= Isolated output dirs =======
+MIHOMO_SRC_DIR = ROOT / "remote-mihomo-src"
+MIHOMO_MRS_DIR = ROOT / "remote-mihomo-mrs"
+SBOX_SRC_DIR   = ROOT / "remote-singbox-src"
+SBOX_SRS_DIR   = ROOT / "remote-singbox-srs"
 
-# 最终产物：.mrs（二进制规则，独立文件夹）
-DIST = ROOT / "remote-mrs"
-
-# sing-box 可执行文件路径，可用环境变量覆盖
-SING_BOX_BIN = os.getenv("SINGBOX_BIN", "sing-box")
-
+# ======= bins (env overridable) =======
+MIHOMO_BIN = os.getenv("MIHOMO_BIN", "./mihomo")
+SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 
 def log(msg: str) -> None:
     print(msg, flush=True)
 
-
-def http_get(url: str) -> bytes:
+def http_get(url: str) -> str:
     req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urlopen(req, timeout=60) as r:
-        return r.read()
-
+        return r.read().decode("utf-8", errors="ignore")
 
 def run(cmd: list[str]) -> None:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if p.returncode != 0:
         if p.stdout.strip():
             log(p.stdout.rstrip())
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}")
+        raise RuntimeError("Command failed: " + " ".join(cmd))
     if p.stdout.strip():
         log(p.stdout.rstrip())
 
-
-def is_singbox_source(obj) -> bool:
-    """sing-box rule-set 源 JSON 判定：{"version":1,"rules":[...]}"""
-    return isinstance(obj, dict) and obj.get("version") == 1 and isinstance(obj.get("rules"), list)
-
-
-def load_as_struct(text: str):
-    """
-    尝试解析为结构体：
-      1) JSON（严格）
-      2) YAML（兼容 YAML/JSON）
-    """
+def load_struct(text: str):
     t = (text or "").strip()
     if not t:
         return None
@@ -76,21 +58,25 @@ def load_as_struct(text: str):
     except Exception:
         return None
 
+def is_singbox_source(obj) -> bool:
+    return isinstance(obj, dict) and obj.get("version") == 1 and isinstance(obj.get("rules"), list)
 
-def parse_clash_rules(raw_text: str) -> list[str]:
+def strip_action(rule_line: str) -> str:
+    parts = [p.strip() for p in (rule_line or "").split(",")]
+    if len(parts) >= 2:
+        return f"{parts[0]},{parts[1]}"
+    return (rule_line or "").strip()
+
+def parse_clash_lines(raw_text: str) -> list[str]:
     """
-    支持输入：
-      - YAML/JSON dict: {"payload":[...]} or {"rules":[...]}
-      - YAML/JSON list: ["DOMAIN-SUFFIX,xx", ...]
-      - TXT: 每行一条规则（支持前导 - ）
-    返回：
-      - list[str]，元素形如 "DOMAIN-SUFFIX,google.com,PROXY"（动作后续会剥离）
+    支持：
+      - YAML/JSON dict: payload/rules
+      - YAML/JSON list
+      - TXT lines
+    输出：list[str] 规则行（可能含 action，后续会 strip）
     """
     txt = (raw_text or "").strip()
-    if not txt:
-        return []
-
-    data = load_as_struct(txt)
+    data = load_struct(txt)
 
     if isinstance(data, dict):
         rules = data.get("payload") or data.get("rules") or []
@@ -101,111 +87,150 @@ def parse_clash_rules(raw_text: str) -> list[str]:
     if isinstance(data, list):
         return [str(x).strip().lstrip("-").strip() for x in data if str(x).strip()]
 
-    # plain text fallback
-    lines = []
+    # txt fallback
+    out = []
     for line in txt.splitlines():
         s = line.strip()
         if not s or s.startswith("#"):
             continue
         s = s.lstrip("-").strip()
         if s:
-            lines.append(s)
-    return lines
+            out.append(s)
+    return out
 
-
-def strip_action(rule_line: str) -> str:
+def buckets_from_clash(rule_lines: list[str]) -> dict:
     """
-    Clash 规则可能带策略/参数：
-      DOMAIN-SUFFIX,google.com,PROXY
-      IP-CIDR,1.1.1.1/32,DIRECT,no-resolve
-    转换只保留前两段：
-      DOMAIN-SUFFIX,google.com
-      IP-CIDR,1.1.1.1/32
+    只提取“可提取”的常用类型（域名/IP/进程），忽略其它类型，避免误伤/编译失败。
     """
-    parts = [p.strip() for p in (rule_line or "").split(",")]
-    if len(parts) >= 2:
-        return f"{parts[0]},{parts[1]}"
-    return (rule_line or "").strip()
-
-
-def add_rule(bucket: dict, key: str, value: str):
-    if not value:
-        return
-    bucket.setdefault(key, [])
-    if value not in bucket[key]:
-        bucket[key].append(value)
-
-
-def clash_to_singbox_source(rule_lines: list[str]) -> dict:
-    """
-    将 Clash 规则行映射为 sing-box rule-set 源 JSON（version=1）
-    仅处理常见类型（域名/IP/进程/geo）。
-    """
-    b = {}
+    b = {
+        "domain": set(),
+        "domain_suffix": set(),
+        "domain_keyword": set(),
+        "domain_regex": set(),
+        "ip_cidr": set(),
+        "ip_cidr6": set(),
+        "process_name": set(),
+    }
 
     for line in rule_lines:
         base = strip_action(line)
         if "," not in base:
             continue
-
         t, v = [x.strip() for x in base.split(",", 1)]
-        t_up = t.upper()
+        t = t.upper()
+        if not v:
+            continue
 
-        if t_up == "DOMAIN":
-            add_rule(b, "domain", v)
-        elif t_up == "DOMAIN-SUFFIX":
-            add_rule(b, "domain_suffix", v.lstrip("."))
-        elif t_up == "DOMAIN-KEYWORD":
-            add_rule(b, "domain_keyword", v)
-        elif t_up == "DOMAIN-REGEX":
-            add_rule(b, "domain_regex", v)
+        if t == "DOMAIN":
+            b["domain"].add(v)
+        elif t == "DOMAIN-SUFFIX":
+            b["domain_suffix"].add(v.lstrip("."))
+        elif t == "DOMAIN-KEYWORD":
+            b["domain_keyword"].add(v)
+        elif t == "DOMAIN-REGEX":
+            b["domain_regex"].add(v)
+        elif t == "IP-CIDR":
+            b["ip_cidr"].add(v)
+        elif t == "IP-CIDR6":
+            b["ip_cidr6"].add(v)
+        elif t == "PROCESS-NAME":
+            b["process_name"].add(v)
 
-        elif t_up == "PROCESS-NAME":
-            add_rule(b, "process_name", v)
-        elif t_up == "PROCESS-PATH":
-            add_rule(b, "process_path", v)
+    return b
 
-        elif t_up == "IP-CIDR":
-            add_rule(b, "ip_cidr", v)
-        elif t_up == "IP-CIDR6":
-            add_rule(b, "ip_cidr6", v)
-        elif t_up == "IP-ASN":
-            add_rule(b, "ip_asn", v)
+def singbox_source_from_buckets(b: dict) -> dict:
+    rule = {"type": "default"}  # sing-box headless rule
+    if b["domain"]:
+        rule["domain"] = sorted(b["domain"])
+    if b["domain_suffix"]:
+        rule["domain_suffix"] = sorted(b["domain_suffix"])
+    if b["domain_keyword"]:
+        rule["domain_keyword"] = sorted(b["domain_keyword"])
+    if b["domain_regex"]:
+        rule["domain_regex"] = sorted(b["domain_regex"])
+    # sing-box 可同时保存 v4/v6
+    cidr_all = sorted(b["ip_cidr"])
+    cidr6_all = sorted(b["ip_cidr6"])
+    if cidr_all:
+        rule["ip_cidr"] = cidr_all
+    if cidr6_all:
+        rule["ip_cidr6"] = cidr6_all
+    if b["process_name"]:
+        rule["process_name"] = sorted(b["process_name"])
 
-        elif t_up == "GEOIP":
-            add_rule(b, "geoip", v)
-        elif t_up == "GEOSITE":
-            add_rule(b, "geosite", v)
+    if len(rule) == 1:
+        return {"version": 1, "rules": []}
+    return {"version": 1, "rules": [rule]}
 
-        else:
-            # 未知类型直接忽略，避免构建失败
-            pass
+def mihomo_payload_from_buckets(b: dict) -> list[str]:
+    payload = []
+    for d in sorted(b["domain"]):
+        payload.append(f"DOMAIN,{d}")
+    for s in sorted(b["domain_suffix"]):
+        payload.append(f"DOMAIN-SUFFIX,{s}")
+    for k in sorted(b["domain_keyword"]):
+        payload.append(f"DOMAIN-KEYWORD,{k}")
+    for r in sorted(b["domain_regex"]):
+        payload.append(f"DOMAIN-REGEX,{r}")
+    for c in sorted(b["ip_cidr"]):
+        payload.append(f"IP-CIDR,{c}")
+    for c6 in sorted(b["ip_cidr6"]):
+        payload.append(f"IP-CIDR6,{c6}")
+    for p in sorted(b["process_name"]):
+        payload.append(f"PROCESS-NAME,{p}")
+    return payload
 
-    rule_obj = {k: arr for k, arr in b.items() if arr}
-    return {"version": 1, "rules": [rule_obj] if rule_obj else []}
+def buckets_from_singbox_source(obj: dict) -> dict:
+    """
+    如果远程本身就是 sing-box source JSON，也能反向“提取可提取项”再产出 mihomo/sing-box 二进制。
+    """
+    b = {
+        "domain": set(),
+        "domain_suffix": set(),
+        "domain_keyword": set(),
+        "domain_regex": set(),
+        "ip_cidr": set(),
+        "ip_cidr6": set(),
+        "process_name": set(),
+    }
+    rules = obj.get("rules", [])
+    for r in rules:
+        if not isinstance(r, dict):
+            continue
+        for k in ["domain", "domain_suffix", "domain_keyword", "domain_regex", "ip_cidr", "ip_cidr6", "process_name"]:
+            v = r.get(k)
+            if isinstance(v, str):
+                b[k].add(v.strip())
+            elif isinstance(v, list):
+                for x in v:
+                    if isinstance(x, str) and x.strip():
+                        b[k].add(x.strip())
+    return b
 
+def ensure_dirs():
+    for d in [MIHOMO_SRC_DIR, MIHOMO_MRS_DIR, SBOX_SRC_DIR, SBOX_SRS_DIR]:
+        d.mkdir(parents=True, exist_ok=True)
 
 def main():
     if not MANIFEST.exists():
         log(f"❌ Missing manifest: {MANIFEST}")
         sys.exit(1)
 
-    # Create isolated dirs
-    WORK.mkdir(parents=True, exist_ok=True)
-    DIST.mkdir(parents=True, exist_ok=True)
-
     items = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if not isinstance(items, list) or not items:
         log("❌ remote-rules.json is empty or invalid.")
         sys.exit(1)
 
-    # Ensure sing-box exists
-    run([SING_BOX_BIN, "version"])
+    ensure_dirs()
+
+    # sanity
+    run([SINGBOX_BIN, "version"])
+    run([MIHOMO_BIN, "-v"])
 
     for it in items:
         name = (it.get("name") or "").strip()
         url = (it.get("url") or "").strip()
-        fmt = (it.get("format") or "auto").lower().strip()  # auto / clash / singbox
+        fmt = (it.get("format") or "clash").lower().strip()  # clash / singbox / auto
 
         if not name or not url:
             log(f"⚠️ Skip invalid item: {it}")
@@ -213,40 +238,47 @@ def main():
 
         log(f"\n==> {name}\n    url: {url}\n    format: {fmt}")
 
-        raw_text = http_get(url).decode("utf-8", errors="ignore").strip()
-        if not raw_text:
+        raw = http_get(url)
+        if not raw.strip():
             raise RuntimeError(f"{name}: empty content from {url}")
 
-        struct = load_as_struct(raw_text)
+        struct = load_struct(raw)
 
-        json_path = WORK / f"{name}.json"
-        mrs_path = DIST / f"{name}.mrs"
-
-        # 1) sing-box 源：直接编译
+        # 统一先得到 buckets（只保留可提取）
         if fmt == "singbox" or is_singbox_source(struct):
             if not is_singbox_source(struct):
-                raise RuntimeError(f"{name}: format=singbox but content is not sing-box source JSON")
-            json_path.write_text(json.dumps(struct, ensure_ascii=False, indent=2), encoding="utf-8")
-            log(f"    ✅ sing-box source saved: {json_path}")
-
-        # 2) clash：解析并转换
+                raise RuntimeError(f"{name}: format=singbox but content not sing-box source JSON")
+            b = buckets_from_singbox_source(struct)
         else:
-            rule_lines = parse_clash_rules(raw_text)
-            src = clash_to_singbox_source(rule_lines)
+            lines = parse_clash_lines(raw)
+            b = buckets_from_clash(lines)
 
-            # 解析到 0 条规则，直接失败（避免假成功）
-            if not src.get("rules"):
-                raise RuntimeError(f"{name}: parsed 0 rules (maybe unsupported format?) url={url}")
+        # 生成 sing-box source json
+        sbox_src = singbox_source_from_buckets(b)
+        if not sbox_src["rules"]:
+            raise RuntimeError(f"{name}: extracted 0 rules (no supported domain/ip/process items?)")
 
-            json_path.write_text(json.dumps(src, ensure_ascii=False, indent=2), encoding="utf-8")
-            log(f"    ✅ converted source saved: {json_path}")
+        sbox_json_path = SBOX_SRC_DIR / f"{name}.json"
+        sbox_json_path.write_text(json.dumps(sbox_src, ensure_ascii=False, indent=2), encoding="utf-8")
+        log(f"    ✅ sing-box source: {sbox_json_path}")
 
-        # compile to mrs
-        run([SING_BOX_BIN, "rule-set", "compile", str(json_path), "-o", str(mrs_path)])
-        log(f"    ✅ compiled: {mrs_path}")
+        # 编译 sing-box srs
+        srs_path = SBOX_SRS_DIR / f"{name}.srs"
+        run([SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(srs_path)])
+        log(f"    ✅ sing-box SRS: {srs_path}")
+
+        # 生成 mihomo payload yaml
+        payload = mihomo_payload_from_buckets(b)
+        mihomo_yaml_path = MIHOMO_SRC_DIR / f"{name}.yaml"
+        mihomo_yaml_path.write_text(yaml.safe_dump({"payload": payload}, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        log(f"    ✅ mihomo source: {mihomo_yaml_path}")
+
+        # 编译 mihomo mrs
+        mrs_path = MIHOMO_MRS_DIR / f"{name}.mrs"
+        run([MIHOMO_BIN, "rule-set", "compile", str(mihomo_yaml_path), "-o", str(mrs_path)])
+        log(f"    ✅ mihomo MRS: {mrs_path}")
 
     log("\n✅ Done.")
-
 
 if __name__ == "__main__":
     main()
