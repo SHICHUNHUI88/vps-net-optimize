@@ -1,9 +1,16 @@
-name: Build Remote Rules to MRS
+name: Remote Rules -> remote-mrs (sing-box)
 
 on:
-  schedule:
-    - cron: "0 4 * * *"  # UTC 04:00 = 北京时间 12:00
   workflow_dispatch:
+  schedule:
+    - cron: "10 4 * * *"   # UTC 04:10 = 北京时间 12:10（避开你旧任务）
+
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - "remote-rules.json"
+      - "scripts/Diversion_Conversion.py"
+      - ".github/workflows/remote-rules-to-mrs.yml"
 
 permissions:
   contents: write
@@ -14,8 +21,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -33,14 +38,33 @@ jobs:
           SB_VER="1.11.0"
           curl -L -o sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SB_VER}/sing-box-${SB_VER}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
-          mv "sing-box-${SB_VER}-linux-amd64/sing-box" /usr/local/bin/sing-box
-          sing-box version
+          mv "sing-box-${SB_VER}-linux-amd64/sing-box" ./sing-box
+          chmod +x ./sing-box
+          ./sing-box version
 
-      - name: Build MRS
-        env:
-          SINGBOX_BIN: sing-box
+      # 🔎 强制打印：让你一眼看出是否找得到清单、脚本、输出目录
+      - name: Precheck files
         run: |
+          set -eux
+          echo "=== PWD ==="
+          pwd
+          echo "=== LIST ROOT ==="
+          ls -la
+          echo "=== LIST .github/workflows ==="
+          ls -la .github/workflows || true
+          echo "=== SHOW remote-rules.json ==="
+          cat remote-rules.json
+
+      - name: Build remote-mrs
+        env:
+          SINGBOX_BIN: ./sing-box
+        run: |
+          set -eux
           python scripts/Diversion_Conversion.py
+          echo "=== LIST remote-src ==="
+          ls -la remote-src || true
+          echo "=== LIST remote-mrs ==="
+          ls -la remote-mrs || true
 
       - name: Commit & Push
         run: |
@@ -48,7 +72,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # ✅ 只提交隔离目录（不进你以前的转换目录）
+          # 只提交隔离目录（不碰你旧目录）
           git add remote-mrs remote-src remote-rules.json || true
 
           if git diff --cached --quiet; then
@@ -56,5 +80,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: update remote mrs"
+          git commit -m "chore: update remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
