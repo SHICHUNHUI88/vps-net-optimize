@@ -7,13 +7,17 @@ on:
     branches: [ "main", "master" ]
     paths:
       - "clash/**.yaml"
+      - "singbox/**.json"          # 监听 singbox 下的 JSON 变更
       - ".github/workflows/build-mrs.yml"
       - "scripts/extract_rules.py"
+      - "scripts/compile_srs.py"
   workflow_dispatch: {}
 
 env:
   MIHOMO_VERSION: 1.19.10
-  SRC_DIR: clash
+  SINGBOX_VERSION: 1.11.0
+  SRC_DIR: clash                    # Mihomo 源目录
+  SBOX_DIR: singbox                 # Sing-box 源目录
 
 permissions:
   contents: write
@@ -27,6 +31,7 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ---------- 下载 mihomo ----------
       - name: Download mihomo
         run: |
           set -eux
@@ -41,6 +46,17 @@ jobs:
           chmod +x mihomo
           ./mihomo -v
 
+      # ---------- 下载 sing-box ----------
+      - name: Download sing-box
+        run: |
+          set -eux
+          wget -O sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
+          tar -xzf sing-box.tar.gz
+          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box .
+          chmod +x sing-box
+          ./sing-box version
+          rm -rf sing-box-${SINGBOX_VERSION}-linux-amd64 sing-box.tar.gz
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -49,21 +65,36 @@ jobs:
       - name: Install PyYAML
         run: pip install pyyaml
 
+      # ---------- 清理旧文件 ----------
       - name: Clean old MRS files
         run: rm -f ${SRC_DIR}/*.mrs
 
-      - name: Run extraction script
-        run: python scripts/extract_rules.py
+      - name: Clean old SRS files
+        run: rm -f ${SBOX_DIR}/*.srs
 
+      # ---------- 运行 Mihomo 转换脚本 ----------
+      - name: Run extraction script (Mihomo)
+        run: python scripts/extract_rules.py
+        env:
+          SRC_DIR: ${{ env.SRC_DIR }}   # 传递给脚本
+
+      # ---------- 运行 Sing-box 编译脚本 ----------
+      - name: Run compilation script (Sing-box)
+        run: python scripts/compile_srs.py
+        env:
+          SBOX_DIR: ${{ env.SBOX_DIR }}
+
+      # ---------- 提交变更 ----------
       - name: Commit and push changes
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ${SRC_DIR}/
+          # 同时添加两个目录
+          git add ${SRC_DIR}/ ${SBOX_DIR}/
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "build: update MRS files in ${SRC_DIR} $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git commit -m "build: update MRS and SRS files $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
