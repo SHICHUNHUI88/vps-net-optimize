@@ -1,19 +1,16 @@
-name: Build MRS (mihomo) + SRS (sing-box) + Remote (dual outputs)
+name: Build Local+Remote Rules (MRS for Mihomo, SRS for sing-box)
 
 on:
+  # 手动触发：你点 Run workflow 一定会跑
+  workflow_dispatch: {}
+
+  # 定时触发：每天北京时间 12:00（UTC 04:00）
   schedule:
-    - cron: "0 5 * * *"  # UTC 05:00 = 北京时间 01:00
+    - cron: "0 4 * * *"
+
+  # 推送触发：不做 paths 限制，避免“没反应”
   push:
     branches: [ "main", "master" ]
-    paths:
-      - "clash/**.yaml"
-      - "singbox/**.json"
-      - "remote-rules.json"
-      - "scripts/extract_rules.py"
-      - "scripts/compile_srs.py"
-      - "scripts/Diversion_Conversion.py"
-      - ".github/workflows/build-mrs.yml"
-  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -34,31 +31,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ---------- Download mihomo (for .mrs) ----------
+      # ---------- 安装 mihomo（二进制，用于 .mrs） ----------
       - name: Download mihomo
         run: |
           set -eux
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d mihomo.gz
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
-          elif [ ! -f "mihomo" ]; then
-            echo "Error: mihomo binary not found"
-            exit 1
+            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           fi
-          chmod +x mihomo
+          chmod +x ./mihomo
           ./mihomo -v
 
-      # ---------- Download sing-box (for .srs) ----------
+      # ---------- 安装 sing-box（二进制，用于 .srs） ----------
       - name: Download sing-box
         run: |
           set -eux
           wget -O sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
-          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box ./sing-box
+          mv "sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
           ./sing-box version
-          rm -rf sing-box-${SINGBOX_VERSION}-linux-amd64 sing-box.tar.gz
+          rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" sing-box.tar.gz
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -70,61 +64,82 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
 
-      # =======================
-      # A) Local Mihomo -> MRS
-      # =======================
-      - name: Clean old MRS files (clash/)
-        run: rm -f ${SRC_DIR}/*.mrs
+      # =========================================================
+      # A) 本地 clash/*.yaml -> clash/*.mrs（mihomo）
+      # =========================================================
+      - name: Clean old local MRS (clash/)
+        run: |
+          set -eux
+          rm -f "${SRC_DIR}"/*.mrs || true
 
-      - name: Run extraction script (Mihomo -> MRS in clash/)
-        run: python scripts/extract_rules.py
+      - name: Build local MRS (mihomo)
+        run: |
+          set -eux
+          python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
           MIHOMO_BIN: ./mihomo
 
-      # =======================
-      # B) Local sing-box -> SRS
-      # =======================
-      - name: Clean old SRS files (singbox/)
-        run: rm -f ${SBOX_DIR}/*.srs
+      # =========================================================
+      # B) 本地 singbox/*.json -> singbox/*.srs（sing-box）
+      # =========================================================
+      - name: Clean old local SRS (singbox/)
+        run: |
+          set -eux
+          rm -f "${SBOX_DIR}"/*.srs || true
 
-      - name: Run compilation script (Sing-box -> SRS in singbox/)
-        run: python scripts/compile_srs.py
+      - name: Build local SRS (sing-box)
+        run: |
+          set -eux
+          python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
           SINGBOX_BIN: ./sing-box
           RULESET_VERSION: "3"
 
-      # =======================
-      # C) Remote links -> (remote-mrs + remote-srs)
-      # =======================
-      - name: Build remote dual outputs (remote-mrs + remote-srs)
-        run: python scripts/Diversion_Conversion.py
+      # =========================================================
+      # C) 远程 remote-rules.json -> remote-mrs/*.mrs + remote-srs/*.srs
+      #    （你的脚本：scripts/Diversion_Conversion.py）
+      # =========================================================
+      - name: Build remote MRS+SRS (Diversion_Conversion.py)
+        run: |
+          set -eux
+          test -f remote-rules.json || (echo "remote-rules.json not found" && exit 1)
+          python scripts/Diversion_Conversion.py
         env:
           SINGBOX_BIN: ./sing-box
           MIHOMO_BIN: ./mihomo
 
+      # ---------- 输出目录检查（让你一眼看到有没有产物） ----------
       - name: List outputs
         run: |
-          echo "=== clash ==="; ls -la clash || true
-          echo "=== singbox ==="; ls -la singbox || true
-          echo "=== remote-mrs ==="; ls -la remote-mrs || true
-          echo "=== remote-srs ==="; ls -la remote-srs || true
-          echo "=== remote-tmp ==="; ls -la remote-tmp || true
+          set -eux
+          echo "=== ${SRC_DIR} ==="
+          ls -la "${SRC_DIR}" || true
+          echo "=== ${SBOX_DIR} ==="
+          ls -la "${SBOX_DIR}" || true
+          echo "=== remote-mrs ==="
+          ls -la remote-mrs || true
+          echo "=== remote-srs ==="
+          ls -la remote-srs || true
+          echo "=== remote-tmp ==="
+          ls -la remote-tmp || true
 
-      # ---------- Commit & Push ----------
-      - name: Commit and push changes
+      # ---------- 提交变更 ----------
+      - name: Commit & Push
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 只提交产物：本地 mrs/srs + 远程 mrs/srs（remote-tmp 可选）
-          git add ${SRC_DIR}/*.mrs || true
-          git add ${SBOX_DIR}/*.srs || true
+          # 本地产物
+          git add "${SRC_DIR}"/*.mrs || true
+          git add "${SBOX_DIR}"/*.srs || true
 
+          # 远程产物
           git add remote-mrs remote-srs remote-rules.json || true
-          # 如果你想把中间文件也提交，取消注释下一行
+
+          # 中间文件（可选：不想提交就删掉这行，并把 remote-tmp/ 写进 .gitignore）
           git add remote-tmp || true
 
           if git diff --cached --quiet; then
