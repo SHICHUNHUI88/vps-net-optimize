@@ -22,16 +22,24 @@ for yaml_file in os.listdir(SRC_DIR):
     if data and 'payload' in data:
         payload = data['payload']
         print(f"  Payload contains {len(payload)} items.")
-        for i, item in enumerate(payload[:5]):
-            print(f"    First few items: {repr(item)}")
+        # 打印前几条规则，便于检查原始内容
+        for i, item in enumerate(payload[:3]):
+            print(f"    Example item {i}: {repr(item)}")
 
         for item in payload:
-            if isinstance(item, str):
-                if item.startswith('DOMAIN') and not item.startswith('DOMAIN-REGEX'):
-                    domain_rules.append(item)
-                elif item.startswith('IP-CIDR') or item.startswith('IP-CIDR6'):
-                    ip_rules.append(item)
-                    print(f"    ✅ Matched IP rule: {repr(item)}")  # 打印匹配到的每一条 IP 规则
+            if not isinstance(item, str):
+                print(f"    ⚠️ Skipping non-string item: {repr(item)}")
+                continue
+            # 去除前导空白后判断
+            stripped = item.lstrip()
+            # 域名规则（排除正则）
+            if stripped.startswith('DOMAIN') and not stripped.startswith('DOMAIN-REGEX'):
+                domain_rules.append(item)
+                print(f"    ➕ Domain rule: {repr(item)}")
+            # IP 规则（同时匹配 IP-CIDR 和 IP-CIDR6）
+            elif stripped.startswith('IP-CIDR'):
+                ip_rules.append(item)
+                print(f"    ➕ IP rule: {repr(item)}")
     else:
         print("  ⚠️ No payload found or empty")
 
@@ -43,10 +51,24 @@ for yaml_file in os.listdir(SRC_DIR):
         with open(temp_domain, 'w') as f:
             f.write("payload:\n")
             for rule in domain_rules:
+                # 保持原样写入（域名规则不需要修改）
                 f.write(f"  - {rule}\n")
-        os.system(f"./mihomo convert-ruleset domain yaml {temp_domain} {SRC_DIR}/{base_name}_domain.mrs")
+        # 执行转换，捕获输出
+        result = subprocess.run(
+            ["./mihomo", "convert-ruleset", "domain", "yaml", temp_domain, f"{SRC_DIR}/{base_name}_domain.mrs"],
+            capture_output=True, text=True
+        )
+        print(f"    Domain convert stdout: {result.stdout.strip()}")
+        if result.stderr:
+            print(f"    Domain convert stderr: {result.stderr.strip()}")
         os.remove(temp_domain)
-        print(f"  ✅ Converted domain rules: {base_name}_domain.mrs")
+        # 检查生成的文件
+        domain_file = f"{SRC_DIR}/{base_name}_domain.mrs"
+        if os.path.exists(domain_file):
+            size = os.path.getsize(domain_file)
+            print(f"    ✅ Domain MRS generated, size: {size} bytes")
+        else:
+            print(f"    ❌ Domain MRS not generated")
     else:
         print(f"  ℹ️ No domain rules")
 
@@ -56,26 +78,30 @@ for yaml_file in os.listdir(SRC_DIR):
         with open(temp_ip, 'w') as f:
             f.write("payload:\n")
             for rule in ip_rules:
-                f.write(f"  - {rule}\n")
-        print(f"  🚀 Converting {len(ip_rules)} IP rules...")
-        # 使用 subprocess 捕获输出
+                # 去掉可能存在的 ,no-resolve 部分，只保留 IP-CIDR,xxx
+                # 按逗号分割，取前两部分
+                parts = rule.split(',')
+                if len(parts) >= 2:
+                    clean_rule = f"{parts[0]},{parts[1]}"
+                else:
+                    clean_rule = rule  # 保底
+                f.write(f"  - {clean_rule}\n")
+        print(f"  🚀 Converting {len(ip_rules)} IP rules (cleaned of no-resolve)...")
         result = subprocess.run(
             ["./mihomo", "convert-ruleset", "ipcidr", "yaml", temp_ip, f"{SRC_DIR}/{base_name}_ip.mrs"],
-            capture_output=True,
-            text=True
+            capture_output=True, text=True
         )
-        print(f"  Command stdout: {result.stdout.strip()}")
-        print(f"  Command stderr: {result.stderr.strip()}")
-        print(f"  Exit code: {result.returncode}")
+        print(f"    IP convert stdout: {result.stdout.strip()}")
+        if result.stderr:
+            print(f"    IP convert stderr: {result.stderr.strip()}")
         os.remove(temp_ip)
-        # 检查生成的文件
         ip_file = f"{SRC_DIR}/{base_name}_ip.mrs"
         if os.path.exists(ip_file):
             size = os.path.getsize(ip_file)
-            print(f"  ✅ Generated {base_name}_ip.mrs, size: {size} bytes")
+            print(f"    ✅ IP MRS generated, size: {size} bytes")
             if size == 0:
-                print("  ⚠️  File is empty!")
+                print("    ⚠️  IP MRS is empty! Check mihomo output above.")
         else:
-            print(f"  ❌ File {base_name}_ip.mrs not generated!")
+            print(f"    ❌ IP MRS not generated")
     else:
         print(f"  ℹ️ No IP rules")
