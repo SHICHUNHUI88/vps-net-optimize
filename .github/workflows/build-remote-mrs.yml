@@ -1,16 +1,15 @@
-name: Remote Rules -> remote-mrs (sing-box)
+name: Remote Rules -> (mihomo .mrs) + (sing-box .srs)
 
 on:
   workflow_dispatch:
   schedule:
     - cron: "10 4 * * *"   # UTC 04:10 = 北京时间 12:10（避开你旧任务）
-
   push:
     branches: [ "main", "master" ]
     paths:
       - "remote-rules.json"
-      - "scripts/Diversion_Conversion.py"
-      - ".github/workflows/remote-rules-to-mrs.yml"
+      - "scripts/Remote_Dual_Convert.py"
+      - ".github/workflows/remote-dual-build.yml"
 
 permissions:
   contents: write
@@ -42,29 +41,27 @@ jobs:
           chmod +x ./sing-box
           ./sing-box version
 
-      # 🔎 强制打印：让你一眼看出是否找得到清单、脚本、输出目录
-      - name: Precheck files
+      - name: Install mihomo
         run: |
           set -eux
-          echo "=== PWD ==="
-          pwd
-          echo "=== LIST ROOT ==="
-          ls -la
-          echo "=== LIST .github/workflows ==="
-          ls -la .github/workflows || true
-          echo "=== SHOW remote-rules.json ==="
-          cat remote-rules.json
+          MI_VER="1.19.10"
+          curl -L -o mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MI_VER}/mihomo-linux-amd64-v${MI_VER}.gz"
+          gzip -d mihomo.gz
+          mv "mihomo-linux-amd64-v${MI_VER}" ./mihomo
+          chmod +x ./mihomo
+          ./mihomo -v
 
-      - name: Build remote-mrs
+      - name: Build dual outputs
         env:
           SINGBOX_BIN: ./sing-box
+          MIHOMO_BIN: ./mihomo
         run: |
           set -eux
           python scripts/Diversion_Conversion.py
-          echo "=== LIST remote-src ==="
-          ls -la remote-src || true
-          echo "=== LIST remote-mrs ==="
-          ls -la remote-mrs || true
+          echo "=== remote-mihomo-mrs ==="
+          ls -la remote-mihomo-mrs || true
+          echo "=== remote-singbox-srs ==="
+          ls -la remote-singbox-srs || true
 
       - name: Commit & Push
         run: |
@@ -72,13 +69,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 只提交隔离目录（不碰你旧目录）
-          git add remote-mrs remote-src remote-rules.json || true
+          # 只提交这些隔离目录（不会碰你旧的 clash/singbox）
+          git add remote-mihomo-src remote-mihomo-mrs remote-singbox-src remote-singbox-srs remote-rules.json || true
 
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
 
-          git commit -m "chore: update remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: update remote mrs+srs $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
