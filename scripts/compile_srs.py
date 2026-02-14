@@ -5,13 +5,14 @@ import os
 import sys
 import json
 import subprocess
+from typing import Any, Dict, List, Optional, Set, Union
 
 # 源目录 & sing-box 可执行文件，可用环境变量覆盖
 SBOX_DIR = os.getenv("SBOX_DIR", "singbox")
 SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 
 # sing-box rule-set 源格式版本（对应 1.11.x 用 3，1.13+ 可以用 4）
-RULESET_VERSION = 3
+RULESET_VERSION = int(os.getenv("RULESET_VERSION", "3"))
 
 
 def log(msg: str) -> None:
@@ -20,7 +21,7 @@ def log(msg: str) -> None:
 
 # ================== 通用 JSON 读取 ==================
 
-def load_json(path: str):
+def load_json(path: str) -> Optional[Any]:
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -34,7 +35,7 @@ def load_json(path: str):
 
 # ================== 结构判断 ==================
 
-def is_ruleset_json(data) -> bool:
+def is_ruleset_json(data: Any) -> bool:
     """
     判断是否是 sing-box rule-set 源格式:
     1) {"version":x,"rules":[...]}
@@ -48,9 +49,32 @@ def is_ruleset_json(data) -> bool:
     return False
 
 
+# ================== 工具：把字段统一转成 list[str]（兼容 str/list）==================
+
+def as_str_list(val: Any) -> List[str]:
+    """
+    允许输入:
+      - "1.1.1.1/32"
+      - ["1.1.1.1/32", "8.8.8.8/32"]
+    输出统一为 list[str]，并去掉空白/空串。
+    """
+    out: List[str] = []
+    if isinstance(val, str):
+        s = val.strip()
+        if s:
+            out.append(s)
+    elif isinstance(val, list):
+        for x in val:
+            if isinstance(x, str):
+                s = x.strip()
+                if s:
+                    out.append(s)
+    return out
+
+
 # ================== 对已有 rule-set 进行“提纯” ==================
 
-# 允许从规则里提取并写入 SRS 的字段
+# 允许从规则里提取并写入 SRS 的字段（headless rule）
 ALLOWED_HEADLESS_KEYS = {
     "type",
     "domain",
@@ -69,16 +93,16 @@ ALLOWED_HEADLESS_KEYS = {
     "invert",
 }
 
-def normalize_ruleset(data):
+def normalize_ruleset(data: Any) -> Dict[str, Any]:
     """
     传入一个“看起来像 rule-set”的 JSON,
     只提取 sing-box 支持的 Headless Rule 字段，构造一个干净的 rule-set 源对象:
         { "version": RULESET_VERSION, "rules": [ {...}, ... ] }
 
-    注意：
-    - 原始 data 不会被修改；
-    - ip_cidr6 会被并入 ip_cidr，保证 IPv6 也能进 SRS；
-    - ip_asn 等无法直接表达的字段：只保留在原 JSON，不写入 rule-set。
+    关键增强：
+    - ip_cidr/ip_cidr6 支持 str 或 list[str]；
+    - ip_cidr6 会并入 ip_cidr（保证 IPv6 也能进 SRS）；
+    - 其余无法表达的字段（如 ip_asn/geoip）不会写入 rule-set。
     """
     if isinstance(data, list):
         rules_src = data
@@ -87,18 +111,18 @@ def normalize_ruleset(data):
     else:
         rules_src = []
 
-    clean_rules = []
+    clean_rules: List[Dict[str, Any]] = []
 
     for idx, rule in enumerate(rules_src):
         if not isinstance(rule, dict):
             log(f"    ⚠️ 跳过非对象规则 rules[{idx}]")
             continue
 
-        clean_rule = {}
+        clean_rule: Dict[str, Any] = {}
 
         # 规则类型，缺省就用 default
         r_type = rule.get("type", "default")
-        if not isinstance(r_type, str) or not r_type:
+        if not isinstance(r_type, str) or not r_type.strip():
             r_type = "default"
         clean_rule["type"] = r_type
 
@@ -106,27 +130,25 @@ def normalize_ruleset(data):
         for key in ALLOWED_HEADLESS_KEYS:
             if key == "type":
                 continue
-            if key in rule and isinstance(rule[key], (list, str, int, bool)):
-                clean_rule[key] = rule[key]
 
-        # ip_cidr6: 合并进 ip_cidr
-        ip_cidr_list = []
+            # ip_cidr 单独处理（因为要合并 ip_cidr6）
+            if key == "ip_cidr":
+                continue
 
-        # 原本就有 ip_cidr 的
-        if "ip_cidr" in rule and isinstance(rule["ip_cidr"], list):
-            for item in rule["ip_cidr"]:
-                if isinstance(item, str):
-                    ip_cidr_list.append(item)
+            v = rule.get(key)
+            if v is None:
+                continue
 
-        # 如果有 ip_cidr6，把 IPv6 CIDR 一并塞进 ip_cidr
-        if "ip_cidr6" in rule and isinstance(rule["ip_cidr6"], list):
-            for item in rule["ip_cidr6"]:
-                if isinstance(item, str):
-                    ip_cidr_list.append(item)
+            # domain / domain_suffix / ... 通常是 list[str]
+            if isinstance(v, (list, str, int, bool)):
+                clean_rule[key] = v
 
-        if ip_cidr_list:
-            # 去重一下
-            clean_rule["ip_cidr"] = sorted(set(ip_cidr_list))
+        # ip_cidr / ip_cidr6: 合并进 ip_cidr（同时兼容 str / list）
+        cidrs = as_str_list(rule.get("ip_cidr"))
+        cidrs6 = as_str_list(rule.get("ip_cidr6"))
+        all_cidrs = cidrs + cidrs6
+        if all_cidrs:
+            clean_rule["ip_cidr"] = sorted(set(all_cidrs))
 
         # 如果除了 type 之外完全没留下任何字段，就没必要写入这条 rule
         if len(clean_rule) > 1:
@@ -142,11 +164,15 @@ def normalize_ruleset(data):
 
 # ================== 从 payload (Clash 样式) 抽规则，构造 rule-set ==================
 
-def build_ruleset_from_payload(data):
+def build_ruleset_from_payload(data: Any) -> Dict[str, Any]:
     """
     支持从类似：
-      { "payload": ["DOMAIN-SUFFIX,github.com", "IP-CIDR,1.1.1.1/32", ...] }
+      { "payload": ["DOMAIN-SUFFIX,github.com", "IP-CIDR,1.1.1.1/32,no-resolve", ...] }
     中提取规则，并构造 rule-set 源对象。
+
+    注意：
+    - 只取第二段为值（域名/IP/进程名），后面的 action/no-resolve 等忽略；
+    - 支持 IP-CIDR / IP-CIDR6；
     """
     if not isinstance(data, dict):
         return {"version": RULESET_VERSION, "rules": []}
@@ -155,12 +181,12 @@ def build_ruleset_from_payload(data):
     if not isinstance(payload, list):
         return {"version": RULESET_VERSION, "rules": []}
 
-    domains = set()
-    domain_suffix = set()
-    domain_keyword = set()
-    domain_regex = set()
-    ip_cidr = set()
-    process_name = set()
+    domains: Set[str] = set()
+    domain_suffix: Set[str] = set()
+    domain_keyword: Set[str] = set()
+    domain_regex: Set[str] = set()
+    ip_cidr: Set[str] = set()
+    process_name: Set[str] = set()
 
     for item in payload:
         if not isinstance(item, str):
@@ -172,14 +198,18 @@ def build_ruleset_from_payload(data):
 
         # 去掉 ['xxx'] 这种包起来的写法
         if line.startswith("['") and line.endswith("']"):
-            line = line.strip("[]'\"")
+            line = line.strip("[]'\"").strip()
 
-        parts = [p.strip() for p in line.split(",") if p.strip()]
+        # 允许出现多段：TYPE,VALUE,ACTION,no-resolve...
+        parts = [p.strip() for p in line.split(",")]
         if len(parts) < 2:
             continue
 
         t = parts[0].upper()
-        v = parts[1]
+        v = parts[1].strip()
+
+        if not v:
+            continue
 
         if t == "DOMAIN":
             domains.add(v)
@@ -195,7 +225,7 @@ def build_ruleset_from_payload(data):
             process_name.add(v)
         # 其它类型暂时忽略
 
-    rule = {"type": "default"}
+    rule: Dict[str, Any] = {"type": "default"}
 
     if domains:
         rule["domain"] = sorted(domains)
@@ -219,7 +249,7 @@ def build_ruleset_from_payload(data):
     }
 
 
-def write_temp_ruleset_json(base_name: str, ruleset_obj) -> str:
+def write_temp_ruleset_json(base_name: str, ruleset_obj: Dict[str, Any]) -> str:
     temp_path = os.path.join(SBOX_DIR, f"temp_ruleset_{base_name}.json")
     with open(temp_path, "w", encoding="utf-8") as f:
         json.dump(ruleset_obj, f, ensure_ascii=False, indent=2)
@@ -264,7 +294,7 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
 
 # ================== 主流程 ==================
 
-def main():
+def main() -> None:
     if not os.path.isdir(SBOX_DIR):
         log(f"❌ 目录不存在: {SBOX_DIR}")
         sys.exit(1)
@@ -295,17 +325,22 @@ def main():
 
         # ===== 决定用哪种方式构造 rule-set =====
         if is_ruleset_json(data):
-            # 已经是 rule-set，提取有用字段、抛弃其它无用字段（仅在临时 JSON 中）
             rs_obj = normalize_ruleset(data)
             if rs_obj["rules"]:
-                log("  ✅ 识别为 rule-set JSON，已提取有效字段")
+                # 自检：统计 ip_cidr 条目数
+                ip_cnt = 0
+                for r in rs_obj.get("rules", []):
+                    ip_cnt += len(r.get("ip_cidr", [])) if isinstance(r.get("ip_cidr"), list) else 0
+                log(f"  ✅ 识别为 rule-set JSON，已提取有效字段（ip_cidr 条目数: {ip_cnt}）")
             else:
                 log("  ⚠️ 识别为 rule-set JSON，但没有提取到任何可用规则，将生成空 SRS 文件")
         else:
-            # 尝试从 payload 里抽规则
             rs_obj = build_ruleset_from_payload(data)
             if rs_obj["rules"]:
-                log("  ✅ 从 payload 中提取并构造 rule-set JSON")
+                ip_cnt = 0
+                for r in rs_obj.get("rules", []):
+                    ip_cnt += len(r.get("ip_cidr", [])) if isinstance(r.get("ip_cidr"), list) else 0
+                log(f"  ✅ 从 payload 中提取并构造 rule-set JSON（ip_cidr 条目数: {ip_cnt}）")
             else:
                 log("  ⚠️ 不是 rule-set，且从 payload 中未提取到任何规则，将生成空 SRS 文件")
 
