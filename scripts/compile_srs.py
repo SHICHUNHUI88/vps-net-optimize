@@ -43,27 +43,23 @@ def is_ruleset_json(data) -> bool:
     return False
 
 
-# ================== 从 payload(Clash 样式) 抽规则，构造 rule-set ==================
+# ================== 从 payload (Clash 样式) 抽规则，构造 rule-set ==================
 
 def build_ruleset_from_payload(data):
     """
     支持从类似：
       { "payload": ["DOMAIN-SUFFIX,github.com", "IP-ASN,138667", "PROCESS-NAME,xxx", ...] }
-    里，提取出 sing-box 支持的多种规则类型：
-      - DOMAIN           -> domain
-      - DOMAIN-SUFFIX    -> domain_suffix
-      - DOMAIN-KEYWORD   -> domain_keyword
-      - DOMAIN-REGEX     -> domain_regex
-      - IP-CIDR/6        -> ip_cidr
-      - IP-ASN           -> ip_asn
-      - PROCESS-NAME     -> process_name
+    里提取规则，并构造 sing-box rule-set 对象。
+    即使没有提取到任何规则，也返回一个包含空 rules 列表的对象。
     """
+    # 如果不是字典，直接返回空规则集
     if not isinstance(data, dict):
-        return None
+        return {"version": 1, "rules": []}
 
     payload = data.get("payload")
+    # 如果没有 payload 或 payload 不是列表，返回空规则集
     if not isinstance(payload, list):
-        return None
+        return {"version": 1, "rules": []}
 
     domains = set()
     domain_suffix = set()
@@ -103,7 +99,6 @@ def build_ruleset_from_payload(data):
         elif t in ("IP-CIDR", "IP-CIDR6"):
             ip_cidr.add(v)
         elif t == "IP-ASN":
-            # IP-ASN,138667
             try:
                 asn = int(v)
                 ip_asn.add(asn)
@@ -111,6 +106,7 @@ def build_ruleset_from_payload(data):
                 continue
         elif t == "PROCESS-NAME":
             process_name.add(v)
+        # 其他未识别的类型直接忽略
 
     rule = {}
 
@@ -129,12 +125,10 @@ def build_ruleset_from_payload(data):
     if process_name:
         rule["process_name"] = sorted(process_name)
 
-    if not rule:
-        return None
-
+    # 无论 rule 是否为空，都返回一个有效的规则集对象
     return {
         "version": 1,
-        "rules": [rule]
+        "rules": [rule] if rule else []
     }
 
 
@@ -215,7 +209,7 @@ def main():
         temp_json = None
 
         if is_ruleset_json(data):
-            # ✅ 你的这份 douyin.json 就走这里：保留 process_name/ip_cidr/ip_cidr6/ip_asn 等全部字段
+            # 已经是 sing-box rule-set 格式，直接使用
             if isinstance(data, dict):
                 rs_obj = data
                 if "version" not in rs_obj:
@@ -227,13 +221,11 @@ def main():
         else:
             # 尝试从 payload 提取 Clash 风格规则
             rs_obj = build_ruleset_from_payload(data)
-            if rs_obj:
-                temp_json = write_temp_ruleset_json(base_name, rs_obj)
+            temp_json = write_temp_ruleset_json(base_name, rs_obj)
+            if rs_obj["rules"]:
                 log("  ✅ 从 payload 中提取并构造 rule-set JSON")
             else:
-                log("  ⏭ 不支持的 JSON 结构，无法提取规则，跳过")
-                fail += 1
-                continue
+                log("  ⚠️ 从 payload 中未提取到任何有效规则，将生成空 SRS 文件")
 
         try:
             ok = compile_to_srs(temp_json, base_name)
