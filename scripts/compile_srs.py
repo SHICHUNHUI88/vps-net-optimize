@@ -8,6 +8,9 @@ import subprocess
 SBOX_DIR = os.getenv("SBOX_DIR", "singbox")
 SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 
+# 推荐给 sing-box 1.11.0 的规则集版本
+RULESET_VERSION = int(os.getenv("RULESET_VERSION", "3"))
+
 
 def log(msg: str) -> None:
     print(msg, flush=True)
@@ -33,7 +36,7 @@ def load_json(path: str):
 def is_ruleset_json(data) -> bool:
     """
     判断是否已经是 sing-box rule-set 源格式：
-    1) {"version":1,"rules":[...]}
+    1) {"version":X,"rules":[...]}
     2) {"rules":[...]} (没有 version 也算)
     3) 根节点就是一个数组：[ {...}, {...} ]
     """
@@ -62,14 +65,14 @@ def build_ruleset_from_payload(data):
       - PROCESS-NAME     -> process_name
 
     即使一个规则都提不到，也会返回：
-      {"version": 1, "rules": []}
+      {"version": RULESET_VERSION, "rules": []}
     """
     if not isinstance(data, dict):
-        return {"version": 1, "rules": []}
+        return {"version": RULESET_VERSION, "rules": []}
 
     payload = data.get("payload")
     if not isinstance(payload, list):
-        return {"version": 1, "rules": []}
+        return {"version": RULESET_VERSION, "rules": []}
 
     domains = set()
     domain_suffix = set()
@@ -135,9 +138,8 @@ def build_ruleset_from_payload(data):
     if process_name:
         rule["process_name"] = sorted(process_name)
 
-    # rule 可能为空，但我们仍然返回一个合法的规则集对象
     return {
-        "version": 1,
+        "version": RULESET_VERSION,
         "rules": [rule] if rule else []
     }
 
@@ -220,6 +222,7 @@ def main():
 
     log(f"🔧 工作目录: {SBOX_DIR}")
     log(f"🔧 发现 {len(json_files)} 个 JSON 文件")
+    log(f"🔧 规则集版本: {RULESET_VERSION}")
 
     success, fail = 0, 0
 
@@ -239,15 +242,14 @@ def main():
         temp_json = None
 
         if is_ruleset_json(data):
-            # 已是 sing-box rule-set 源格式，原样编译（缺 version 就补一个）
+            # 已是 sing-box rule-set 源格式，强制统一 version
             if isinstance(data, dict):
                 rs_obj = data
-                if "version" not in rs_obj:
-                    rs_obj["version"] = 1
+                rs_obj["version"] = RULESET_VERSION
             else:  # 根是数组
-                rs_obj = {"version": 1, "rules": data}
+                rs_obj = {"version": RULESET_VERSION, "rules": data}
             temp_json = write_temp_ruleset_json(base_name, rs_obj)
-            log("  ✅ 已是 sing-box rule-set JSON，直接编译")
+            log("  ✅ 已是 sing-box rule-set JSON，直接编译（已统一 version）")
         else:
             # 尝试从 payload 提取 Clash 风格规则
             rs_obj = build_ruleset_from_payload(data)
