@@ -30,8 +30,6 @@ jobs:
       - name: Install sing-box
         run: |
           set -eux
-          # 这里用官方预编译（linux amd64）
-          # 你也可以改成你固定的版本/来源
           SB_VER="1.11.0"
           curl -L -o sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SB_VER}/sing-box-${SB_VER}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
@@ -49,10 +47,14 @@ jobs:
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dist .work || true
+
+          # ✅ 只提交隔离目录（不进你以前的转换目录）
+          git add remote-mrs remote-src remote-rules.json || true
+
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
+
           git commit -m "chore: update remote mrs"
           git push
