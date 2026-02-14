@@ -18,11 +18,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # GitHub Runner 是 amd64，直接下 amd64 版本就行
-          url="https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64"
-          echo "📥 Downloading: $url"
-          curl -fL --retry 3 --retry-delay 2 "$url" -o mihomo
+
+          # GitHub Runner 是 amd64，这里直接用 amd64 版本
+          MIHOMO_VERSION="1.19.10"
+          ASSET="mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          URL="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/${ASSET}"
+
+          echo "📥 Downloading: ${URL}"
+          wget -O mihomo.gz "${URL}"
+
+          # 解压 gz，得到 mihomo-linux-amd64-v1.19.10
+          gzip -d -f mihomo.gz
+
+          # 直接重命名为 mihomo（注意，这里不再做什么 before/after 检测）
+          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+
           chmod +x mihomo
+
           echo "✅ mihomo version:"
           ./mihomo -v
 
@@ -30,17 +42,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          # 确保源文件存在
+          if [ ! -f "ruleset-src/douyin.yaml" ]; then
+            echo "❌ 找不到 ruleset-src/douyin.yaml"
+            exit 1
+          fi
+
           mkdir -p ruleset-mrs
-          # douyin.yaml 是域名类规则，用 domain 模式
+
+          echo "🔄 开始转换 douyin.yaml -> douyin.mrs (domain 模式)"
           ./mihomo convert-ruleset domain yaml ruleset-src/douyin.yaml ruleset-mrs/douyin.mrs
+
+          if [ ! -s "ruleset-mrs/douyin.mrs" ]; then
+            echo "❌ 转换失败：ruleset-mrs/douyin.mrs 为空或不存在"
+            exit 1
+          fi
+
+          ls -lh ruleset-mrs/douyin.mrs
 
       - name: Commit douyin.mrs
         shell: bash
         run: |
           set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # 如果没有变化就不提交
           if git status --porcelain | grep -q "ruleset-mrs/douyin.mrs"; then
             echo "📤 提交 douyin.mrs..."
             git add ruleset-mrs/douyin.mrs
@@ -48,5 +77,5 @@ jobs:
             git push
             echo "✅ 推送成功"
           else
-            echo "✅ 没有变更，无需提交"
+            echo "✅ 没有新的变更，无需提交"
           fi
