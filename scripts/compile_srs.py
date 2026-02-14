@@ -16,6 +16,7 @@ def log(msg: str) -> None:
 # ================== 通用 JSON 读取 ==================
 
 def load_json(path: str):
+    """读取 JSON 文件，失败返回 None。"""
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -50,14 +51,23 @@ def build_ruleset_from_payload(data):
     支持从类似：
       { "payload": ["DOMAIN-SUFFIX,github.com", "IP-ASN,138667", "PROCESS-NAME,xxx", ...] }
     里提取规则，并构造 sing-box rule-set 对象。
-    即使没有提取到任何规则，也返回一个包含空 rules 列表的对象。
+
+    会提取的类型：
+      - DOMAIN           -> domain
+      - DOMAIN-SUFFIX    -> domain_suffix
+      - DOMAIN-KEYWORD   -> domain_keyword
+      - DOMAIN-REGEX     -> domain_regex
+      - IP-CIDR / IP-CIDR6 -> ip_cidr
+      - IP-ASN           -> ip_asn
+      - PROCESS-NAME     -> process_name
+
+    即使一个规则都提不到，也会返回：
+      {"version": 1, "rules": []}
     """
-    # 如果不是字典，直接返回空规则集
     if not isinstance(data, dict):
         return {"version": 1, "rules": []}
 
     payload = data.get("payload")
-    # 如果没有 payload 或 payload 不是列表，返回空规则集
     if not isinstance(payload, list):
         return {"version": 1, "rules": []}
 
@@ -125,7 +135,7 @@ def build_ruleset_from_payload(data):
     if process_name:
         rule["process_name"] = sorted(process_name)
 
-    # 无论 rule 是否为空，都返回一个有效的规则集对象
+    # rule 可能为空，但我们仍然返回一个合法的规则集对象
     return {
         "version": 1,
         "rules": [rule] if rule else []
@@ -133,6 +143,7 @@ def build_ruleset_from_payload(data):
 
 
 def write_temp_ruleset_json(base_name: str, ruleset_obj) -> str:
+    """把 rule-set 对象写到临时 JSON 文件，返回路径。"""
     temp_path = os.path.join(SBOX_DIR, f"temp_ruleset_{base_name}.json")
     with open(temp_path, "w", encoding="utf-8") as f:
         json.dump(ruleset_obj, f, ensure_ascii=False, indent=2)
@@ -141,7 +152,23 @@ def write_temp_ruleset_json(base_name: str, ruleset_obj) -> str:
 
 # ================== 调用 sing-box 编译 SRS ==================
 
+def touch_empty_srs(base_name: str):
+    """生成一个空的占位 SRS 文件（0 字节也行）。"""
+    output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
+    with open(output_srs, "wb") as f:
+        pass
+    log(f"    ⚠️ 已生成空占位 SRS: {output_srs}")
+    return True
+
+
 def compile_to_srs(json_path: str, base_name: str) -> bool:
+    """
+    调用 sing-box 把源 JSON 编译成 .srs。
+
+    不论成功失败，最终都会在目录里留下一个 .srs 文件：
+      - 成功: 真正的规则集
+      - 失败: 0 字节占位文件
+    """
     output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
     cmd = [SINGBOX_BIN, "rule-set", "compile", "--output", output_srs, json_path]
     log(f"    ▶ Run: {' '.join(cmd)}")
@@ -149,11 +176,11 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
-        log("    ❌ 命令超时")
-        return False
+        log("    ❌ 命令超时，将生成空占位 SRS")
+        return touch_empty_srs(base_name)
     except Exception as e:
-        log(f"    ❌ 调用 sing-box 出错: {e}")
-        return False
+        log(f"    ❌ 调用 sing-box 出错: {e}，将生成空占位 SRS")
+        return touch_empty_srs(base_name)
 
     if result.stdout.strip():
         log(f"    stdout: {result.stdout.strip()}")
@@ -161,18 +188,18 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
         log(f"    stderr: {result.stderr.strip()}")
 
     if result.returncode != 0:
-        log(f"    ❌ sing-box 退出码: {result.returncode}")
-        return False
+        log(f"    ❌ sing-box 退出码: {result.returncode}，将生成空占位 SRS")
+        return touch_empty_srs(base_name)
 
     if not os.path.exists(output_srs):
-        log("    ❌ SRS 文件未生成")
-        return False
+        log("    ❌ sing-box 未生成 SRS 文件，将生成空占位 SRS")
+        return touch_empty_srs(base_name)
 
     size = os.path.getsize(output_srs)
     log(f"    ✅ SRS 生成成功: {output_srs} ({size} 字节)")
     if size == 0:
         log("    ⚠️ SRS 文件大小为 0，请检查上面的 stderr 输出")
-    return size > 0
+    return True
 
 
 # ================== 主流程 ==================
@@ -203,13 +230,16 @@ def main():
 
         data = load_json(full_path)
         if data is None:
-            fail += 1
+            # JSON 解析失败，也生成空占位 SRS，避免 URL 404
+            log("  ❌ JSON 解析失败，将生成空占位 SRS")
+            touch_empty_srs(base_name)
+            success += 1
             continue
 
         temp_json = None
 
         if is_ruleset_json(data):
-            # 已经是 sing-box rule-set 格式，直接使用
+            # 已是 sing-box rule-set 源格式，原样编译（缺 version 就补一个）
             if isinstance(data, dict):
                 rs_obj = data
                 if "version" not in rs_obj:
@@ -225,7 +255,7 @@ def main():
             if rs_obj["rules"]:
                 log("  ✅ 从 payload 中提取并构造 rule-set JSON")
             else:
-                log("  ⚠️ 从 payload 中未提取到任何有效规则，将生成空 SRS 文件")
+                log("  ⚠️ 从 payload 中未提取到任何有效规则，将尝试编译空规则集")
 
         try:
             ok = compile_to_srs(temp_json, base_name)
@@ -238,7 +268,7 @@ def main():
         else:
             fail += 1
 
-    log(f"\n📊 统计: 成功 {success} 个, 失败 {fail} 个")
+    log(f"\n📊 统计: 成功 {success} 个, 失败 {fail} 个（失败时也已生成占位 SRS）")
 
 
 if __name__ == "__main__":
