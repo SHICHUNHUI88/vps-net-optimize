@@ -1,19 +1,70 @@
-# Updated extraction handling
+name: Build MRS Rules
 
-# Improved extraction logic that works for both .gz and .tar.gz formats without conflicts
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "ruleset-src/**.yaml"
+      - ".github/workflows/build-mrs.yml"
+  workflow_dispatch: {}
 
-# Assuming the extract function handles both file types appropriately.
-# Example logic:
-extract_file() {
-  case "${1##*.}" in
-    gz) 
-      tar -xzvf "$1";;
-    tar.gz) 
-      tar -xzvf "$1";;
-    *) 
-      echo "Unsupported file format";;
-  esac
-}
+env:
+  MIHOMO_VERSION: 1.19.10   # 使用你上次成功的固定版本
+  SRC_DIR: ruleset-src       # 源YAML目录
+  OUT_DIR: ruleset           # 输出MRS目录
 
-# Call the extract_file function with the filename as argument
-extract_file "file.tar.gz"
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download mihomo (fixed version)
+        run: |
+          set -eux
+          # 直接下载固定版本的 .gz 文件
+          wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          gzip -d mihomo.gz
+          # 解压后可能文件名带版本号，统一重命名为 mihomo
+          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
+            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+          else
+            # 如果直接解压出 mihomo 文件（视压缩包内容而定）
+            [ -f "mihomo" ] || { echo "Binary not found"; exit 1; }
+          fi
+          chmod +x mihomo
+          ./mihomo -v
+
+      - name: Build MRS for all YAML
+        run: |
+          set -eux
+          mkdir -p "${OUT_DIR}"
+          # 遍历 ruleset-src 下所有 .yaml 文件（全量处理，最可靠）
+          for yaml in ${SRC_DIR}/*.yaml; do
+            [ -f "$yaml" ] || continue
+            base=$(basename "$yaml" .yaml)
+            ./mihomo convert-ruleset domain yaml "$yaml" "${OUT_DIR}/${base}.mrs"
+            echo "✓ Converted: $yaml -> ${OUT_DIR}/${base}.mrs"
+          done
+          # 清理二进制，避免干扰 git 提交
+          rm -f mihomo
+
+      - name: Commit & push
+        run: |
+          set -eux
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${OUT_DIR}/"
+          # 精确判断是否有真实变更
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "build: update MRS files $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
