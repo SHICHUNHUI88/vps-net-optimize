@@ -22,7 +22,8 @@ for yaml_file in os.listdir(SRC_DIR):
             if isinstance(item, str):
                 if item.startswith('DOMAIN') and not item.startswith('DOMAIN-REGEX'):
                     domain_rules.append(item)
-                elif item.startswith('IP-CIDR'):
+                # ✅ 修复：同时匹配 IP-CIDR 和 IP-CIDR6
+                elif item.startswith('IP-CIDR') or item.startswith('IP-CIDR6'):
                     ip_rules.append(item)
 
     # 转换域名规则
