@@ -2,7 +2,7 @@ name: Build MRS (mihomo) + SRS (sing-box) + Remote (dual outputs)
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # UTC 05:00 = 北京时间 12:00
+    - cron: "0 5 * * *"  # UTC 05:00 = 北京时间 01:00
   push:
     branches: [ "main", "master" ]
     paths:
