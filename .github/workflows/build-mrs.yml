@@ -1,11 +1,7 @@
-name: Build MRS (all ruleset-src)
+name: Build douyin.mrs
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "ruleset-src/**/*.yaml"
 
 permissions:
   contents: write
@@ -15,156 +11,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 拉代码
       - name: Checkout
         uses: actions/checkout@v5
 
-      # 时间戳（给 commit 用）
-      - name: Set timestamp
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "TS=$(date +%Y%m%d%H%M%S)" >> "$GITHUB_ENV"
-
-      # ✅ 这是你要的「Download mihomo」完整脚本（不会再 mv 自己）
       - name: Download mihomo
         shell: bash
         run: |
           set -euo pipefail
-
-          arch="$(uname -m)"
-          case "$arch" in
-            x86_64)        asset="mihomo-linux-amd64" ;;
-            aarch64|arm64) asset="mihomo-linux-arm64" ;;
-            *)
-              echo "Unsupported arch: $arch"
-              exit 1
-              ;;
-          esac
-
-          url="https://github.com/MetaCubeX/mihomo/releases/latest/download/${asset}"
-          echo "📥 下载 mihomo from: $url"
-
-          # 直接下载成 mihomo，不做任何“自动检测/重命名”
+          # GitHub Runner 是 amd64，直接下 amd64 版本就行
+          url="https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64"
+          echo "📥 Downloading: $url"
           curl -fL --retry 3 --retry-delay 2 "$url" -o mihomo
           chmod +x mihomo
-
-          echo "✅ mihomo 版本信息:"
+          echo "✅ mihomo version:"
           ./mihomo -v
 
-      # 把 ruleset-src 里的 yaml 批量转成 mrs
-      - name: Build *.mrs from ruleset-src
+      - name: Convert douyin.yaml -> douyin.mrs
         shell: bash
         run: |
           set -euo pipefail
-
           mkdir -p ruleset-mrs
+          # douyin.yaml 是域名类规则，用 domain 模式
+          ./mihomo convert-ruleset domain yaml ruleset-src/douyin.yaml ruleset-mrs/douyin.mrs
 
-          echo "=========================================="
-          echo "🔄 开始转换 YAML -> MRS"
-          echo "=========================================="
-
-          # 找出所有 yaml（包含子目录）
-          mapfile -t files < <(find ruleset-src -type f -name "*.yaml" | sort)
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "❌ ruleset-src 下没有找到任何 .yaml 文件"
-            exit 1
-          fi
-
-          total=0
-          converted=0
-          failed=0
-
-          for f in "${files[@]}"; do
-            rel="${f#ruleset-src/}"                 # 相对路径
-            base="$(basename "$f" .yaml)"          # 不带后缀名
-            out_dir="ruleset-mrs/$(dirname "$rel")"
-            out="${out_dir}/${base}.mrs"
-
-            # 默认按 domain；文件名以 -ip 结尾就按 ipcidr
-            kind="domain"
-            if [[ "$base" == *-ip ]]; then
-              kind="ipcidr"
-            fi
-
-            total=$((total + 1))
-            mkdir -p "$out_dir"
-
-            echo ""
-            echo "📝 转换 [$total]: $rel"
-            echo "   输入: $f"
-            echo "   输出: $out"
-            echo "   类型: $kind"
-
-            log="convert-${base}.log"
-
-            if ./mihomo convert-ruleset "$kind" yaml "$f" "$out" >"$log" 2>&1; then
-              if [ -s "$out" ]; then
-                converted=$((converted + 1))
-                size=$(du -h "$out" | cut -f1)
-                echo "   ✅ 成功 (大小: $size)"
-              else
-                failed=$((failed + 1))
-                echo "   ❌ 失败：输出文件为空"
-                echo "   ---- 错误日志 ----"
-                cat "$log" || true
-                echo "   ------------------"
-              fi
-            else
-              failed=$((failed + 1))
-              echo "   ❌ 转换失败"
-              echo "   ---- 错误日志 ----"
-              cat "$log" || true
-              echo "   ------------------"
-            fi
-          done
-
-          echo ""
-          echo "=========================================="
-          echo "📊 转换统计"
-          echo "=========================================="
-          echo "总文件数: $total"
-          echo "成功转换: $converted"
-          echo "转换失败: $failed"
-
-          if [ $failed -eq 0 ] && [ $converted -gt 0 ]; then
-            echo "✅ 全部转换成功！"
-          elif [ $converted -gt 0 ]; then
-            echo "⚠️  部分文件转换失败"
-            exit 1
-          else
-            echo "❌ 没有成功转换任何文件"
-            exit 1
-          fi
-
-      - name: List generated MRS files
-        shell: bash
-        run: |
-          echo "📦 生成的 MRS 文件列表:"
-          find ruleset-mrs -type f -name "*.mrs" -print -exec ls -lh {} \; || echo "  (暂无文件)"
-
-      - name: Commit results
+      - name: Commit douyin.mrs
         shell: bash
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 没有任何 mrs 产物就直接失败
-          if ! find ruleset-mrs -type f -name "*.mrs" | grep -q .; then
-            echo "❌ 没有任何 .mrs 产物，终止提交"
-            exit 1
-          fi
-
-          # 如果没有变更就不提交
-          if git status --porcelain | grep -q "ruleset-mrs"; then
-            echo "📤 提交更改..."
-            git add ruleset-mrs
-            git commit -m "build: update mrs files ${{ env.TS }}" || exit 0
+          if git status --porcelain | grep -q "ruleset-mrs/douyin.mrs"; then
+            echo "📤 提交 douyin.mrs..."
+            git add ruleset-mrs/douyin.mrs
+            git commit -m "build: update douyin.mrs" || exit 0
             git push
             echo "✅ 推送成功"
           else
-            echo "✅ 没有新的变更，无需提交"
+            echo "✅ 没有变更，无需提交"
           fi
