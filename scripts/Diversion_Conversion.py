@@ -36,27 +36,26 @@ def http_get(url: str) -> str:
 
 
 def run(cmd: list[str], timeout: int = 120) -> str:
-    """Run command and return combined output. Raise with full output on failure."""
     log(f"    ▶ Run: {' '.join(cmd)}")
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    out_lines = []
     try:
-        p = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=timeout,
-        )
+        for line in iter(p.stdout.readline, ''):
+            if not line:
+                break
+            line = line.rstrip()
+            if line:
+                log(line)
+                out_lines.append(line)
+        p.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
+        p.kill()
         raise RuntimeError(f"Timeout after {timeout}s: {' '.join(cmd)}")
 
-    out = (p.stdout or "").rstrip()
-    if out:
-        log(out)
-
     if p.returncode != 0:
-        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}\n{out}")
+        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}\n" + "\n".join(out_lines))
 
-    return out
+    return "\n".join(out_lines)
 
 
 def safe_load_struct(text: str):
