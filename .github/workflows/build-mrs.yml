@@ -1,4 +1,4 @@
-name: Build MRS Rules (domain & ip only) in /clash
+name: Build MRS Rules (domain & ip only) with daily schedule
 
 on:
   schedule:
@@ -6,15 +6,13 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "clash/**.yaml"             # 监听目录改为 clash/
+      - "ruleset-src/**.yaml"
       - ".github/workflows/build-mrs.yml"
-  workflow_dispatch: {}
+  workflow_dispatch: {}       # 允许手动触发
 
 env:
-  MIHOMO_VERSION: 1.19.10
-  # ✅ 关键修改：将源目录和输出目录都设置为 clash
-  SRC_DIR: clash                     
-  OUT_DIR: clash                    
+  MIHOMO_VERSION: 1.19.10      # 可根据需要修改版本
+  SRC_DIR: ruleset-src          # 源文件和输出文件共用目录
 
 permissions:
   contents: write
@@ -28,11 +26,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 下载指定版本的 mihomo（固定版本，避免动态解析失败）
       - name: Download mihomo (fixed version)
         run: |
           set -eux
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d mihomo.gz
+          # 解压后可能得到带版本号的文件，统一重命名为 mihomo
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
             mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
           elif [ ! -f "mihomo" ]; then
@@ -42,6 +42,7 @@ jobs:
           chmod +x mihomo
           ./mihomo -v
 
+      # 设置 Python 环境（用于运行提取脚本）
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -54,14 +55,14 @@ jobs:
       - name: Build MRS for domain and IP rules only
         run: |
           set -eux
-          # 清理旧的 .mrs 文件（确保与当前源文件同步）
+          # 清理旧的 .mrs 文件（避免残留）
           rm -f ${SRC_DIR}/*.mrs
 
           for yaml in ${SRC_DIR}/*.yaml; do
             [ -f "$yaml" ] || continue
             base=$(basename "$yaml" .yaml)
 
-            # Python 脚本提取规则并转换
+            # 使用 Python 脚本提取规则并转换
             python3 - <<EOF
 import yaml
 import os
@@ -86,7 +87,7 @@ if data and 'payload' in data:
             elif item.startswith('IP-CIDR'):
                 ip_rules.append(item)
 
-# 转换域名规则
+# 转换域名规则（如果有）
 if domain_rules:
     temp_domain = f"{src_dir}/temp_domain_{base_name}.yaml"
     with open(temp_domain, 'w') as f:
@@ -99,7 +100,7 @@ if domain_rules:
 else:
     print(f"ℹ️ No domain rules in {base_name}.yaml")
 
-# 转换 IP 规则
+# 转换 IP 规则（如果有）
 if ip_rules:
     temp_ip = f"{src_dir}/temp_ip_{base_name}.yaml"
     with open(temp_ip, 'w') as f:
