@@ -97,16 +97,32 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 只提交远程产物（不碰你旧的 clash/singbox）
-          git add remote-mrs remote-srs remote-rules.json || true
+          echo "=== ls outputs ==="
+          ls -la remote-mrs || true
+          ls -la remote-srs || true
+          ls -la remote-tmp || true
 
-          # 中间文件可选：你想提交就保留；不想提交就删掉这一行，并把 remote-tmp/ 写进 .gitignore
-          git add remote-tmp || true
+          echo "=== git status (before add) ==="
+          git status --porcelain || true
+
+          # 关键：明确 add 到文件级别（目录可能为空会被忽略）
+          git add remote-rules.json || true
+          git add remote-mrs/*.mrs || true
+          git add remote-srs/*.srs || true
+
+          # 如果你想提交中间文件再打开
+          # git add remote-tmp/* || true
+
+          echo "=== git status (after add) ==="
+          git status --porcelain || true
+
+          # 如果被 .gitignore 忽略，这里强制 add（只对规则产物）
+          git add -f remote-srs/*.srs remote-mrs/*.mrs || true
 
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No changes."
             exit 0
           fi
 
-          git commit -m "build: update remote mrs+srs $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git commit -m "chore: update remote mrs+srs $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
