@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import yaml
 import os
+import subprocess
 
 SRC_DIR = os.getenv('SRC_DIR', 'clash')
 
@@ -20,28 +21,23 @@ for yaml_file in os.listdir(SRC_DIR):
 
     if data and 'payload' in data:
         payload = data['payload']
-        print(f"  Payload contains {len(payload)} items. First 5 items as raw strings:")
+        print(f"  Payload contains {len(payload)} items.")
         for i, item in enumerate(payload[:5]):
-            # 打印每个条目的 repr，可以看到隐藏字符
-            print(f"    {i}: {repr(item)}")
+            print(f"    First few items: {repr(item)}")
 
         for item in payload:
             if isinstance(item, str):
-                # 打印每个被检查的规则的前缀，便于追踪
-                if item.startswith('IP-CIDR'):
-                    print(f"    ➡️ Matched IP-CIDR: {repr(item)}")
-                    ip_rules.append(item)
-                elif item.startswith('IP-CIDR6'):
-                    print(f"    ➡️ Matched IP-CIDR6: {repr(item)}")
-                    ip_rules.append(item)
-                elif item.startswith('DOMAIN') and not item.startswith('DOMAIN-REGEX'):
+                if item.startswith('DOMAIN') and not item.startswith('DOMAIN-REGEX'):
                     domain_rules.append(item)
+                elif item.startswith('IP-CIDR') or item.startswith('IP-CIDR6'):
+                    ip_rules.append(item)
+                    print(f"    ✅ Matched IP rule: {repr(item)}")  # 打印匹配到的每一条 IP 规则
     else:
         print("  ⚠️ No payload found or empty")
 
     print(f"  Found {len(domain_rules)} domain rules, {len(ip_rules)} IP rules")
 
-    # 转换域名规则...
+    # 转换域名规则
     if domain_rules:
         temp_domain = os.path.join(SRC_DIR, f"temp_domain_{base_name}.yaml")
         with open(temp_domain, 'w') as f:
@@ -54,6 +50,7 @@ for yaml_file in os.listdir(SRC_DIR):
     else:
         print(f"  ℹ️ No domain rules")
 
+    # 转换 IP 规则
     if ip_rules:
         temp_ip = os.path.join(SRC_DIR, f"temp_ip_{base_name}.yaml")
         with open(temp_ip, 'w') as f:
@@ -61,14 +58,23 @@ for yaml_file in os.listdir(SRC_DIR):
             for rule in ip_rules:
                 f.write(f"  - {rule}\n")
         print(f"  🚀 Converting {len(ip_rules)} IP rules...")
-        # 执行转换并捕获输出，便于调试
-        result = os.system(f"./mihomo convert-ruleset ipcidr yaml {temp_ip} {SRC_DIR}/{base_name}_ip.mrs")
-        print(f"  Conversion command exited with code: {result}")
+        # 使用 subprocess 捕获输出
+        result = subprocess.run(
+            ["./mihomo", "convert-ruleset", "ipcidr", "yaml", temp_ip, f"{SRC_DIR}/{base_name}_ip.mrs"],
+            capture_output=True,
+            text=True
+        )
+        print(f"  Command stdout: {result.stdout.strip()}")
+        print(f"  Command stderr: {result.stderr.strip()}")
+        print(f"  Exit code: {result.returncode}")
         os.remove(temp_ip)
-        # 检查生成的文件大小
-        if os.path.exists(f"{SRC_DIR}/{base_name}_ip.mrs"):
-            size = os.path.getsize(f"{SRC_DIR}/{base_name}_ip.mrs")
+        # 检查生成的文件
+        ip_file = f"{SRC_DIR}/{base_name}_ip.mrs"
+        if os.path.exists(ip_file):
+            size = os.path.getsize(ip_file)
             print(f"  ✅ Generated {base_name}_ip.mrs, size: {size} bytes")
+            if size == 0:
+                print("  ⚠️  File is empty!")
         else:
             print(f"  ❌ File {base_name}_ip.mrs not generated!")
     else:
