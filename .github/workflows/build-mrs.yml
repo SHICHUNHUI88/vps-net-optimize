@@ -27,8 +27,10 @@ jobs:
             *) echo "Unsupported arch: $arch" && exit 1 ;;
           esac
           url="https://github.com/MetaCubeX/mihomo/releases/latest/download/${asset}"
+          echo "📥 下载 mihomo from: $url"
           curl -fL --retry 3 --retry-delay 2 "$url" -o mihomo
           chmod +x mihomo
+          echo "✅ mihomo 版本信息:"
           ./mihomo -v
 
       - name: Build *.mrs from ruleset-src
@@ -36,21 +38,86 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ruleset-mrs
+          
+          # 统计信息
+          total=0
+          converted=0
+          failed=0
+          
+          echo "=========================================="
+          echo "🔄 开始转换 YAML 到 MRS 格式"
+          echo "=========================================="
 
           shopt -s nullglob
           for f in ruleset-src/*.yaml; do
             base="$(basename "$f" .yaml)"
             out="ruleset-mrs/${base}.mrs"
-
-            # 默认 domain；文件名以 -ip 结尾就用 ipcidr（你以后有 IP 规则时用得上）
+            
+            # 默认 domain；文件名以 -ip 结尾就用 ipcidr
             kind="domain"
             if [[ "$base" == *-ip ]]; then
               kind="ipcidr"
             fi
-
-            echo "Convert: $f -> $out (kind=$kind)"
-            ./mihomo convert-ruleset "$kind" yaml "$f" "$out"
+            
+            total=$((total + 1))
+            
+            # 检查源文件是否存在
+            if [ ! -f "$f" ]; then
+              echo "❌ 文件不存在: $f"
+              failed=$((failed + 1))
+              continue
+            fi
+            
+            # 统计规则数量
+            rule_count=$(grep -c "^  - " "$f" || echo "0")
+            
+            echo ""
+            echo "📝 转换 [$total]: $base"
+            echo "   输入: $f (规则数: $rule_count)"
+            echo "   输出: $out"
+            echo "   类型: $kind"
+            
+            # 执行转换
+            if ./mihomo convert-ruleset "$kind" yaml "$f" "$out" 2>&1; then
+              converted=$((converted + 1))
+              
+              # 检查输出文件大小
+              if [ -f "$out" ]; then
+                size=$(du -h "$out" | cut -f1)
+                echo "   ✅ 成功 (文件大小: $size)"
+              else
+                echo "   ⚠️  转换输出文件为空"
+                failed=$((failed + 1))
+              fi
+            else
+              echo "   ❌ 转换失败"
+              failed=$((failed + 1))
+            fi
           done
+          
+          echo ""
+          echo "=========================================="
+          echo "📊 转换统计"
+          echo "=========================================="
+          echo "总文件数: $total"
+          echo "成功转换: $converted"
+          echo "转换失败: $failed"
+          
+          if [ $failed -eq 0 ] && [ $converted -gt 0 ]; then
+            echo "✅ 全部转换成功！"
+          elif [ $converted -gt 0 ]; then
+            echo "⚠️  部分文件转换失败"
+            exit 1
+          else
+            echo "❌ 没有成功转换任何文件"
+            exit 1
+          fi
+
+      - name: List generated MRS files
+        shell: bash
+        run: |
+          echo "📦 生成的 MRS 文件列表:"
+          ls -lh ruleset-mrs/*.mrs 2>/dev/null || echo "  (暂无文件)"
 
       - name: Commit results
         shell: bash
@@ -58,6 +125,15 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # 检查是否有变更
+          if git diff --quiet --exit-code ruleset-mrs/; then
+            echo "✅ 没有新的变更，无需提交"
+            exit 0
+          fi
+          
+          echo "📤 提交更改..."
           git add ruleset-mrs/*.mrs
-          git commit -m "build: update mrs" || exit 0
+          git commit -m "build: update mrs files 2026-02-14 02:20:55" || exit 0
           git push
+          echo "✅ 推送成功"
