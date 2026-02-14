@@ -1,4 +1,4 @@
-name: Build MRS Rules (in source dir) with daily schedule
+name: Build MRS Rules (domain & ip only) with daily schedule
 
 on:
   schedule:
@@ -6,13 +6,13 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "ruleset-src/**.yaml"
+      - "clash/**/*.yaml"        # 只要 clash 目录下的 yaml 变更就触发
       - ".github/workflows/build-mrs.yml"
-  workflow_dispatch: {}       # 允许手动触发
+  workflow_dispatch: {}           # 允许手动触发
 
 env:
-  MIHOMO_VERSION: 1.19.10
-  SRC_DIR: ruleset-src
+  MIHOMO_VERSION: 1.19.10        # 可根据需要修改版本
+  SRC_DIR: clash                  # 现在改为 clash 目录
 
 permissions:
   contents: write
@@ -26,11 +26,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 下载指定版本的 mihomo（固定版本，避免动态解析失败）
       - name: Download mihomo (fixed version)
         run: |
           set -eux
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d mihomo.gz
+          # 解压后可能得到带版本号的文件，统一重命名为 mihomo
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
             mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
           elif [ ! -f "mihomo" ]; then
@@ -40,48 +42,102 @@ jobs:
           chmod +x mihomo
           ./mihomo -v
 
-      - name: Build MRS for all YAML (recursive, domain/ip split)
+      # 设置 Python 环境（用于运行提取脚本）
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      # 构建步骤：递归扫描 clash 目录，提取域名和 IP 规则，分别生成 *_domain.mrs 和 *_ip.mrs
+      - name: Build MRS for domain and IP rules only
         run: |
           set -eux
-          # 清理旧的 MRS
+          # 递归清理旧的 .mrs 文件（避免残留）
           find "${SRC_DIR}" -type f -name '*.mrs' -delete || true
 
-          # 递归扫描所有 yaml
+          # 递归处理 clash 目录下所有 yaml
           while IFS= read -r yaml; do
             [ -f "$yaml" ] || continue
-            base="$(basename "$yaml" .yaml)"
-            dir="$(dirname "$yaml")"
 
-            kind="domain"
-            case "$base" in
-              *-ip) kind="ipcidr" ;;
-            esac
+            # 取文件名和所在目录
+            base_name="$(basename "$yaml" .yaml)"
+            dir_name="$(dirname "$yaml")"
 
-            out="${dir}/${base}.mrs"
-            echo "Convert [$kind]: $yaml -> $out"
-            ./mihomo convert-ruleset "$kind" yaml "$yaml" "$out"
+            echo "Processing YAML: $yaml"
+
+            python3 - <<EOF
+import yaml
+import os
+
+yaml_file = r"""$yaml"""
+base_name = r"""$base_name"""
+dir_name = r"""$dir_name"""
+
+# 读取 YAML
+with open(yaml_file, 'r', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+
+domain_rules = []
+ip_rules = []
+
+# 只处理顶层 payload 且 payload 为字符串列表的情况
+if isinstance(data, dict) and 'payload' in data and isinstance(data['payload'], list):
+    for item in data['payload']:
+        if isinstance(item, str):
+            # 提取域名规则：以 DOMAIN 开头（排除 DOMAIN-REGEX）
+            if item.startswith('DOMAIN') and not item.startswith('DOMAIN-REGEX'):
+                domain_rules.append(item)
+            # 提取 IP 规则：以 IP-CIDR 或 IP-CIDR6 开头
+            elif item.startswith('IP-CIDR'):
+                ip_rules.append(item)
+
+# 转换域名规则（如果有）
+if domain_rules:
+    temp_domain = os.path.join(dir_name, f"temp_domain_{base_name}.yaml")
+    with open(temp_domain, 'w', encoding='utf-8') as f:
+        f.write("payload:\\n")
+        for rule in domain_rules:
+            f.write(f"  - {rule}\\n")
+    out_domain = os.path.join(dir_name, f"{base_name}_domain.mrs")
+    os.system(f"./mihomo convert-ruleset domain yaml {temp_domain} {out_domain}")
+    os.remove(temp_domain)
+    print(f"✓ Converted domain rules: {out_domain}")
+else:
+    print(f"ℹ️ No domain rules in {yaml_file}")
+
+# 转换 IP 规则（如果有）
+if ip_rules:
+    temp_ip = os.path.join(dir_name, f"temp_ip_{base_name}.yaml")
+    with open(temp_ip, 'w', encoding='utf-8') as f:
+        f.write("payload:\\n")
+        for rule in ip_rules:
+            f.write(f"  - {rule}\\n")
+    out_ip = os.path.join(dir_name, f"{base_name}_ip.mrs")
+    os.system(f"./mihomo convert-ruleset ipcidr yaml {temp_ip} {out_ip}")
+    os.remove(temp_ip)
+    print(f"✓ Converted IP rules: {out_ip}")
+else:
+    print(f"ℹ️ No IP rules in {yaml_file}")
+EOF
+
           done < <(find "${SRC_DIR}" -type f -name '*.yaml' | sort)
 
+          # 删除 mihomo 二进制，避免被 git 跟踪
           rm -f mihomo
 
+      # 提交并推送生成的 .mrs 文件（原 YAML 保持不变）
       - name: Commit and push changes
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # 只把 .mrs 加入暂存区
-          if find "${SRC_DIR}" -type f -name '*.mrs' | grep -q .; then
-            find "${SRC_DIR}" -type f -name '*.mrs' -print0 | xargs -0 git add
-          else
-            echo "No .mrs files found, nothing to commit."
-            exit 0
-          fi
-
+          git add "${SRC_DIR}/"
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-
           git commit -m "build: update MRS files in ${SRC_DIR} $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
