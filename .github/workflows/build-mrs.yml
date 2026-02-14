@@ -22,14 +22,28 @@ jobs:
           set -euo pipefail
           arch="$(uname -m)"
           case "$arch" in
-            x86_64)  asset="mihomo-linux-amd64" ;;
-            aarch64) asset="mihomo-linux-arm64" ;;
+            x86_64)  asset="mihomo-linux-amd64" ;; 
+            aarch64) asset="mihomo-linux-arm64" ;; 
             *) echo "Unsupported arch: $arch" && exit 1 ;;
           esac
           url="https://github.com/MetaCubeX/mihomo/releases/latest/download/${asset}"
           echo "📥 下载 mihomo from: $url"
-          curl -fL --retry 3 --retry-delay 2 "$url" -o mihomo
+          
+          # 下载文件
+          curl -fL --retry 3 --retry-delay 2 "$url" -o mihomo.bin
+          
+          # 如果下载的是压缩文件，进行解压
+          if file mihomo.bin | grep -q "gzip"; then
+            echo "🔧 检测到 gzip 压缩，正在解压..."
+            gzip -d -f mihomo.bin
+            mv mihomo.bin mihomo 2>/dev/null || true
+          else
+            mv mihomo.bin mihomo
+          fi
+          
+          # 确保文件可执行
           chmod +x mihomo
+          
           echo "✅ mihomo 版本信息:"
           ./mihomo -v
 
@@ -134,6 +148,6 @@ jobs:
           
           echo "📤 提交更改..."
           git add ruleset-mrs/*.mrs
-          git commit -m "build: update mrs files 2026-02-14 02:20:55" || exit 0
+          git commit -m "build: update mrs files" || exit 0
           git push
           echo "✅ 推送成功"
