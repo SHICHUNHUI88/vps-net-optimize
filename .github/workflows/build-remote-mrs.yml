@@ -105,24 +105,36 @@ jobs:
           echo "=== git status (before add) ==="
           git status --porcelain || true
 
-          # 关键：明确 add 到文件级别（目录可能为空会被忽略）
+          # 1) 把产物 add 进去
           git add remote-rules.json || true
           git add remote-mrs/*.mrs || true
           git add remote-srs/*.srs || true
-
-          # 如果你想提交中间文件再打开
+          # 如果你想提交中间文件，再打开这一行
           # git add remote-tmp/* || true
 
           echo "=== git status (after add) ==="
           git status --porcelain || true
 
-          # 如果被 .gitignore 忽略，这里强制 add（只对规则产物）
-          git add -f remote-srs/*.srs remote-mrs/*.mrs || true
-
+          # 2) 如果没有变更就直接退出
           if git diff --cached --quiet; then
-            echo "No changes."
+            echo "No changes to commit."
             exit 0
           fi
 
+          # 3) 先把远端 main 拉一下，避免 cannot lock ref
+          git fetch origin
+          git pull --rebase origin main || true
+
+          # 4) 再 commit
           git commit -m "chore: update remote mrs+srs $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push
+
+          # 5) 尝试 push，不行就再拉一次再推一次（最多 3 次）
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Push success on attempt $i"
+              break
+            fi
+            echo "Push failed on attempt $i, pulling and rebasing..."
+            git fetch origin
+            git pull --rebase origin main || true
+          done
