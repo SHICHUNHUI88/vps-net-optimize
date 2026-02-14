@@ -4,9 +4,9 @@ on:
   # 手动触发：你点 Run workflow 一定会跑
   workflow_dispatch: {}
 
-  # 定时触发：每天北京时间 12:00（UTC 04:00）
+  # 定时触发：每天北京时间 12:10（UTC 04:10）
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "10 4 * * *"
 
   # 推送触发：不做 paths 限制，避免“没反应”
   push:
