@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import json
@@ -8,8 +10,8 @@ import subprocess
 SBOX_DIR = os.getenv("SBOX_DIR", "singbox")
 SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 
-# 推荐给 sing-box 1.11.0 的规则集版本
-RULESET_VERSION = int(os.getenv("RULESET_VERSION", "3"))
+# sing-box rule-set 源格式版本（对应 1.11.x 用 3，1.13+ 可以用 4）
+RULESET_VERSION = 3
 
 
 def log(msg: str) -> None:
@@ -19,7 +21,6 @@ def log(msg: str) -> None:
 # ================== 通用 JSON 读取 ==================
 
 def load_json(path: str):
-    """读取 JSON 文件，失败返回 None。"""
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -35,10 +36,10 @@ def load_json(path: str):
 
 def is_ruleset_json(data) -> bool:
     """
-    判断是否已经是 sing-box rule-set 源格式：
-    1) {"version":X,"rules":[...]}
-    2) {"rules":[...]} (没有 version 也算)
-    3) 根节点就是一个数组：[ {...}, {...} ]
+    判断是否是 sing-box rule-set 源格式:
+    1) {"version":x,"rules":[...]}
+    2) {"rules":[...]}
+    3) 根节点就是一个数组: [ {...}, {...} ]
     """
     if isinstance(data, dict) and isinstance(data.get("rules"), list):
         return True
@@ -47,25 +48,105 @@ def is_ruleset_json(data) -> bool:
     return False
 
 
+# ================== 对已有 rule-set 进行“提纯” ==================
+
+# 允许从规则里提取并写入 SRS 的字段
+ALLOWED_HEADLESS_KEYS = {
+    "type",
+    "domain",
+    "domain_suffix",
+    "domain_keyword",
+    "domain_regex",
+    "ip_cidr",
+    "port",
+    "port_range",
+    "source_port",
+    "source_port_range",
+    "process_name",
+    "process_path",
+    "package_name",
+    "network_type",
+    "invert",
+}
+
+def normalize_ruleset(data):
+    """
+    传入一个“看起来像 rule-set”的 JSON,
+    只提取 sing-box 支持的 Headless Rule 字段，构造一个干净的 rule-set 源对象:
+        { "version": RULESET_VERSION, "rules": [ {...}, ... ] }
+
+    注意：
+    - 原始 data 不会被修改；
+    - ip_cidr6 会被并入 ip_cidr，保证 IPv6 也能进 SRS；
+    - ip_asn 等无法直接表达的字段：只保留在原 JSON，不写入 rule-set。
+    """
+    if isinstance(data, list):
+        rules_src = data
+    elif isinstance(data, dict):
+        rules_src = data.get("rules", [])
+    else:
+        rules_src = []
+
+    clean_rules = []
+
+    for idx, rule in enumerate(rules_src):
+        if not isinstance(rule, dict):
+            log(f"    ⚠️ 跳过非对象规则 rules[{idx}]")
+            continue
+
+        clean_rule = {}
+
+        # 规则类型，缺省就用 default
+        r_type = rule.get("type", "default")
+        if not isinstance(r_type, str) or not r_type:
+            r_type = "default"
+        clean_rule["type"] = r_type
+
+        # 直接允许透传的字段
+        for key in ALLOWED_HEADLESS_KEYS:
+            if key == "type":
+                continue
+            if key in rule and isinstance(rule[key], (list, str, int, bool)):
+                clean_rule[key] = rule[key]
+
+        # ip_cidr6: 合并进 ip_cidr
+        ip_cidr_list = []
+
+        # 原本就有 ip_cidr 的
+        if "ip_cidr" in rule and isinstance(rule["ip_cidr"], list):
+            for item in rule["ip_cidr"]:
+                if isinstance(item, str):
+                    ip_cidr_list.append(item)
+
+        # 如果有 ip_cidr6，把 IPv6 CIDR 一并塞进 ip_cidr
+        if "ip_cidr6" in rule and isinstance(rule["ip_cidr6"], list):
+            for item in rule["ip_cidr6"]:
+                if isinstance(item, str):
+                    ip_cidr_list.append(item)
+
+        if ip_cidr_list:
+            # 去重一下
+            clean_rule["ip_cidr"] = sorted(set(ip_cidr_list))
+
+        # 如果除了 type 之外完全没留下任何字段，就没必要写入这条 rule
+        if len(clean_rule) > 1:
+            clean_rules.append(clean_rule)
+        else:
+            log(f"    ℹ️ rules[{idx}] 没有可用字段，跳过")
+
+    return {
+        "version": RULESET_VERSION,
+        "rules": clean_rules,
+    }
+
+
 # ================== 从 payload (Clash 样式) 抽规则，构造 rule-set ==================
 
 def build_ruleset_from_payload(data):
     """
     支持从类似：
-      { "payload": ["DOMAIN-SUFFIX,github.com", "IP-ASN,138667", "PROCESS-NAME,xxx", ...] }
-    里提取规则，并构造 sing-box rule-set 对象。
-
-    会提取的类型：
-      - DOMAIN           -> domain
-      - DOMAIN-SUFFIX    -> domain_suffix
-      - DOMAIN-KEYWORD   -> domain_keyword
-      - DOMAIN-REGEX     -> domain_regex
-      - IP-CIDR / IP-CIDR6 -> ip_cidr
-      - IP-ASN           -> ip_asn
-      - PROCESS-NAME     -> process_name
-
-    即使一个规则都提不到，也会返回：
-      {"version": RULESET_VERSION, "rules": []}
+      { "payload": ["DOMAIN-SUFFIX,github.com", "IP-CIDR,1.1.1.1/32", ...] }
+    中提取规则，并构造 rule-set 源对象。
     """
     if not isinstance(data, dict):
         return {"version": RULESET_VERSION, "rules": []}
@@ -79,7 +160,6 @@ def build_ruleset_from_payload(data):
     domain_keyword = set()
     domain_regex = set()
     ip_cidr = set()
-    ip_asn = set()
     process_name = set()
 
     for item in payload:
@@ -90,7 +170,7 @@ def build_ruleset_from_payload(data):
         if not line or line.startswith("#"):
             continue
 
-        # 处理类似 "['DOMAIN-SUFFIX,github.com']" 这种包起来的写法
+        # 去掉 ['xxx'] 这种包起来的写法
         if line.startswith("['") and line.endswith("']"):
             line = line.strip("[]'\"")
 
@@ -111,17 +191,11 @@ def build_ruleset_from_payload(data):
             domain_regex.add(v)
         elif t in ("IP-CIDR", "IP-CIDR6"):
             ip_cidr.add(v)
-        elif t == "IP-ASN":
-            try:
-                asn = int(v)
-                ip_asn.add(asn)
-            except ValueError:
-                continue
         elif t == "PROCESS-NAME":
             process_name.add(v)
-        # 其他未识别的类型直接忽略
+        # 其它类型暂时忽略
 
-    rule = {}
+    rule = {"type": "default"}
 
     if domains:
         rule["domain"] = sorted(domains)
@@ -133,19 +207,19 @@ def build_ruleset_from_payload(data):
         rule["domain_regex"] = sorted(domain_regex)
     if ip_cidr:
         rule["ip_cidr"] = sorted(ip_cidr)
-    if ip_asn:
-        rule["ip_asn"] = sorted(ip_asn)
     if process_name:
         rule["process_name"] = sorted(process_name)
 
+    if len(rule) == 1:  # 只有 type，说明啥都没提到
+        return {"version": RULESET_VERSION, "rules": []}
+
     return {
         "version": RULESET_VERSION,
-        "rules": [rule] if rule else []
+        "rules": [rule],
     }
 
 
 def write_temp_ruleset_json(base_name: str, ruleset_obj) -> str:
-    """把 rule-set 对象写到临时 JSON 文件，返回路径。"""
     temp_path = os.path.join(SBOX_DIR, f"temp_ruleset_{base_name}.json")
     with open(temp_path, "w", encoding="utf-8") as f:
         json.dump(ruleset_obj, f, ensure_ascii=False, indent=2)
@@ -154,23 +228,7 @@ def write_temp_ruleset_json(base_name: str, ruleset_obj) -> str:
 
 # ================== 调用 sing-box 编译 SRS ==================
 
-def touch_empty_srs(base_name: str):
-    """生成一个空的占位 SRS 文件（0 字节也行）。"""
-    output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
-    with open(output_srs, "wb") as f:
-        pass
-    log(f"    ⚠️ 已生成空占位 SRS: {output_srs}")
-    return True
-
-
 def compile_to_srs(json_path: str, base_name: str) -> bool:
-    """
-    调用 sing-box 把源 JSON 编译成 .srs。
-
-    不论成功失败，最终都会在目录里留下一个 .srs 文件：
-      - 成功: 真正的规则集
-      - 失败: 0 字节占位文件
-    """
     output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
     cmd = [SINGBOX_BIN, "rule-set", "compile", "--output", output_srs, json_path]
     log(f"    ▶ Run: {' '.join(cmd)}")
@@ -178,11 +236,11 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
-        log("    ❌ 命令超时，将生成空占位 SRS")
-        return touch_empty_srs(base_name)
+        log("    ❌ 命令超时")
+        return False
     except Exception as e:
-        log(f"    ❌ 调用 sing-box 出错: {e}，将生成空占位 SRS")
-        return touch_empty_srs(base_name)
+        log(f"    ❌ 调用 sing-box 出错: {e}")
+        return False
 
     if result.stdout.strip():
         log(f"    stdout: {result.stdout.strip()}")
@@ -190,18 +248,18 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
         log(f"    stderr: {result.stderr.strip()}")
 
     if result.returncode != 0:
-        log(f"    ❌ sing-box 退出码: {result.returncode}，将生成空占位 SRS")
-        return touch_empty_srs(base_name)
+        log(f"    ❌ sing-box 退出码: {result.returncode}")
+        return False
 
     if not os.path.exists(output_srs):
-        log("    ❌ sing-box 未生成 SRS 文件，将生成空占位 SRS")
-        return touch_empty_srs(base_name)
+        log("    ❌ SRS 文件未生成")
+        return False
 
     size = os.path.getsize(output_srs)
     log(f"    ✅ SRS 生成成功: {output_srs} ({size} 字节)")
     if size == 0:
         log("    ⚠️ SRS 文件大小为 0，请检查上面的 stderr 输出")
-    return True
+    return size > 0
 
 
 # ================== 主流程 ==================
@@ -222,7 +280,6 @@ def main():
 
     log(f"🔧 工作目录: {SBOX_DIR}")
     log(f"🔧 发现 {len(json_files)} 个 JSON 文件")
-    log(f"🔧 规则集版本: {RULESET_VERSION}")
 
     success, fail = 0, 0
 
@@ -233,31 +290,26 @@ def main():
 
         data = load_json(full_path)
         if data is None:
-            # JSON 解析失败，也生成空占位 SRS，避免 URL 404
-            log("  ❌ JSON 解析失败，将生成空占位 SRS")
-            touch_empty_srs(base_name)
-            success += 1
+            fail += 1
             continue
 
-        temp_json = None
-
+        # ===== 决定用哪种方式构造 rule-set =====
         if is_ruleset_json(data):
-            # 已是 sing-box rule-set 源格式，强制统一 version
-            if isinstance(data, dict):
-                rs_obj = data
-                rs_obj["version"] = RULESET_VERSION
-            else:  # 根是数组
-                rs_obj = {"version": RULESET_VERSION, "rules": data}
-            temp_json = write_temp_ruleset_json(base_name, rs_obj)
-            log("  ✅ 已是 sing-box rule-set JSON，直接编译（已统一 version）")
+            # 已经是 rule-set，提取有用字段、抛弃其它无用字段（仅在临时 JSON 中）
+            rs_obj = normalize_ruleset(data)
+            if rs_obj["rules"]:
+                log("  ✅ 识别为 rule-set JSON，已提取有效字段")
+            else:
+                log("  ⚠️ 识别为 rule-set JSON，但没有提取到任何可用规则，将生成空 SRS 文件")
         else:
-            # 尝试从 payload 提取 Clash 风格规则
+            # 尝试从 payload 里抽规则
             rs_obj = build_ruleset_from_payload(data)
-            temp_json = write_temp_ruleset_json(base_name, rs_obj)
             if rs_obj["rules"]:
                 log("  ✅ 从 payload 中提取并构造 rule-set JSON")
             else:
-                log("  ⚠️ 从 payload 中未提取到任何有效规则，将尝试编译空规则集")
+                log("  ⚠️ 不是 rule-set，且从 payload 中未提取到任何规则，将生成空 SRS 文件")
+
+        temp_json = write_temp_ruleset_json(base_name, rs_obj)
 
         try:
             ok = compile_to_srs(temp_json, base_name)
@@ -270,7 +322,7 @@ def main():
         else:
             fail += 1
 
-    log(f"\n📊 统计: 成功 {success} 个, 失败 {fail} 个（失败时也已生成占位 SRS）")
+    log(f"\n📊 统计: 成功 {success} 个, 失败 {fail} 个")
 
 
 if __name__ == "__main__":
