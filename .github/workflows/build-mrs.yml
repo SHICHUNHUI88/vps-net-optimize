@@ -1,4 +1,4 @@
-name: Build MRS Rules (domain & ip only) in /clash
+name: Build MRS (mihomo) + SRS (sing-box) + Remote-MRS (isolated)
 
 on:
   schedule:
@@ -7,17 +7,25 @@ on:
     branches: [ "main", "master" ]
     paths:
       - "clash/**.yaml"
-      - "singbox/**.json"          # 监听 singbox 下的 JSON 变更
-      - ".github/workflows/build-mrs.yml"
+      - "singbox/**.json"
+      - "remote-rules.json"
       - "scripts/extract_rules.py"
       - "scripts/compile_srs.py"
+      - "scripts/Diversion_Conversion.py"
+      - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
 
 env:
   MIHOMO_VERSION: 1.19.10
   SINGBOX_VERSION: 1.11.0
-  SRC_DIR: clash                    # Mihomo 源目录
-  SBOX_DIR: singbox                 # Sing-box 源目录
+
+  # ====== 旧流程输出目录（保持不变） ======
+  SRC_DIR: clash
+  SBOX_DIR: singbox
+
+  # ====== 新流程（远程规则）隔离输出目录 ======
+  REMOTE_SRC_DIR: remote-src
+  REMOTE_MRS_DIR: remote-mrs
 
 permissions:
   contents: write
@@ -31,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ---------- 下载 mihomo ----------
+      # ---------- 下载 mihomo（用于 .mrs） ----------
       - name: Download mihomo
         run: |
           set -eux
@@ -46,55 +54,83 @@ jobs:
           chmod +x mihomo
           ./mihomo -v
 
-      # ---------- 下载 sing-box ----------
+      # ---------- 下载 sing-box（用于 .srs + remote-mrs） ----------
       - name: Download sing-box
         run: |
           set -eux
           wget -O sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
-          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box .
-          chmod +x sing-box
+          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box ./sing-box
+          chmod +x ./sing-box
           ./sing-box version
           rm -rf sing-box-${SINGBOX_VERSION}-linux-amd64 sing-box.tar.gz
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
 
       - name: Install PyYAML
         run: pip install pyyaml
 
-      # ---------- 清理旧文件 ----------
-      - name: Clean old MRS files
+      # =========================================================
+      # A) Mihomo: clash/*.yaml -> clash/*.mrs   （旧流程，保持）
+      # =========================================================
+      - name: Clean old MRS files (mihomo output in clash/)
         run: rm -f ${SRC_DIR}/*.mrs
 
-      - name: Clean old SRS files
-        run: rm -f ${SBOX_DIR}/*.srs
-
-      # ---------- 运行 Mihomo 转换脚本 ----------
-      - name: Run extraction script (Mihomo)
+      - name: Run extraction script (Mihomo -> MRS in clash/)
         run: python scripts/extract_rules.py
         env:
-          SRC_DIR: ${{ env.SRC_DIR }}   # 传递给脚本
+          SRC_DIR: ${{ env.SRC_DIR }}
 
-      # ---------- 运行 Sing-box 编译脚本 ----------
-      - name: Run compilation script (Sing-box)
+      # =========================================================
+      # B) sing-box: singbox/*.json -> singbox/*.srs  （旧流程，保持）
+      # =========================================================
+      - name: Clean old SRS files (sing-box output in singbox/)
+        run: rm -f ${SBOX_DIR}/*.srs
+
+      - name: Run compilation script (Sing-box -> SRS in singbox/)
         run: python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
+          SINGBOX_BIN: ./sing-box
+          RULESET_VERSION: "3"
 
-      # ---------- 提交变更 ----------
+      # =========================================================
+      # C) Remote rules: remote-rules.json -> remote-mrs/*.mrs  （新流程，隔离）
+      # =========================================================
+      - name: Build Remote MRS (isolated in remote-mrs/)
+        env:
+          SINGBOX_BIN: ./sing-box
+        run: |
+          python scripts/Diversion_Conversion.py
+          echo "=== LIST remote-src ==="
+          ls -la ${REMOTE_SRC_DIR} || true
+          echo "=== LIST remote-mrs ==="
+          ls -la ${REMOTE_MRS_DIR} || true
+
+      # ---------- 提交变更（只提交对应目录，不互相污染） ----------
       - name: Commit and push changes
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 同时添加两个目录
-          git add ${SRC_DIR}/ ${SBOX_DIR}/
+
+          # 1) clash/ 里的 .mrs
+          git add ${SRC_DIR}/*.mrs || true
+
+          # 2) singbox/ 里的 .srs
+          git add ${SBOX_DIR}/*.srs || true
+
+          # 3) 远程规则隔离产物（remote-mrs/ 必须提交；remote-src/ 可选提交）
+          git add ${REMOTE_MRS_DIR} || true
+          git add ${REMOTE_SRC_DIR} remote-rules.json || true
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "build: update MRS and SRS files $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
