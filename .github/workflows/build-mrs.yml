@@ -1,7 +1,11 @@
-name: Build douyin.mrs
+name: build-mrs
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - "ruleset-src/**.yaml"
+      - ".github/workflows/build-mrs.yml"
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -9,73 +13,108 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 获取全部历史，用于准确比较变更文件
 
+      # ------------------------------------------------------------
+      # 下载 mihomo 核心（使用 bash 解析 API，更稳定）
+      # ------------------------------------------------------------
       - name: Download mihomo
         shell: bash
         run: |
           set -euo pipefail
 
-          # GitHub Runner 是 amd64，这里直接用 amd64 版本
-          MIHOMO_VERSION="1.19.10"
-          ASSET="mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          URL="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/${ASSET}"
+          API_URL="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
+          echo "Fetching latest release info from $API_URL ..."
 
-          echo "📥 Downloading: ${URL}"
-          wget -O mihomo.gz "${URL}"
+          # 提取包含 linux-amd64 且以 .gz 或 .tar.gz 结尾的 browser_download_url
+          DOWNLOAD_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" "$API_URL" | \
+            grep -E '"browser_download_url":.*linux-amd64.*\.(gz|tar\.gz)"' | \
+            head -1 | sed -E 's/.*"([^"]+)".*/\1/')
 
-          # 解压 gz，得到 mihomo-linux-amd64-v1.19.10
-          gzip -d -f mihomo.gz
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "❌ 未找到匹配的 asset，当前 release 中的实际 asset 名称如下："
+            curl -s "$API_URL" | grep '"name":' || echo "无法获取 asset 列表"
+            exit 1
+          fi
 
-          # 直接重命名为 mihomo（注意，这里不再做什么 before/after 检测）
-          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+          echo "✅ 找到下载链接: $DOWNLOAD_URL"
+
+          # 下载（-f 使 404 直接失败）
+          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$DOWNLOAD_URL"
+
+          # 简单校验：小于 1MB 则失败
+          SIZE=$(stat -c%s mihomo.pkg)
+          echo "下载大小: $SIZE bytes"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "❌ 文件太小，可能不是有效的二进制包"
+            head -c 200 mihomo.pkg || true
+            exit 1
+          fi
+
+          # 根据 URL 后缀解压
+          if [[ "$DOWNLOAD_URL" =~ \.tar\.gz$ ]]; then
+            tar -xzf mihomo.pkg
+          else
+            mv mihomo.pkg mihomo.gz
+            gunzip -f mihomo.gz
+          fi
 
           chmod +x mihomo
-
-          echo "✅ mihomo version:"
           ./mihomo -v
 
-      - name: Convert douyin.yaml -> douyin.mrs
-        shell: bash
+      # ------------------------------------------------------------
+      # 获取本次 push 中变更的 YAML 文件（新增、修改、重命名）
+      # ------------------------------------------------------------
+      - name: Get changed YAML files
+        id: changed-files
         run: |
-          set -euo pipefail
-
-          # 确保源文件存在
-          if [ ! -f "ruleset-src/douyin.yaml" ]; then
-            echo "❌ 找不到 ruleset-src/douyin.yaml"
-            exit 1
-          fi
-
-          mkdir -p ruleset-mrs
-
-          echo "🔄 开始转换 douyin.yaml -> douyin.mrs (domain 模式)"
-          ./mihomo convert-ruleset domain yaml ruleset-src/douyin.yaml ruleset-mrs/douyin.mrs
-
-          if [ ! -s "ruleset-mrs/douyin.mrs" ]; then
-            echo "❌ 转换失败：ruleset-mrs/douyin.mrs 为空或不存在"
-            exit 1
-          fi
-
-          ls -lh ruleset-mrs/douyin.mrs
-
-      - name: Commit douyin.mrs
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # 如果没有变化就不提交
-          if git status --porcelain | grep -q "ruleset-mrs/douyin.mrs"; then
-            echo "📤 提交 douyin.mrs..."
-            git add ruleset-mrs/douyin.mrs
-            git commit -m "build: update douyin.mrs" || exit 0
-            git push
-            echo "✅ 推送成功"
+          set -eux
+          if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # 首次 push（新分支），与 HEAD~ 比较
+            CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~ HEAD -- ruleset-src/ '*.yaml' || true)
           else
-            echo "✅ 没有新的变更，无需提交"
+            CHANGED=$(git diff --name-only --diff-filter=ACMR ${{ github.event.before }} ${{ github.event.after }} -- ruleset-src/ '*.yaml' || true)
+          fi
+
+          # 转换为 JSON 数组，存入输出
+          echo "changed=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------
+      # 对每一个变更的 YAML 生成对应的 .mrs 文件
+      # ------------------------------------------------------------
+      - name: Build mrs
+        run: |
+          set -eux
+          mkdir -p ruleset
+
+          # 遍历变更文件列表
+          echo '${{ steps.changed-files.outputs.changed }}' | jq -r '.[]' | while read -r yaml_file; do
+            if [ -f "$yaml_file" ]; then
+              base=$(basename "$yaml_file" .yaml)
+              output="ruleset/${base}.mrs"
+              echo "🔨 构建 $yaml_file -> $output"
+              ./mihomo convert-ruleset domain yaml "$yaml_file" "$output"
+            else
+              echo "⚠️ 文件 $yaml_file 不存在，跳过"
+            fi
+          done
+
+      # ------------------------------------------------------------
+      # 提交并推送生成的 .mrs 文件
+      # ------------------------------------------------------------
+      - name: Commit & push
+        run: |
+          set -eux
+          if git status --porcelain | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add ruleset/
+            git commit -m "build: update MRS files"
+            git push
+          else
+            echo "✅ 无变化，无需提交"
           fi
