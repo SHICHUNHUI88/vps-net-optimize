@@ -1,164 +1,169 @@
-name: build-mrs
+name: Build geoip files
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "ruleset-src/douyin.yaml"
-      - ".github/workflows/build-mrs.yml"
-  workflow_dispatch: {}
+  workflow_dispatch:
   schedule:
-    - cron: "0 4 * * *"   # UTC 04:00 = 北京时间 12:00
-
-env:
-  TZ: Asia/Shanghai
-  TOOLS_DIR: data/tools
-  OUT_DIR: ruleset
-  SRC_FILE: ruleset-src/douyin.yaml
+    - cron: "0 0 * * 4"
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - ".gitignore"
+      - "LICENSE*"
+      - "*.md"
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build & Commit douyin.mrs
+    name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout codebase
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Set timezone
-        run: |
-          set -eux
-          sudo timedatectl set-timezone "$TZ" || true
-          date
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
 
-      - name: Install dependencies
-        run: |
-          set -eux
-          sudo apt-get update -y
-          sudo apt-get install -y curl jq gzip tar
-
-      - name: Create tools directory
-        run: |
-          set -eux
-          mkdir -p "${TOOLS_DIR}"
-          echo "✓ Tools dir: ${TOOLS_DIR}"
-
-      - name: Check if mihomo exists
-        id: check_tools
-        run: |
-          set -eux
-          if [ -f "${TOOLS_DIR}/mihomo" ]; then
-            echo "mihomo_exist=true" >> $GITHUB_OUTPUT
-            echo "✓ mihomo already exists"
-            "${TOOLS_DIR}/mihomo" -v || true
-          else
-            echo "mihomo_exist=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ mihomo not found, will download"
-          fi
-
-      - name: Download mihomo (robust)
-        if: steps.check_tools.outputs.mihomo_exist == 'false'
+      - name: Set variables
         shell: bash
         run: |
-          set -euxo pipefail
-          cd "${TOOLS_DIR}"
+          set -euo pipefail
+          echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
 
-          api="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
-
-          echo "Fetching latest assets list..."
-          curl -fsSL "$api" | jq -r '.assets[].name' | sed 's/^/ - /'
-
-          url="$(curl -fsSL "$api" | jq -r '
-            .assets[]
-            | select(.name | test("linux-amd64"))
-            | select(.name | test("\\.(gz|tar\\.gz)$"))
-            | .browser_download_url
-          ' | head -n 1)"
-
-          echo "Download URL: ${url:-}"
-          if [ -z "${url:-}" ]; then
-            echo "❌ No linux-amd64 asset found."
-            exit 1
-          fi
-
-          curl -fL --retry 3 --retry-delay 2 -o mihomo.pkg "$url"
-
-          size="$(stat -c%s mihomo.pkg)"
-          echo "Downloaded size: $size"
-          if [ "$size" -lt 1000000 ]; then
-            echo "❌ File too small, likely not a binary. First 200 bytes:"
-            head -c 200 mihomo.pkg || true
-            exit 1
-          fi
-
-          if echo "$url" | grep -qE '\.tar\.gz$'; then
-            tar -xzf mihomo.pkg
-          else
-            mv mihomo.pkg mihomo.gz
-            gzip -t mihomo.gz
-            gzip -d -f mihomo.gz
-          fi
-
-          bin="$(find . -maxdepth 2 -type f -name 'mihomo*' -size +5M | head -n 1)"
-          echo "Detected binary: ${bin:-}"
-          if [ -z "${bin:-}" ]; then
-            echo "❌ Cannot find mihomo binary after extract."
-            ls -lah
-            exit 1
-          fi
-
-          cp -f "$bin" mihomo
-          chmod +x mihomo
-          ./mihomo -v
-          rm -f mihomo.pkg mihomo.gz || true
-          echo "✓ mihomo ready in ${TOOLS_DIR}/mihomo"
-
-      - name: Sanity check source file
+      - name: Download GeoLite2 databases
+        shell: bash
+        env:
+          LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
-          set -eux
-          test -f "${SRC_FILE}"
-          echo "✓ Source exists: ${SRC_FILE}"
-          head -n 20 "${SRC_FILE}" || true
+          set -euo pipefail
+          mkdir -p output
+          test -n "${LICENSE_KEY}" || (echo "MAXMIND_GEOLITE2_LICENSE is empty" && exit 1)
 
-      - name: Build douyin.mrs
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz" \
+            -o ./output/GeoLite2-ASN.tar.gz
+
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN-CSV&license_key=${LICENSE_KEY}&suffix=zip" \
+            -o ./output/GeoLite2-ASN-CSV.zip
+
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${LICENSE_KEY}&suffix=tar.gz" \
+            -o ./output/GeoLite2-Country.tar.gz
+
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip" \
+            -o ./output/GeoLite2-Country-CSV.zip
+
+      - name: Prepare GeoLite2 databases
         shell: bash
         run: |
-          set -euxo pipefail
-          mkdir -p "${OUT_DIR}"
+          set -euo pipefail
 
-          "${TOOLS_DIR}/mihomo" convert-ruleset domain yaml "${SRC_FILE}" "${OUT_DIR}/douyin.mrs"
+          cp ./output/*.{gz,zip} ./
 
-          echo "✓ Output:"
-          ls -lah "${OUT_DIR}/douyin.mrs"
+          unzip -q GeoLite2-Country-CSV.zip
+          unzip -q GeoLite2-ASN-CSV.zip
+          tar -xzf GeoLite2-Country.tar.gz
+          tar -xzf GeoLite2-ASN.tar.gz
 
-      - name: Check for changes
-        id: check_changes
+          # mmdb -> output
+          cp GeoLite2-Country_*/*.mmdb ./output/
+          cp GeoLite2-ASN_*/*.mmdb ./output/
+
+          # csv -> output（尽量宽松匹配，避免某次 MaxMind 文件名微调就失败）
+          cp GeoLite2-Country-CSV_*/*.csv ./output/
+          cp GeoLite2-ASN-CSV_*/*.csv ./output/
+
+          # 你后面工具可能要用的 csv 目录
+          mkdir -p geolite2
+          cp GeoLite2-Country-CSV_*/*.csv ./geolite2/
+          cp GeoLite2-ASN-CSV_*/*.csv ./geolite2/
+
+      - name: Build geoip files
         shell: bash
         run: |
-          set -euxo pipefail
-          git add "${OUT_DIR}/douyin.mrs"
+          set -euo pipefail
+          go build -o geoip .
+          ./geoip convert -c ./config.json
 
-          if git diff --cached --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No changes detected"
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "✓ Changes detected"
-          fi
-
-      - name: Commit and push changes
-        if: steps.check_changes.outputs.has_changes == 'true'
+      - name: Verify mmdb files
         shell: bash
         run: |
-          set -euxo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "build: update douyin.mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push
-          echo "✓ Pushed"
+          set -euo pipefail
+          cd ./output
+          go install -v github.com/maxmind/mmdbverify@latest
+          for name in *.mmdb; do
+            "$(go env GOPATH)/bin/mmdbverify" -file "${name}"
+          done
+
+      - name: Generate sha256 checksum for dat files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ./output
+          for name in *.dat; do
+            sha256sum "${name}" > "./${name}.sha256sum"
+          done
+
+      - name: Generate sha256 checksum for mmdb files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ./output
+          for name in *.mmdb; do
+            sha256sum "${name}" > "./${name}.sha256sum"
+          done
+
+      - name: Git push assets to "release" branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd output
+
+          git init
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b release
+
+          git add -A
+          git commit -m "${{ env.RELEASE_NAME }}"
+
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin release
+
+      - name: Purge jsdelivr CDN
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd output
+          for file in $(ls); do
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/${file}" || true
+          done
+
+      - name: Remove some files to avoid publishing to GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ./output/*.{gz,zip} || true
+          rm -rf ./output/GeoLite2-*.csv || true
+          rm -rf ./output/GeoLite2-*.mmdb || true
+          rm -rf ./output/GeoLite2-*.sha256sum || true
+          rm -rf ./output/{clash,dat,mrs,nginx,srs,surge,text} || true
+
+      - name: Upload files to GitHub release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ./output/*
+          release_name: ${{ env.RELEASE_NAME }}
+          tag: ${{ env.TAG_NAME }}
