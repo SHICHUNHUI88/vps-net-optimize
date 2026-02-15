@@ -102,22 +102,18 @@ jobs:
 
           echo "Default branch: $DEFAULT_BRANCH"
 
-          # 先跟远端同步一次，避免 main -> main (fetch first)
+          # 先跟远端同步，避免 cannot lock ref
           git fetch origin
           git pull --rebase origin "$DEFAULT_BRANCH" || true
 
-          # 把产物加进暂存区
           git add remote-mrs || true
           git add remote-srs || true
           git add remote-tmp || true
           git add remote-rules.json || true
-          # 你原来的 remote-src 没这个目录，就别加了
-          # git add remote-src || true
 
           echo "=== git status (after add) ==="
           git status --porcelain || true
 
-          # 没有变更就直接退出
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
@@ -125,7 +121,6 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # push，失败的话自动再拉一次重试，最多 3 次
           for i in 1 2 3; do
             if git push origin "HEAD:$DEFAULT_BRANCH"; then
               echo "Push success on attempt $i"
