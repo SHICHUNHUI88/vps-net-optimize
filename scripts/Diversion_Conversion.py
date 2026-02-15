@@ -36,7 +36,7 @@ def http_get(url: str) -> str:
         return r.read().decode("utf-8", errors="ignore")
 
 
-def run(cmd: list[str], timeout: int = 180) -> str:
+def run(cmd, timeout: int = 180) -> str:
     log(f"    ▶ Run: {' '.join(cmd)}")
     p = subprocess.run(
         cmd,
@@ -53,7 +53,7 @@ def run(cmd: list[str], timeout: int = 180) -> str:
     return out
 
 
-def ensure_dirs():
+def ensure_dirs() -> None:
     REMOTE_TMP.mkdir(parents=True, exist_ok=True)
     REMOTE_SRS.mkdir(parents=True, exist_ok=True)
     REMOTE_MRS.mkdir(parents=True, exist_ok=True)
@@ -63,13 +63,13 @@ def safe_load_struct(text: str):
     t = (text or "").strip()
     if not t:
         return None
-    # json first
+    # 先尝试 JSON
     if t[:1] in "{[":
         try:
             return json.loads(t)
         except Exception:
             pass
-    # yaml
+    # 再尝试 YAML
     try:
         return yaml.safe_load(t)
     except Exception:
@@ -84,11 +84,15 @@ def first_nonempty_line(text: str) -> str:
     return ""
 
 
-# ---------- Type detection ----------
+# ========= 类型识别 =========
 
 CLASH_TYPES = {
-    "DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-REGEX",
-    "IP-CIDR", "IP-CIDR6",
+    "DOMAIN",
+    "DOMAIN-SUFFIX",
+    "DOMAIN-KEYWORD",
+    "DOMAIN-REGEX",
+    "IP-CIDR",
+    "IP-CIDR6",
     "PROCESS-NAME",
 }
 
@@ -101,51 +105,62 @@ def looks_like_clash_rule_line(s: str) -> bool:
 
 
 def is_singbox_ruleset_json(obj) -> bool:
-    # sing-box rule-set source: {"version":1,"rules":[{...}]}
-    return isinstance(obj, dict) and isinstance(obj.get("version"), int) and isinstance(obj.get("rules"), list)
+    # sing-box 规则源：{"version":1,"rules":[{...}]}
+    return isinstance(obj, dict) and isinstance(obj.get("version"), int) and isinstance(
+        obj.get("rules"), list
+    )
 
 
-def detect_format(fmt: str, raw_text: str):
+def detect_format(fmt: str, raw_text: str) -> str:
     """
-    Return normalized format:
-      - clash            : lines like DOMAIN,xxx (from yaml/json/txt)
-      - domain-text      : one domain per line
-      - ip-text          : one cidr per line
-      - singbox-json     : {"version":1,"rules":[{...}]}
-      - auto             : decide by content
+    规范化 / 自动识别源格式：
+      - clash         : Clash YAML / JSON / 文本规则
+      - domain-text   : 纯域名 txt（一行一个）
+      - ip-text       : 纯 CIDR txt（一行一个）
+      - singbox-json  : sing-box 规则源 JSON
+      - auto          : 自动判断
     """
     fmt = (fmt or "auto").strip().lower()
-    if fmt in ("clash", "domain-text", "domain_text", "ip-text", "ip_text", "singbox-json", "singbox_json", "auto"):
+    if fmt in (
+        "clash",
+        "domain-text",
+        "domain_text",
+        "ip-text",
+        "ip_text",
+        "singbox-json",
+        "singbox_json",
+        "auto",
+    ):
         pass
     else:
         fmt = "auto"
 
+    # 用户明确指定就直接用
     if fmt != "auto":
-        if fmt in ("domain_text",):
+        if fmt == "domain_text":
             return "domain-text"
-        if fmt in ("ip_text",):
+        if fmt == "ip_text":
             return "ip-text"
-        if fmt in ("singbox_json",):
+        if fmt == "singbox_json":
             return "singbox-json"
         return fmt
 
-    # auto detect
+    # 自动检测
     t = (raw_text or "").strip()
     obj = safe_load_struct(t)
     if is_singbox_ruleset_json(obj):
         return "singbox-json"
 
-    # if yaml dict has payload/rules -> likely clash
-    if isinstance(obj, dict) and (("payload" in obj) or ("rules" in obj)):
+    # YAML/JSON dict 里有 payload/rules，大概率是 Clash 规则
+    if isinstance(obj, dict) and ("payload" in obj or "rules" in obj):
         return "clash"
 
-    # first meaningful line
+    # 第一行长得像 Clash 规则行
     s0 = first_nonempty_line(t)
     if looks_like_clash_rule_line(s0):
         return "clash"
 
-    # try detect pure cidr list
-    # if many lines are parseable as cidr, treat as ip-text
+    # 看看是不是纯 CIDR / 纯域名列表
     cidr_hits = 0
     domain_hits = 0
     total = 0
@@ -154,9 +169,9 @@ def detect_format(fmt: str, raw_text: str):
         if not s or s.startswith("#"):
             continue
         s = s.lstrip("-").strip()
-        total += 1
         if not s:
             continue
+        total += 1
         if "/" in s:
             try:
                 ipaddress.ip_network(s, strict=False)
@@ -164,10 +179,8 @@ def detect_format(fmt: str, raw_text: str):
                 continue
             except Exception:
                 pass
-        # rough domain check
         if "." in s and " " not in s and "," not in s and "/" not in s:
             domain_hits += 1
-
         if total >= 50:
             break
 
@@ -176,20 +189,19 @@ def detect_format(fmt: str, raw_text: str):
     if total > 0 and domain_hits >= max(3, int(total * 0.6)):
         return "domain-text"
 
-    # fallback
     return "clash"
 
 
-# ---------- Clash rules extraction ----------
+# ========= Clash 规则解析 =========
 
-def parse_rule_lines_from_clash_like(raw_text: str) -> list[str]:
+def parse_rule_lines_from_clash_like(raw_text: str) -> list:
     """
     支持：
       - YAML dict: payload / rules
       - YAML list
-      - json dict/list
-      - txt lines (可能是 DOMAIN,xxx 也可能是纯列表)
-    输出：原始“行”（不保证都有 action）
+      - JSON dict/list
+      - 文本行
+    输出：规则行列表（字符串）
     """
     txt = (raw_text or "").strip()
     data = safe_load_struct(txt)
@@ -228,7 +240,7 @@ def parse_rule_lines_from_clash_like(raw_text: str) -> list[str]:
 
 def strip_action(rule_line: str) -> str:
     """
-    只保留 TYPE,VALUE（去掉后面的 action/no-resolve 等）
+    把 "DOMAIN,example.com,PROXY" 裁成 "DOMAIN,example.com"
     """
     parts = [p.strip() for p in (rule_line or "").split(",")]
     if len(parts) >= 2:
@@ -236,14 +248,14 @@ def strip_action(rule_line: str) -> str:
     return (rule_line or "").strip()
 
 
-def extract_supported_from_clash_lines(rule_lines: list[str]) -> dict:
+def extract_supported_from_clash_lines(rule_lines: list) -> dict:
     """
-    只提取常用规则：
-    DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-REGEX / IP-CIDR / IP-CIDR6 / PROCESS-NAME
+    从 Clash 规则里提取：
+      DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-REGEX / IP-CIDR / IP-CIDR6 / PROCESS-NAME
     """
     b = {
         "domain": set(),
-        "domain_suffix": set(),   # sing-box domain_suffix 需要保留前导点
+        "domain_suffix": set(),
         "domain_keyword": set(),
         "domain_regex": set(),
         "ip_cidr": set(),
@@ -263,6 +275,7 @@ def extract_supported_from_clash_lines(rule_lines: list[str]) -> dict:
         if t == "DOMAIN":
             b["domain"].add(v)
         elif t == "DOMAIN-SUFFIX":
+            # sing-box 这边习惯保留前导点
             vv = v if v.startswith(".") else "." + v
             b["domain_suffix"].add(vv)
         elif t == "DOMAIN-KEYWORD":
@@ -287,9 +300,13 @@ def extract_supported_from_clash_lines(rule_lines: list[str]) -> dict:
     return b
 
 
-# ---------- TXT list parsing ----------
+# ========= 纯列表解析（域名 / CIDR） =========
 
-def parse_domain_list(raw_text: str) -> list[str]:
+def parse_domain_list(raw_text: str) -> list:
+    """
+    解析 Loy 这种：一行一个域名 / .域名
+    也兼容 "DOMAIN,xxx" / "DOMAIN-SUFFIX,xxx"
+    """
     out = []
     for line in (raw_text or "").splitlines():
         s = line.strip()
@@ -298,21 +315,26 @@ def parse_domain_list(raw_text: str) -> list[str]:
         s = s.lstrip("-").strip()
         if not s:
             continue
-        # accept "DOMAIN,xxx" too
+
+        # 兼容 TYPE,VALUE
         if looks_like_clash_rule_line(s):
             t, v = [x.strip() for x in strip_action(s).split(",", 1)]
             if t.upper() in ("DOMAIN", "DOMAIN-SUFFIX"):
                 s = v
             else:
                 continue
-        # basic filter
+
         if " " in s or "/" in s:
             continue
         out.append(s.lstrip("."))
+
     return sorted(set(out))
 
 
-def parse_cidr_list(raw_text: str) -> tuple[list[str], list[str]]:
+def parse_cidr_list(raw_text: str):
+    """
+    解析纯 CIDR 列表，也兼容 "IP-CIDR,xxx" / "IP-CIDR6,xxx"
+    """
     v4 = set()
     v6 = set()
     for line in (raw_text or "").splitlines():
@@ -322,13 +344,15 @@ def parse_cidr_list(raw_text: str) -> tuple[list[str], list[str]]:
         s = s.lstrip("-").strip()
         if not s:
             continue
-        # accept "IP-CIDR,xxx" too
+
+        # 兼容 TYPE,VALUE
         if looks_like_clash_rule_line(s):
             t, v = [x.strip() for x in strip_action(s).split(",", 1)]
             if t.upper() in ("IP-CIDR", "IP-CIDR6"):
                 s = v
             else:
                 continue
+
         try:
             net = ipaddress.ip_network(s, strict=False)
             if net.version == 4:
@@ -337,29 +361,35 @@ def parse_cidr_list(raw_text: str) -> tuple[list[str], list[str]]:
                 v6.add(s)
         except Exception:
             pass
+
     return sorted(v4), sorted(v6)
 
 
-# ---------- sing-box & mihomo writers ----------
+# ========= sing-box & mihomo 输出 =========
 
 def build_singbox_source_json(b: dict) -> dict:
     """
-    输出 sing-box rule-set 源格式（按你样板）
+    构造 sing-box rule-set 源 JSON：
+      {"version":1,"rules":[{...}]}
+    注意：为了兼容当前版本，只输出 ip_cidr，不再单独写 ip_cidr6。
     """
     rule = {"type": "default"}
+
     if b.get("domain"):
         rule["domain"] = sorted(b["domain"])
     if b.get("domain_suffix"):
-        # 保留前导点（你的习惯）
         rule["domain_suffix"] = sorted(b["domain_suffix"])
     if b.get("domain_keyword"):
         rule["domain_keyword"] = sorted(b["domain_keyword"])
     if b.get("domain_regex"):
         rule["domain_regex"] = sorted(b["domain_regex"])
-    if b.get("ip_cidr"):
-        rule["ip_cidr"] = sorted(b["ip_cidr"])
-    if b.get("ip_cidr6"):
-        rule["ip_cidr6"] = sorted(b["ip_cidr6"])
+
+    # 合并 IPv4+IPv6 到 ip_cidr，避免 ip_cidr6 把 sing-box 弄崩
+    ip_cidr_merged = set(b.get("ip_cidr") or [])
+    ip_cidr_merged.update(b.get("ip_cidr6") or [])
+    if ip_cidr_merged:
+        rule["ip_cidr"] = sorted(ip_cidr_merged)
+
     if b.get("process_name"):
         rule["process_name"] = sorted(b["process_name"])
 
@@ -368,7 +398,13 @@ def build_singbox_source_json(b: dict) -> dict:
     return {"version": 1, "rules": [rule]}
 
 
-def write_mihomo_payload_yaml(lines: list[str], path: Path) -> None:
+def write_mihomo_payload_yaml(lines: list, path: Path) -> None:
+    """
+    写成 mihomo convert-ruleset 需要的：
+      payload:
+        - xxx
+        - yyy
+    """
     with open(path, "w", encoding="utf-8") as f:
         f.write("payload:\n")
         for x in lines:
@@ -378,23 +414,35 @@ def write_mihomo_payload_yaml(lines: list[str], path: Path) -> None:
 def convert_with_mihomo(behavior: str, src_yaml: Path, dst_mrs: Path) -> None:
     """
     mihomo convert-ruleset <behavior> yaml <src_yaml> <dst_mrs>
-    behavior: domain / ipcidr
+      behavior: domain / ipcidr
     """
-    cmd = [MIHOMO_BIN, "convert-ruleset", behavior, "yaml", str(src_yaml), str(dst_mrs)]
+    cmd = [
+        MIHOMO_BIN,
+        "convert-ruleset",
+        behavior,
+        "yaml",
+        str(src_yaml),
+        str(dst_mrs),
+    ]
     run(cmd, timeout=180)
 
 
 def compile_singbox_srs(src_json: dict, name: str) -> Path:
     sbox_json_path = REMOTE_TMP / f"{name}.json"
-    sbox_json_path.write_text(json.dumps(src_json, ensure_ascii=False, indent=2), encoding="utf-8")
+    sbox_json_path.write_text(
+        json.dumps(src_json, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     log(f"    ✅ write sing-box source: {sbox_json_path}")
     srs_path = REMOTE_SRS / f"{name}.srs"
-    run([SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(srs_path)], timeout=240)
+    run(
+        [SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(srs_path)],
+        timeout=240,
+    )
     log(f"    ✅ SRS: {srs_path} ({srs_path.stat().st_size} bytes)")
     return srs_path
 
 
-def build_mrs_domain_from_list(domains: list[str], name: str) -> Path | None:
+def build_mrs_domain_from_list(domains: list, name: str):
     if not domains:
         log("    ℹ️ no domain entries, skip domain.mrs")
         return None
@@ -403,11 +451,14 @@ def build_mrs_domain_from_list(domains: list[str], name: str) -> Path | None:
     write_mihomo_payload_yaml(domains, tmp_domain_yaml)
     log(f"    ✅ write mihomo domain source: {tmp_domain_yaml}")
     convert_with_mihomo("domain", tmp_domain_yaml, out_domain_mrs)
-    log(f"    ✅ MRS(domain): {out_domain_mrs} ({out_domain_mrs.stat().st_size} bytes)")
+    log(
+        f"    ✅ MRS(domain): {out_domain_mrs} "
+        f"({out_domain_mrs.stat().st_size} bytes)"
+    )
     return out_domain_mrs
 
 
-def build_mrs_ip_from_list(cidrs: list[str], name: str) -> Path | None:
+def build_mrs_ip_from_list(cidrs: list, name: str):
     if not cidrs:
         log("    ℹ️ no ipcidr entries, skip ipcidr.mrs")
         return None
@@ -416,11 +467,14 @@ def build_mrs_ip_from_list(cidrs: list[str], name: str) -> Path | None:
     write_mihomo_payload_yaml(cidrs, tmp_ip_yaml)
     log(f"    ✅ write mihomo ipcidr source: {tmp_ip_yaml}")
     convert_with_mihomo("ipcidr", tmp_ip_yaml, out_ip_mrs)
-    log(f"    ✅ MRS(ipcidr): {out_ip_mrs} ({out_ip_mrs.stat().st_size} bytes)")
+    log(
+        f"    ✅ MRS(ipcidr): {out_ip_mrs} "
+        f"({out_ip_mrs.stat().st_size} bytes)"
+    )
     return out_ip_mrs
 
 
-# ---------- main ----------
+# ========= main =========
 
 def main() -> None:
     if not MANIFEST.exists():
@@ -434,7 +488,7 @@ def main() -> None:
         log("❌ remote-rules.json is empty or invalid.")
         sys.exit(1)
 
-    # sanity
+    # 检查二进制
     run([SINGBOX_BIN, "version"], timeout=60)
     run([MIHOMO_BIN, "-v"], timeout=60)
 
@@ -451,34 +505,28 @@ def main() -> None:
         fmt = detect_format(fmt_in, raw)
         log(f"\n==> {name}\n    url: {url}\n    format: {fmt_in} -> {fmt}")
 
-        # -------- 1) singbox-json source --------
         obj = safe_load_struct(raw)
+
+        # ---- 1) singbox-json 源（有就原样编译）----
         if fmt == "singbox-json" and is_singbox_ruleset_json(obj):
             src_json = obj
-            # compile srs
             compile_singbox_srs(src_json, name)
 
-            # also try build mrs (domain/ipcidr) from singbox json fields
+            # 顺手从 sing-box JSON 抽 domain/ip 生成 mrs
             domains = []
             cidrs = []
-            rules = src_json.get("rules") or []
-            for r in rules:
+            for r in src_json.get("rules") or []:
                 if not isinstance(r, dict):
                     continue
-                # domain / domain_suffix to mihomo domain payload
-                for d in (r.get("domain") or []):
+                for d in r.get("domain") or []:
                     if isinstance(d, str) and d.strip():
                         domains.append(d.strip().lstrip("."))
-                for ds in (r.get("domain_suffix") or []):
+                for ds in r.get("domain_suffix") or []:
                     if isinstance(ds, str) and ds.strip():
                         domains.append(ds.strip().lstrip("."))
-                # ip cidr
-                for c in (r.get("ip_cidr") or []):
+                for c in r.get("ip_cidr") or []:
                     if isinstance(c, str) and c.strip():
                         cidrs.append(c.strip())
-                for c6 in (r.get("ip_cidr6") or []):
-                    if isinstance(c6, str) and c6.strip():
-                        cidrs.append(c6.strip())
 
             domains = sorted(set(domains))
             cidrs = sorted(set(cidrs))
@@ -486,7 +534,7 @@ def main() -> None:
             build_mrs_ip_from_list(cidrs, name)
             continue
 
-        # -------- 2) pure domain list txt --------
+        # ---- 2) 纯域名 txt ----
         if fmt == "domain-text":
             domains = parse_domain_list(raw)
             log(f"    ✅ parsed domain lines: {len(domains)}")
@@ -497,9 +545,9 @@ def main() -> None:
             # mrs(domain)
             build_mrs_domain_from_list(domains, name)
 
-            # srs: treat as domain_suffix for broad match (保留前导点)
+            # srs：把这些全当 domain_suffix 来用（带前导点）
             b = {
-                "domain": set(),  # 可留空
+                "domain": set(),
                 "domain_suffix": {("." + d) for d in domains},
                 "domain_keyword": set(),
                 "domain_regex": set(),
@@ -510,7 +558,7 @@ def main() -> None:
             compile_singbox_srs(build_singbox_source_json(b), name)
             continue
 
-        # -------- 3) pure cidr list txt --------
+        # ---- 3) 纯 CIDR txt ----
         if fmt == "ip-text":
             v4, v6 = parse_cidr_list(raw)
             log(f"    ✅ parsed cidr lines: v4={len(v4)} v6={len(v6)}")
@@ -518,55 +566,34 @@ def main() -> None:
                 log("    ⚠️ ip-text parsed 0, skip")
                 continue
 
-            # mrs(ipcidr): merge v4+v6
+            # mrs(ipcidr)：v4+v6 一起
             build_mrs_ip_from_list(sorted(set(v4 + v6)), name)
 
-            # srs
+            # srs：v4+v6 全塞 ip_cidr
             b = {
                 "domain": set(),
                 "domain_suffix": set(),
                 "domain_keyword": set(),
                 "domain_regex": set(),
-                "ip_cidr": set(v4),
-                "ip_cidr6": set(v6),
+                "ip_cidr": set(v4 + v6),
+                "ip_cidr6": set(),
                 "process_name": set(),
             }
             compile_singbox_srs(build_singbox_source_json(b), name)
             continue
 
-        # -------- 4) clash-like (yaml/json/txt rules) --------
+        # ---- 4) Clash 类规则（默认）----
         rule_lines = parse_rule_lines_from_clash_like(raw)
-        # 如果是 auto 检测成 clash，但内容其实是纯域名/纯cidr，也兜底一下：
-        if rule_lines and not looks_like_clash_rule_line(rule_lines[0]):
-            # try fallback domain-text
-            domains = parse_domain_list(raw)
-            v4, v6 = parse_cidr_list(raw)
-            if domains and (len(domains) >= max(3, int(len(rule_lines) * 0.6))):
-                log("    ℹ️ fallback: treat as domain-text")
-                it2 = {"name": name, "url": url, "format": "domain-text"}
-                # 简单递归式处理：直接走 domain-text 分支
-                domains = parse_domain_list(raw)
-                build_mrs_domain_from_list(domains, name)
-                b = {"domain": set(), "domain_suffix": {("." + d) for d in domains},
-                     "domain_keyword": set(), "domain_regex": set(),
-                     "ip_cidr": set(), "ip_cidr6": set(), "process_name": set()}
-                compile_singbox_srs(build_singbox_source_json(b), name)
-                continue
-            if (v4 or v6) and ((len(v4) + len(v6)) >= max(3, int(len(rule_lines) * 0.6))):
-                log("    ℹ️ fallback: treat as ip-text")
-                build_mrs_ip_from_list(sorted(set(v4 + v6)), name)
-                b = {"domain": set(), "domain_suffix": set(),
-                     "domain_keyword": set(), "domain_regex": set(),
-                     "ip_cidr": set(v4), "ip_cidr6": set(v6), "process_name": set()}
-                compile_singbox_srs(build_singbox_source_json(b), name)
-                continue
-
         b = extract_supported_from_clash_lines(rule_lines)
 
         cnt = (
-            len(b["domain"]) + len(b["domain_suffix"]) + len(b["domain_keyword"]) +
-            len(b["domain_regex"]) + len(b["ip_cidr"]) + len(b["ip_cidr6"]) +
-            len(b["process_name"])
+            len(b["domain"])
+            + len(b["domain_suffix"])
+            + len(b["domain_keyword"])
+            + len(b["domain_regex"])
+            + len(b["ip_cidr"])
+            + len(b["ip_cidr6"])
+            + len(b["process_name"])
         )
         log(
             f"    ✅ extracted items: {cnt} "
@@ -579,11 +606,10 @@ def main() -> None:
             log("    ⚠️ extracted 0 supported rules, skip")
             continue
 
-        # ---- sing-box: json -> srs ----
+        # 先给 sing-box 出 SRS
         compile_singbox_srs(build_singbox_source_json(b), name)
 
-        # ---- mihomo: mrs ----
-        # 注意：mihomo domain 行为用“域名/后缀列表”最稳，不把 keyword/regex 硬塞进去
+        # 再给 mihomo 出 MRS（domain / ipcidr）
         domains_for_mrs = []
         for d in b["domain"]:
             domains_for_mrs.append(d.lstrip("."))
