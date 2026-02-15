@@ -1,5 +1,18 @@
 [
-{"name":"tiktok","url":"https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/TikTok/TikTok.yaml","format":"clash"}, 
+{"name":"tiktok","url":"https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/TikTok/TikTok.yaml","format":"clash"},
+  {"name":"Loy-reject","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt","format":"domain-text"},
 
-{"name":"Loy-reject","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt","format":"domain-text"}
+{"name":"bx7-AdvertisingLite","url":"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/AdvertisingLite/AdvertisingLite.yaml","format":"clash"},
+  {"name":"Loy-icloud","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/icloud.txt","format":"domain-text"},
+  {"name":"Loy-Apple","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt","format":"domain-text"},
+  {"name":"bx7-Microsoft","url":"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml","format":"clash"},
+  {"name":"bx7-YouTube","url":"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/YouTube/YouTube_No_Resolve.yaml","format":"clash"},
+  {"name":"bx7-Netflix","url":"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Netflix/Netflix.yaml","format":"clash"},
+  {"name":"bx7-games","url":"https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml","format":"clash"},
+  {"name":"Loy-proxy","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt","format":"domain-text"},
+  {"name":"Loy-gfw","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt","format":"domain-text"},
+  {"name":"Loy-tld-not-cn","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt","format":"domain-text"},
+  {"name":"Loy-direct","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt","format":"domain-text"},
+  {"name":"Loy-private","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt","format":"domain-text"},
+  {"name":"Loy-applications","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt","format":"domain-text"}
 ]
