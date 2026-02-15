@@ -304,8 +304,13 @@ def extract_supported_from_clash_lines(rule_lines: list) -> dict:
 
 def parse_domain_list(raw_text: str) -> list:
     """
-    解析 Loy 这种：一行一个域名 / .域名
-    也兼容 "DOMAIN,xxx" / "DOMAIN-SUFFIX,xxx"
+    解析 Loy 那种一行一个域名 / .域名 的 txt 列表，
+    也兼容 "DOMAIN,xxx" / "DOMAIN-SUFFIX,xxx" 这种写法。
+
+    这里严格一点，只保留“像域名”的内容：
+      - 必须包含至少一个 '.'
+      - 不能有空格、不能有 '/'
+      - 排除 YAML 字段名（例如 payload:）
     """
     out = []
     for line in (raw_text or "").splitlines():
@@ -316,16 +321,27 @@ def parse_domain_list(raw_text: str) -> list:
         if not s:
             continue
 
-        # 兼容 TYPE,VALUE
+        # 兼容 TYPE,VALUE 格式
         if looks_like_clash_rule_line(s):
             t, v = [x.strip() for x in strip_action(s).split(",", 1)]
+            # 只吃 DOMAIN / DOMAIN-SUFFIX，其它（PROCESS-NAME 等）直接丢掉
             if t.upper() in ("DOMAIN", "DOMAIN-SUFFIX"):
                 s = v
             else:
                 continue
 
+        # 必须像域名：至少有一个点，避免把 payload: 之类字段名当成域名
+        if "." not in s:
+            continue
+
+        # 有空格或者斜杠基本就不是单纯域名了，丢掉
         if " " in s or "/" in s:
             continue
+
+        # 像 "payload:" 这种带冒号的也不要
+        if ":" in s:
+            continue
+
         out.append(s.lstrip("."))
 
     return sorted(set(out))
