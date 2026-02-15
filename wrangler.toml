@@ -1,0 +1,3 @@
+name = "vps-net-optimize-bot"
+main = "worker.js"
+compatibility_date = "2026-02-15"
