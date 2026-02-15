@@ -91,50 +91,47 @@ jobs:
           ls -la remote-tmp || true
 
       # ---------- Commit & Push ----------
-      - name: Commit & Push
+      - name: Commit and push changes
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -eux
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          echo "=== ls outputs ==="
-          ls -la remote-mrs || true
-          ls -la remote-srs || true
-          ls -la remote-tmp || true
+          echo "Default branch: $DEFAULT_BRANCH"
 
-          echo "=== git status (before add) ==="
-          git status --porcelain || true
+          # 先跟远端同步一次，避免 main -> main (fetch first)
+          git fetch origin
+          git pull --rebase origin "$DEFAULT_BRANCH" || true
 
-          # 1) 把产物 add 进去
+          # 把产物加进暂存区
+          git add remote-mrs || true
+          git add remote-srs || true
+          git add remote-tmp || true
           git add remote-rules.json || true
-          git add remote-mrs/*.mrs || true
-          git add remote-srs/*.srs || true
-          # 如果你想提交中间文件，再打开这一行
-          # git add remote-tmp/* || true
+          # 你原来的 remote-src 没这个目录，就别加了
+          # git add remote-src || true
 
           echo "=== git status (after add) ==="
           git status --porcelain || true
 
-          # 2) 如果没有变更就直接退出
+          # 没有变更就直接退出
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
 
-          # 3) 先把远端 main 拉一下，避免 cannot lock ref
-          git fetch origin
-          git pull --rebase origin main || true
+          git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # 4) 再 commit
-          git commit -m "chore: update remote mrs+srs $(date -u +'%Y-%m-%d %H:%M UTC')"
-
-          # 5) 尝试 push，不行就再拉一次再推一次（最多 3 次）
+          # push，失败的话自动再拉一次重试，最多 3 次
           for i in 1 2 3; do
-            if git push origin HEAD:main; then
+            if git push origin "HEAD:$DEFAULT_BRANCH"; then
               echo "Push success on attempt $i"
               break
             fi
             echo "Push failed on attempt $i, pulling and rebasing..."
             git fetch origin
-            git pull --rebase origin main || true
+            git pull --rebase origin "$DEFAULT_BRANCH" || true
           done
