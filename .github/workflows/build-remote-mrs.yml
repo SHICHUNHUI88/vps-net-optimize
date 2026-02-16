@@ -42,6 +42,10 @@ jobs:
       - name: Download sing-box
         run: |
           set -eux
+          # 先清理一下旧文件
+          rm -f sing-box sing-box.tar.gz || true
+          rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" || true
+
           wget -O sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
           mv "sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box" ./sing-box
@@ -53,11 +57,16 @@ jobs:
       - name: Download mihomo
         run: |
           set -eux
+          # 先清理旧文件，防止下次改配置又撞名
+          rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
+
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d mihomo.gz
+
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
             mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           fi
+
           chmod +x ./mihomo
           ./mihomo -v
 
