@@ -45,18 +45,19 @@ jobs:
           fetch-depth: 0
 
       # 下载 mihomo（用于 .mrs）
-      - name: Download mihomo (fixed version)
+      - name: Download mihomo
         run: |
           set -eux
+
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          gzip -d mihomo.gz
-          # 解压后可能得到带版本号的文件，统一重命名为 mihomo
-          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
-          elif [ ! -f "mihomo" ]; then
+          gzip -df mihomo.gz
+
+          # 确认 mihomo 存在
+          if [ ! -f "mihomo" ]; then
             echo "Error: mihomo binary not found"
             exit 1
           fi
+
           chmod +x mihomo
           ./mihomo -v
 
