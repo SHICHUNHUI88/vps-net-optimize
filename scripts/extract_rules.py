@@ -9,6 +9,9 @@ import subprocess
 SRC_DIR = os.getenv("SRC_DIR", "clash")
 MIHOMO_BIN = os.getenv("MIHOMO_BIN", "./mihomo")
 
+# 严格模式：转换失败就删除旧产物，避免误用旧 mrs
+STRICT_MODE = True
+
 
 def log(msg: str) -> None:
     print(msg, flush=True)
@@ -36,7 +39,6 @@ def extract_rules_from_payload(payload):
         return [], []
 
     for item in payload:
-        # 只处理字符串规则
         if not isinstance(item, str):
             continue
 
@@ -47,13 +49,12 @@ def extract_rules_from_payload(payload):
         stripped = line.lstrip()
 
         # ---------- 域名规则 ----------
-        # DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-WILDCARD 等都收集 value
-        # 但排除 DOMAIN-REGEX（regex 不适合丢给 behavior=domain）
+        # 收集 DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-WILDCARD 等
+        # 排除 DOMAIN-REGEX（regex 不适合丢给 behavior=domain）
         if stripped.startswith("DOMAIN") and not stripped.startswith("DOMAIN-REGEX"):
             parts = [p.strip() for p in line.split(",") if p.strip()]
             if len(parts) >= 2:
-                value = parts[1]
-                domains.add(value)
+                domains.add(parts[1])
             continue
 
         # ---------- IP 规则 ----------
@@ -72,15 +73,22 @@ def extract_rules_from_payload(payload):
     return sorted(domains), sorted(cidrs)
 
 
-def convert_with_mihomo_atomic(behavior: str, src_yaml: str, dst_mrs: str) -> bool:
+def write_temp_payload_yaml(temp_path: str, items) -> None:
+    """写一个 payload: 列表给 mihomo 用（纯值列表）"""
+    with open(temp_path, "w", encoding="utf-8") as f:
+        f.write("payload:\n")
+        for it in items:
+            f.write(f"  - {it}\n")
+
+
+def convert_with_mihomo_atomic_strict(behavior: str, src_yaml: str, dst_mrs: str) -> bool:
     """
-    调用 mihomo convert-ruleset 进行转换（原子写入）：
-    - 先输出到 dst_mrs.tmp
-    - 成功后 replace 覆盖 dst_mrs
+    原子写入 + 严格模式：
+    - 输出到 dst_mrs.tmp
+    - 成功且非空：os.replace 覆盖 dst_mrs
+    - 失败/空：删除 tmp；严格模式下删除 dst_mrs（防止继续用旧文件）
     """
     tmp_out = dst_mrs + ".tmp"
-
-    # 每次都先清理旧 tmp，避免脏文件影响判断
     safe_unlink(tmp_out)
 
     cmd = [MIHOMO_BIN, "convert-ruleset", behavior, "yaml", src_yaml, tmp_out]
@@ -92,44 +100,48 @@ def convert_with_mihomo_atomic(behavior: str, src_yaml: str, dst_mrs: str) -> bo
     if result.stderr.strip():
         log(f"    stderr: {result.stderr.strip()}")
 
+    # 失败：删 tmp，严格模式删旧产物
     if result.returncode != 0:
         log(f"    ❌ mihomo exit code: {result.returncode}")
         safe_unlink(tmp_out)
+        if STRICT_MODE:
+            log("    🧹 STRICT: delete old output to avoid stale mrs")
+            safe_unlink(dst_mrs)
         return False
 
     if not os.path.exists(tmp_out):
         log("    ❌ tmp MRS file not created")
+        if STRICT_MODE:
+            log("    🧹 STRICT: delete old output to avoid stale mrs")
+            safe_unlink(dst_mrs)
         return False
 
     size = os.path.getsize(tmp_out)
     log(f"    ✅ tmp MRS generated: {tmp_out} ({size} bytes)")
 
-    # 如果产物为空：视为无效，删掉 tmp，并且删掉正式文件（增删同步）
+    # 空文件：当作失败处理
     if size == 0:
-        log("    ⚠️  tmp MRS is empty -> delete output for sync")
+        log("    ⚠️ tmp MRS is empty -> treat as failure")
         safe_unlink(tmp_out)
-        safe_unlink(dst_mrs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: delete old output to avoid stale mrs")
+            safe_unlink(dst_mrs)
         return False
 
-    # 原子替换：成功后再覆盖正式文件
+    # 原子替换
     try:
         os.replace(tmp_out, dst_mrs)
     except Exception as e:
         log(f"    ❌ Failed to replace {dst_mrs}: {e}")
         safe_unlink(tmp_out)
+        if STRICT_MODE:
+            log("    🧹 STRICT: delete old output to avoid stale mrs")
+            safe_unlink(dst_mrs)
         return False
 
     final_size = os.path.getsize(dst_mrs)
     log(f"    ✅ MRS updated: {dst_mrs} ({final_size} bytes)")
     return True
-
-
-def write_temp_payload_yaml(temp_path: str, items) -> None:
-    """写一个 payload: 列表给 mihomo 用（纯值列表）"""
-    with open(temp_path, "w", encoding="utf-8") as f:
-        f.write("payload:\n")
-        for it in items:
-            f.write(f"  - {it}\n")
 
 
 def process_yaml_file(yaml_path: str, base_name: str) -> None:
@@ -140,10 +152,23 @@ def process_yaml_file(yaml_path: str, base_name: str) -> None:
             data = yaml.safe_load(f)
     except Exception as e:
         log(f"  ❌ Failed to load YAML: {e}")
+        # 严格模式：YAML 解析失败也不要留旧产物（防止假更新）
+        if STRICT_MODE:
+            out_domain = os.path.join(SRC_DIR, f"{base_name}_domain.mrs")
+            out_ip = os.path.join(SRC_DIR, f"{base_name}_ip.mrs")
+            log("  🧹 STRICT: YAML parse failed -> delete old outputs")
+            safe_unlink(out_domain)
+            safe_unlink(out_ip)
         return
 
     if not isinstance(data, dict) or "payload" not in data:
         log("  ⚠️ No payload found or payload is not a list")
+        if STRICT_MODE:
+            out_domain = os.path.join(SRC_DIR, f"{base_name}_domain.mrs")
+            out_ip = os.path.join(SRC_DIR, f"{base_name}_ip.mrs")
+            log("  🧹 STRICT: invalid structure -> delete old outputs")
+            safe_unlink(out_domain)
+            safe_unlink(out_ip)
         return
 
     payload = data["payload"]
@@ -151,47 +176,42 @@ def process_yaml_file(yaml_path: str, base_name: str) -> None:
 
     log(f"  Found {len(domains)} domain entries, {len(cidrs)} IP CIDR entries")
 
-    # 输出文件（固定命名）
     out_domain = os.path.join(SRC_DIR, f"{base_name}_domain.mrs")
     out_ip = os.path.join(SRC_DIR, f"{base_name}_ip.mrs")
 
-    # ---------- 域名规则 -> _domain.mrs ----------
+    # ---------- 域名规则 ----------
     if domains:
         temp_domain = os.path.join(SRC_DIR, f"temp_domain_{base_name}.yaml")
         try:
             write_temp_payload_yaml(temp_domain, domains)
             log(f"  🚀 Converting domain rules ({len(domains)}) ...")
-            ok = convert_with_mihomo_atomic("domain", temp_domain, out_domain)
+            ok = convert_with_mihomo_atomic_strict("domain", temp_domain, out_domain)
             if not ok:
-                log("  ❌ Domain rules conversion failed (old output NOT used)")
+                log("  ❌ Domain conversion failed")
         finally:
             safe_unlink(temp_domain)
     else:
-        # 增删同步：如果源里已经没有域名规则了，就删掉对应产物
+        # 增删同步：没规则就删产物
         if os.path.exists(out_domain):
             log("  🧹 No domain rules -> delete *_domain.mrs for sync")
-            safe_unlink(out_domain)
-        else:
-            log("  ℹ️ No domain rules, skip domain.mrs")
+        safe_unlink(out_domain)
 
-    # ---------- IP 规则 -> _ip.mrs ----------
+    # ---------- IP 规则 ----------
     if cidrs:
         temp_ip = os.path.join(SRC_DIR, f"temp_ip_{base_name}.yaml")
         try:
             write_temp_payload_yaml(temp_ip, cidrs)
             log(f"  🚀 Converting IP rules ({len(cidrs)}) ...")
-            ok = convert_with_mihomo_atomic("ipcidr", temp_ip, out_ip)
+            ok = convert_with_mihomo_atomic_strict("ipcidr", temp_ip, out_ip)
             if not ok:
-                log("  ❌ IP rules conversion failed (old output NOT used)")
+                log("  ❌ IP conversion failed")
         finally:
             safe_unlink(temp_ip)
     else:
-        # 增删同步：如果源里已经没有 IP 规则了，就删掉对应产物
+        # 增删同步：没规则就删产物
         if os.path.exists(out_ip):
             log("  🧹 No IP rules -> delete *_ip.mrs for sync")
-            safe_unlink(out_ip)
-        else:
-            log("  ℹ️ No IP rules, skip _ip.mrs")
+        safe_unlink(out_ip)
 
 
 def main():
@@ -210,6 +230,7 @@ def main():
 
     log(f"🔧 Using SRC_DIR = {SRC_DIR}")
     log(f"🔧 MIHOMO_BIN = {MIHOMO_BIN}")
+    log(f"🔧 STRICT_MODE = {STRICT_MODE}")
     log(f"🔧 Found {len(yaml_files)} yaml files")
 
     for yaml_file in sorted(yaml_files):
