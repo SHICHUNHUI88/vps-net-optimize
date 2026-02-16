@@ -102,14 +102,25 @@ jobs:
 
           echo "Default branch: $DEFAULT_BRANCH"
 
-          # 先跟远端同步，避免 cannot lock ref
+          # 先跟远端同步一次，确保基线是干净的
           git fetch origin
           git pull --rebase origin "$DEFAULT_BRANCH" || true
 
-          git add remote-mrs || true
-          git add remote-srs || true
-          git add remote-tmp || true
-          git add remote-rules.json || true
+          # ✅ 用 -A 提交新增 / 修改 / 删除（关键：删除的 .mrs/.srs 也要带上）
+          if [ -d remote-mrs ]; then
+            git add -A remote-mrs
+          fi
+
+          if [ -d remote-srs ]; then
+            git add -A remote-srs
+          fi
+
+          # remote-tmp 是临时文件夹，不建议入库，所以不 add
+          # 如果你就是想把 tmp 也提交，那改成：git add -A remote-tmp
+
+          if [ -f remote-rules.json ]; then
+            git add remote-rules.json
+          fi
 
           echo "=== git status (after add) ==="
           git status --porcelain || true
@@ -121,6 +132,7 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
+          # 推送失败时做 3 次重试（每次先拉取 + rebase 一下）
           for i in 1 2 3; do
             if git push origin "HEAD:$DEFAULT_BRANCH"; then
               echo "Push success on attempt $i"
