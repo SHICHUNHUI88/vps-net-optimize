@@ -15,7 +15,7 @@ on:
       - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
 
-# ✅ 防止同一分支并发跑两次互相抢推送
+# 防止同一分支并发跑两次互相抢推送
 concurrency:
   group: build-rules-${{ github.ref }}
   cancel-in-progress: false
@@ -24,11 +24,9 @@ env:
   MIHOMO_VERSION: 1.19.10
   SINGBOX_VERSION: 1.11.0
 
-  # ====== 旧流程输出目录（保持不变） ======
+  # 输出目录
   SRC_DIR: clash
   SBOX_DIR: singbox
-
-  # ====== 新流程（远程规则）隔离输出目录 ======
   REMOTE_SRC_DIR: remote-src
   REMOTE_MRS_DIR: remote-mrs
 
@@ -38,31 +36,33 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # 拉代码
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ---------- 下载 mihomo（用于 .mrs） ----------
+      # 下载 mihomo（用于 .mrs）
       - name: Download mihomo
         run: |
           set -eux
 
-          # 解压前先清理旧文件，避免 gzip 提示 mihomo already exists
+          # 清理旧文件，避免 gzip 提示 mihomo already exists
           rm -f mihomo mihomo.gz || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          gzip -d mihomo.gz    # 这里解压后就直接得到 ./mihomo
+          gzip -d mihomo.gz
           chmod +x ./mihomo
           ./mihomo -v
 
-      # ---------- 下载 sing-box（用于 .srs + remote-mrs） ----------
+      # 下载 sing-box（用于 .srs + remote-mrs）
       - name: Download sing-box
         run: |
           set -eux
 
-          # 清理旧的 sing-box 和目录/压缩包
+          # 清理旧文件和目录
           rm -f sing-box sing-box.tar.gz || true
           rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" || true
 
@@ -73,57 +73,60 @@ jobs:
           ./sing-box version
           rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" sing-box.tar.gz
 
-      # =========================================================
-      # A) Mihomo: clash/*.yaml -> clash/*_domain.mrs & *_ip.mrs
-      # =========================================================
-      - name: Clean old MRS files (mihomo output in clash/)
-        run: rm -f ${SRC_DIR}/*.mrs || true
+      # Python 环境
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-      - name: Run extraction script (Mihomo -> MRS in clash/)
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      # A) clash/*.yaml -> clash/*.mrs
+      - name: Clean old MRS files (clash/)
+        run: rm -f "${SRC_DIR}"/*.mrs || true
+
+      - name: Run extraction script (Mihomo -> MRS)
         run: python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
           MIHOMO_BIN: ./mihomo
 
-      # =========================================================
-      # B) sing-box: singbox/*.json -> singbox/*.srs
-      # =========================================================
-      - name: Clean old SRS files (sing-box output in singbox/)
-        run: rm -f ${SBOX_DIR}/*.srs || true
+      # B) singbox/*.json -> singbox/*.srs
+      - name: Clean old SRS files (singbox/)
+        run: rm -f "${SBOX_DIR}"/*.srs || true
 
-      - name: Run compilation script (Sing-box -> SRS in singbox/)
+      - name: Run compilation script (Sing-box -> SRS)
         run: python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
           SINGBOX_BIN: ./sing-box
           RULESET_VERSION: "3"
 
-      # =========================================================
-      # C) Remote rules: remote-rules.json -> remote-mrs/*.mrs
-      # =========================================================
-      - name: Build Remote MRS (isolated in remote-mrs/)
+      # C) remote-rules.json -> remote-mrs/*.mrs
+      - name: Build Remote MRS (remote-mrs/)
         env:
           SINGBOX_BIN: ./sing-box
         run: |
           set -eux
           python scripts/Diversion_Conversion.py
           echo "=== LIST remote-src ==="
-          ls -la ${REMOTE_SRC_DIR} || true
+          ls -la "${REMOTE_SRC_DIR}" || true
           echo "=== LIST remote-mrs ==="
-          ls -la ${REMOTE_MRS_DIR} || true
+          ls -la "${REMOTE_MRS_DIR}" || true
 
-      
-      # Commit & Push (包含“删除同步” + rebase 重试) 
-      - name: Commit and push changes (full add + autostash rebase + retry)
+      # 提交并推送（带删除同步 + rebase 重试）
+      - name: Commit and push changes
         run: |
           set -eux
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # ✅ 关键：全仓库暂存（新增/修改/删除全部包含，避免漏网导致 rebase 报 unstaged）
+          # 全仓库暂存（新增/修改/删除）
           git add -A
 
-          # 没有任何变化就退出
+          # 没有变化直接退出
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
@@ -131,21 +134,19 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # ✅ push 前先 fetch+rebase（自动 stash），避免 rejected / unstaged changes
           BRANCH="${GITHUB_REF_NAME:-main}"
 
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
 
-            # ✅ autostash：就算此刻工作区又脏了，也能自动 stash -> rebase -> pop
+            # 自动 stash 再 rebase，避免 unstaged 报错
             git rebase --autostash "origin/${BRANCH}" || {
               git rebase --abort || true
               echo "Rebase failed (possible conflict)."
               exit 1
             }
 
-            # 极少数情况：rebase 后又产生新改动（比如脚本写时间戳/缓存）
-            # 这里再统一补一刀，确保 push 前工作区干净
+            # rebase 后如有新改动再补一次提交
             if ! git diff --quiet || ! git diff --cached --quiet; then
               git add -A
               if ! git diff --cached --quiet; then
