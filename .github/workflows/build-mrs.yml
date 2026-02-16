@@ -49,16 +49,10 @@ jobs:
         run: |
           set -eux
 
-          # 不管之前有没有，先删掉同名文件，避免撞名
-          rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
+          rm -f mihomo mihomo.gz || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -df mihomo.gz
-
-          # 这里其实解压出来的就是 mihomo，不会叫 mihomo-linux-xxx
-          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
-          fi
 
           chmod +x ./mihomo
           ./mihomo -v
