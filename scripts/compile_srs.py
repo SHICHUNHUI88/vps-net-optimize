@@ -5,7 +5,7 @@ import os
 import sys
 import json
 import subprocess
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set
 
 # 源目录 & sing-box 可执行文件，可用环境变量覆盖
 SBOX_DIR = os.getenv("SBOX_DIR", "singbox")
@@ -14,9 +14,21 @@ SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 # sing-box rule-set 源格式版本（对应 1.11.x 用 3，1.13+ 可以用 4）
 RULESET_VERSION = int(os.getenv("RULESET_VERSION", "3"))
 
+# 严格模式：编译失败 / 空产物 时删除旧 .srs，防止“假更新”
+STRICT_MODE = True
+
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+def safe_unlink(path: str) -> None:
+    """删除文件（不存在就忽略）"""
+    try:
+        if path and os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        log(f"    ⚠️ 删除文件失败 {path}: {e}")
 
 
 # ================== 通用 JSON 读取 ==================
@@ -49,7 +61,7 @@ def is_ruleset_json(data: Any) -> bool:
     return False
 
 
-# ================== 工具：把字段统一转成 list[str]（兼容 str/list）==================
+# ================== 工具：把字段统一转成 list[str] ==================
 
 def as_str_list(val: Any) -> List[str]:
     """
@@ -92,6 +104,7 @@ ALLOWED_HEADLESS_KEYS = {
     "network_type",
     "invert",
 }
+
 
 def normalize_ruleset(data: Any) -> Dict[str, Any]:
     """
@@ -139,7 +152,6 @@ def normalize_ruleset(data: Any) -> Dict[str, Any]:
             if v is None:
                 continue
 
-            # domain / domain_suffix / ... 通常是 list[str]
             if isinstance(v, (list, str, int, bool)):
                 clean_rule[key] = v
 
@@ -169,10 +181,6 @@ def build_ruleset_from_payload(data: Any) -> Dict[str, Any]:
     支持从类似：
       { "payload": ["DOMAIN-SUFFIX,github.com", "IP-CIDR,1.1.1.1/32,no-resolve", ...] }
     中提取规则，并构造 rule-set 源对象。
-
-    注意：
-    - 只取第二段为值（域名/IP/进程名），后面的 action/no-resolve 等忽略；
-    - 支持 IP-CIDR / IP-CIDR6；
     """
     if not isinstance(data, dict):
         return {"version": RULESET_VERSION, "rules": []}
@@ -200,14 +208,12 @@ def build_ruleset_from_payload(data: Any) -> Dict[str, Any]:
         if line.startswith("['") and line.endswith("']"):
             line = line.strip("[]'\"").strip()
 
-        # 允许出现多段：TYPE,VALUE,ACTION,no-resolve...
         parts = [p.strip() for p in line.split(",")]
         if len(parts) < 2:
             continue
 
         t = parts[0].upper()
         v = parts[1].strip()
-
         if not v:
             continue
 
@@ -256,20 +262,38 @@ def write_temp_ruleset_json(base_name: str, ruleset_obj: Dict[str, Any]) -> str:
     return temp_path
 
 
-# ================== 调用 sing-box 编译 SRS ==================
+# ================== 调用 sing-box 编译 SRS（严格模式 + 原子写入） ==================
 
-def compile_to_srs(json_path: str, base_name: str) -> bool:
+def compile_to_srs_strict(json_path: str, base_name: str, has_rules: bool) -> bool:
+    """
+    严格模式编译：
+    - 输出写到 *.srs.tmp
+    - 成功且非空时，用 os.replace 原子替换 *.srs
+    - 失败/超时/空文件时，删除 tmp，并在 STRICT_MODE 下删除旧 *.srs
+    """
     output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
-    cmd = [SINGBOX_BIN, "rule-set", "compile", "--output", output_srs, json_path]
+    tmp_srs = output_srs + ".tmp"
+
+    safe_unlink(tmp_srs)
+
+    cmd = [SINGBOX_BIN, "rule-set", "compile", "--output", tmp_srs, json_path]
     log(f"    ▶ Run: {' '.join(cmd)}")
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
         log("    ❌ 命令超时")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
         return False
     except Exception as e:
         log(f"    ❌ 调用 sing-box 出错: {e}")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
         return False
 
     if result.stdout.strip():
@@ -279,17 +303,48 @@ def compile_to_srs(json_path: str, base_name: str) -> bool:
 
     if result.returncode != 0:
         log(f"    ❌ sing-box 退出码: {result.returncode}")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
         return False
 
-    if not os.path.exists(output_srs):
-        log("    ❌ SRS 文件未生成")
+    if not os.path.exists(tmp_srs):
+        log("    ❌ 临时 SRS 文件未生成")
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
         return False
 
-    size = os.path.getsize(output_srs)
-    log(f"    ✅ SRS 生成成功: {output_srs} ({size} 字节)")
-    if size == 0:
-        log("    ⚠️ SRS 文件大小为 0，请检查上面的 stderr 输出")
-    return size > 0
+    size = os.path.getsize(tmp_srs)
+    log(f"    ✅ 临时 SRS 生成成功: {tmp_srs} ({size} 字节)")
+
+    # 如果没有规则或生成的是空文件，当失败处理
+    if (not has_rules) or size == 0:
+        if not has_rules:
+            log("    ⚠️ 无规则可编译，视为空产物")
+        else:
+            log("    ⚠️ SRS 文件大小为 0，视为失败")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
+        return False
+
+    # 原子替换正式文件
+    try:
+        os.replace(tmp_srs, output_srs)
+    except Exception as e:
+        log(f"    ❌ 替换正式 SRS 失败: {e}")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(output_srs)
+        return False
+
+    final_size = os.path.getsize(output_srs)
+    log(f"    ✅ SRS 更新成功: {output_srs} ({final_size} 字节)")
+    return True
 
 
 # ================== 主流程 ==================
@@ -309,6 +364,8 @@ def main() -> None:
         return
 
     log(f"🔧 工作目录: {SBOX_DIR}")
+    log(f"🔧 RULESET_VERSION = {RULESET_VERSION}")
+    log(f"🔧 STRICT_MODE = {STRICT_MODE}")
     log(f"🔧 发现 {len(json_files)} 个 JSON 文件")
 
     success, fail = 0, 0
@@ -316,24 +373,29 @@ def main() -> None:
     for json_file in sorted(json_files):
         full_path = os.path.join(SBOX_DIR, json_file)
         base_name = os.path.splitext(json_file)[0]
+        output_srs = os.path.join(SBOX_DIR, f"{base_name}.srs")
+
         log(f"\n🔍 处理: {json_file}")
 
         data = load_json(full_path)
         if data is None:
             fail += 1
+            # 严格模式：源解析失败也不要留旧 SRS
+            if STRICT_MODE:
+                log("  🧹 STRICT: JSON 解析失败 -> 删除旧 SRS")
+                safe_unlink(output_srs)
             continue
 
         # ===== 决定用哪种方式构造 rule-set =====
         if is_ruleset_json(data):
             rs_obj = normalize_ruleset(data)
             if rs_obj["rules"]:
-                # 自检：统计 ip_cidr 条目数
                 ip_cnt = 0
                 for r in rs_obj.get("rules", []):
                     ip_cnt += len(r.get("ip_cidr", [])) if isinstance(r.get("ip_cidr"), list) else 0
                 log(f"  ✅ 识别为 rule-set JSON，已提取有效字段（ip_cidr 条目数: {ip_cnt}）")
             else:
-                log("  ⚠️ 识别为 rule-set JSON，但没有提取到任何可用规则，将生成空 SRS 文件")
+                log("  ⚠️ 识别为 rule-set JSON，但没有提取到任何可用规则")
         else:
             rs_obj = build_ruleset_from_payload(data)
             if rs_obj["rules"]:
@@ -342,15 +404,25 @@ def main() -> None:
                     ip_cnt += len(r.get("ip_cidr", [])) if isinstance(r.get("ip_cidr"), list) else 0
                 log(f"  ✅ 从 payload 中提取并构造 rule-set JSON（ip_cidr 条目数: {ip_cnt}）")
             else:
-                log("  ⚠️ 不是 rule-set，且从 payload 中未提取到任何规则，将生成空 SRS 文件")
+                log("  ⚠️ 不是 rule-set，且从 payload 中未提取到任何规则")
+
+        has_rules = bool(rs_obj.get("rules"))
+
+        # ➜ 增删同步：如果这份 JSON 已经没有规则了，就删除对应 .srs 并跳过编译
+        if not has_rules:
+            log("  🧹 无规则 -> 删除对应 SRS（增删同步）")
+            safe_unlink(output_srs)
+            # 这里算成功还是失败随你，我这里当“成功同步”
+            success += 1
+            continue
 
         temp_json = write_temp_ruleset_json(base_name, rs_obj)
 
         try:
-            ok = compile_to_srs(temp_json, base_name)
+            ok = compile_to_srs_strict(temp_json, base_name, has_rules=True)
         finally:
             if temp_json and os.path.exists(temp_json):
-                os.remove(temp_json)
+                safe_unlink(temp_json)
 
         if ok:
             success += 1
