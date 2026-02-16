@@ -42,19 +42,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ---------- Download mihomo (for .mrs) ----------
+      #  Download mihomo (for .mrs) 
       - name: Download mihomo
         run: |
           set -eux
+
+          # 保险起见，先清一下
+          rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
+
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d mihomo.gz
+
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
             mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
           elif [ ! -f "mihomo" ]; then
             echo "Error: mihomo binary not found"
             exit 1
           fi
-          chmod +x mihomo
+
+          chmod +x ./mihomo
           ./mihomo -v
 
       # 下载 sing-box（用于 .srs + remote-mrs）
