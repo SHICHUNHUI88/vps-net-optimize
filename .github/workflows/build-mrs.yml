@@ -49,13 +49,17 @@ jobs:
         run: |
           set -eux
 
-          # 清理旧压缩包（在不在都忽略错误）
-          rm -f mihomo.gz || true
+          # 清理旧文件（跟 sing-box 那段一个意思）
+          rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-
-          # 关键：-f 强制覆盖已有的 mihomo 文件
           gzip -df mihomo.gz
+
+          # 有些包解出来就叫 mihomo，这时前面的 rm -f 保证不会撞名
+          # 如果实际解出来叫 mihomo-linux-amd64-v${MIHOMO_VERSION}，你可以再加一行判断：
+          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
+            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
+          fi
 
           chmod +x ./mihomo
           ./mihomo -v
