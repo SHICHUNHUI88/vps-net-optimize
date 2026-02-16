@@ -15,6 +15,11 @@ on:
       - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
 
+# ✅ 防止同一个分支并发跑两次互相抢推送
+concurrency:
+  group: build-rules-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   MIHOMO_VERSION: 1.19.10
   SINGBOX_VERSION: 1.11.0
@@ -77,18 +82,19 @@ jobs:
       # A) Mihomo: clash/*.yaml -> clash/*.mrs   （旧流程，保持）
       # =========================================================
       - name: Clean old MRS files (mihomo output in clash/)
-        run: rm -f ${SRC_DIR}/*.mrs
+        run: rm -f ${SRC_DIR}/*.mrs || true
 
       - name: Run extraction script (Mihomo -> MRS in clash/)
         run: python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
+          MIHOMO_BIN: ./mihomo
 
       # =========================================================
       # B) sing-box: singbox/*.json -> singbox/*.srs  （旧流程，保持）
       # =========================================================
       - name: Clean old SRS files (sing-box output in singbox/)
-        run: rm -f ${SBOX_DIR}/*.srs
+        run: rm -f ${SBOX_DIR}/*.srs || true
 
       - name: Run compilation script (Sing-box -> SRS in singbox/)
         run: python scripts/compile_srs.py
@@ -104,6 +110,7 @@ jobs:
         env:
           SINGBOX_BIN: ./sing-box
         run: |
+          set -eux
           python scripts/Diversion_Conversion.py
           echo "=== LIST remote-src ==="
           ls -la ${REMOTE_SRC_DIR} || true
@@ -111,21 +118,37 @@ jobs:
           ls -la ${REMOTE_MRS_DIR} || true
 
       # ---------- 提交变更（只提交对应目录，不互相污染） ----------
-      - name: Commit and push changes
+      - name: Commit and push changes (safe rebase + retry)
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 1) clash/ 里的 .mrs
-          git add ${SRC_DIR}/*.mrs || true
+          # 只 add 存在的文件/目录，避免 remote-src 不存在时 pathspec 报错
+          shopt -s nullglob
+          mrs_files=(${SRC_DIR}/*.mrs)
+          srs_files=(${SBOX_DIR}/*.srs)
+          shopt -u nullglob
 
-          # 2) singbox/ 里的 .srs
-          git add ${SBOX_DIR}/*.srs || true
+          if [ ${#mrs_files[@]} -gt 0 ]; then
+            git add "${mrs_files[@]}"
+          fi
 
-          # 3) 远程规则隔离产物（remote-mrs/ 必须提交；remote-src/ 可选提交）
-          git add ${REMOTE_MRS_DIR} || true
-          git add ${REMOTE_SRC_DIR} remote-rules.json || true
+          if [ ${#srs_files[@]} -gt 0 ]; then
+            git add "${srs_files[@]}"
+          fi
+
+          if [ -d "${REMOTE_MRS_DIR}" ]; then
+            git add "${REMOTE_MRS_DIR}"
+          fi
+
+          if [ -d "${REMOTE_SRC_DIR}" ]; then
+            git add "${REMOTE_SRC_DIR}"
+          fi
+
+          if [ -f "remote-rules.json" ]; then
+            git add "remote-rules.json"
+          fi
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
@@ -133,4 +156,27 @@ jobs:
           fi
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push
+
+          # ✅ 关键：push 前先 fetch+rebase 到远端最新，避免 rejected (fetch first)
+          BRANCH="${GITHUB_REF_NAME:-main}"
+
+          for i in 1 2 3 4 5; do
+            git fetch origin "${BRANCH}"
+
+            git rebase "origin/${BRANCH}" || {
+              git rebase --abort || true
+              echo "Rebase failed (possible conflict)."
+              exit 1
+            }
+
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Push success."
+              exit 0
+            fi
+
+            echo "Push rejected (race). Retry... attempt=$i"
+            sleep $((i*2))
+          done
+
+          echo "Failed to push after retries."
+          exit 1
