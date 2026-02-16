@@ -353,14 +353,6 @@ payload:
   - DOMAIN-SUFFIX,slyip.net
   - DOMAIN-SUFFIX,suroot.com
 
-  # === 📱三星服务 ===
-  - DOMAIN-SUFFIX,getui.com
-  - DOMAIN-SUFFIX,igexin.com
-  - PROCESS-NAME,com.sec.spp.push
-  - DOMAIN,report-v2.samsung.japps.cn
-  - DOMAIN-SUFFIX,samsung.japps.cn
-  - IP-CIDR,54.223.223.92/32,no-resolve
-
   # === IIJ 日本 CDN / 企业网络 IP ===
   - IP-CIDR,202.232.0.0/13,no-resolve
   - IP-CIDR,210.130.0.0/15,no-resolve
