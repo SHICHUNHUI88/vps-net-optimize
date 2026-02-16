@@ -15,16 +15,14 @@ on:
       - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
 
-# 防止同一分支并发跑两次互相抢推送
 concurrency:
   group: build-rules-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  MIHOMO_VERSION: 1.19.10
-  SINGBOX_VERSION: 1.11.0
+  MIHOMO_VERSION: "1.19.10"
+  SINGBOX_VERSION: "1.11.0"
 
-  # 输出目录
   SRC_DIR: clash
   SBOX_DIR: singbox
   REMOTE_SRC_DIR: remote-src
@@ -48,15 +46,14 @@ jobs:
       - name: Download mihomo
         run: |
           set -eux
-
-          # 清理旧文件（跟 sing-box 那段一个意思）
+          # 清理旧文件，避免解压冲突
           rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          # -f 强制覆盖同名文件
           gzip -df mihomo.gz
 
-          # 有些包解出来就叫 mihomo，这时前面的 rm -f 保证不会撞名
-          # 如果实际解出来叫 mihomo-linux-amd64-v${MIHOMO_VERSION}，你可以再加一行判断：
+          # 有些版本解压出来叫 mihomo-linux-amd64-vX.X.X
           if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
             mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           fi
@@ -68,8 +65,6 @@ jobs:
       - name: Download sing-box
         run: |
           set -eux
-
-          # 清理旧文件和目录
           rm -f sing-box sing-box.tar.gz || true
           rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" || true
 
@@ -117,12 +112,12 @@ jobs:
         run: |
           set -eux
           python scripts/Diversion_Conversion.py
-          echo "=== LIST remote-src ==="
+          echo "=== remote-src ==="
           ls -la "${REMOTE_SRC_DIR}" || true
-          echo "=== LIST remote-mrs ==="
+          echo "=== remote-mrs ==="
           ls -la "${REMOTE_MRS_DIR}" || true
 
-      # 提交并推送（带删除同步 + rebase 重试）
+      # 提交并推送（只提交规则相关文件）
       - name: Commit and push changes
         run: |
           set -eux
@@ -130,8 +125,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 全仓库暂存（新增/修改/删除）
-          git add -A
+          # 只暂存规则相关目录和 remote-rules.json，避免把 mihomo / sing-box 提交进仓库
+          if [ -d "${SRC_DIR}" ]; then
+            git add -A "${SRC_DIR}"
+          fi
+
+          if [ -d "${SBOX_DIR}" ]; then
+            git add -A "${SBOX_DIR}"
+          fi
+
+          if [ -d "${REMOTE_MRS_DIR}" ]; then
+            git add -A "${REMOTE_MRS_DIR}"
+          fi
+
+          if [ -d "${REMOTE_SRC_DIR}" ]; then
+            git add -A "${REMOTE_SRC_DIR}"
+          fi
+
+          if [ -f "remote-rules.json" ]; then
+            git add remote-rules.json
+          fi
 
           # 没有变化直接退出
           if git diff --cached --quiet; then
@@ -141,25 +154,19 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
+          # 保证工作区干净再 rebase/push，避免 unstaged 报错
+          git reset --hard HEAD
+
           BRANCH="${GITHUB_REF_NAME:-main}"
 
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
 
-            # 自动 stash 再 rebase，避免 unstaged 报错
-            git rebase --autostash "origin/${BRANCH}" || {
+            git rebase "origin/${BRANCH}" || {
               git rebase --abort || true
               echo "Rebase failed (possible conflict)."
               exit 1
             }
-
-            # rebase 后如有新改动再补一次提交
-            if ! git diff --quiet || ! git diff --cached --quiet; then
-              git add -A
-              if ! git diff --cached --quiet; then
-                git commit -m "build: post-rebase sync $(date -u +'%Y-%m-%d %H:%M UTC')" || true
-              fi
-            fi
 
             if git push origin "HEAD:${BRANCH}"; then
               echo "Push success."
