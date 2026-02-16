@@ -15,7 +15,7 @@ on:
       - ".github/workflows/build-mrs.yml"
   workflow_dispatch: {}
 
-# ✅ 防止同一个分支并发跑两次互相抢推送
+# ✅ 防止同一分支并发跑两次互相抢推送
 concurrency:
   group: build-rules-${{ github.ref }}
   cancel-in-progress: false
@@ -79,7 +79,7 @@ jobs:
         run: pip install pyyaml
 
       # =========================================================
-      # A) Mihomo: clash/*.yaml -> clash/*.mrs   （旧流程，保持）
+      # A) Mihomo: clash/*.yaml -> clash/*_domain.mrs & *_ip.mrs
       # =========================================================
       - name: Clean old MRS files (mihomo output in clash/)
         run: rm -f ${SRC_DIR}/*.mrs || true
@@ -91,7 +91,7 @@ jobs:
           MIHOMO_BIN: ./mihomo
 
       # =========================================================
-      # B) sing-box: singbox/*.json -> singbox/*.srs  （旧流程，保持）
+      # B) sing-box: singbox/*.json -> singbox/*.srs
       # =========================================================
       - name: Clean old SRS files (sing-box output in singbox/)
         run: rm -f ${SBOX_DIR}/*.srs || true
@@ -104,7 +104,7 @@ jobs:
           RULESET_VERSION: "3"
 
       # =========================================================
-      # C) Remote rules: remote-rules.json -> remote-mrs/*.mrs  （新流程，隔离）
+      # C) Remote rules: remote-rules.json -> remote-mrs/*.mrs
       # =========================================================
       - name: Build Remote MRS (isolated in remote-mrs/)
         env:
@@ -117,33 +117,30 @@ jobs:
           echo "=== LIST remote-mrs ==="
           ls -la ${REMOTE_MRS_DIR} || true
 
-      # ---------- 提交变更（只提交对应目录，不互相污染） ----------
-      - name: Commit and push changes (safe rebase + retry)
+      # =========================================================
+      # Commit & Push (包含“删除同步” + rebase 重试)
+      # =========================================================
+      - name: Commit and push changes (add deletions + safe rebase + retry)
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 只 add 存在的文件/目录，避免 remote-src 不存在时 pathspec 报错
-          shopt -s nullglob
-          mrs_files=(${SRC_DIR}/*.mrs)
-          srs_files=(${SBOX_DIR}/*.srs)
-          shopt -u nullglob
-
-          if [ ${#mrs_files[@]} -gt 0 ]; then
-            git add "${mrs_files[@]}"
+          # ✅ 关键：用 -A 提交新增/修改/删除（解决你 cn_dns_cdn_ip.mrs 删不掉的问题）
+          if [ -d "${SRC_DIR}" ]; then
+            git add -A "${SRC_DIR}"
           fi
 
-          if [ ${#srs_files[@]} -gt 0 ]; then
-            git add "${srs_files[@]}"
+          if [ -d "${SBOX_DIR}" ]; then
+            git add -A "${SBOX_DIR}"
           fi
 
           if [ -d "${REMOTE_MRS_DIR}" ]; then
-            git add "${REMOTE_MRS_DIR}"
+            git add -A "${REMOTE_MRS_DIR}"
           fi
 
           if [ -d "${REMOTE_SRC_DIR}" ]; then
-            git add "${REMOTE_SRC_DIR}"
+            git add -A "${REMOTE_SRC_DIR}"
           fi
 
           if [ -f "remote-rules.json" ]; then
@@ -157,7 +154,7 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # ✅ 关键：push 前先 fetch+rebase 到远端最新，避免 rejected (fetch first)
+          # ✅ 关键：push 前先 fetch+rebase，避免 rejected (fetch first)
           BRANCH="${GITHUB_REF_NAME:-main}"
 
           for i in 1 2 3 4 5; do
