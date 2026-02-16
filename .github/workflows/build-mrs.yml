@@ -49,23 +49,14 @@ jobs:
         run: |
           set -eux
 
-          # 清理旧文件
-          rm -f mihomo "mihomo-linux-amd64-v${MIHOMO_VERSION}" "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz" || true
+          # 清理旧压缩包（在不在都忽略错误）
+          rm -f mihomo.gz || true
 
-          # 保持原始文件名，和 sing-box 写法类似
-          wget "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
 
-          # 解压，-f 强制覆盖
-          gzip -df "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          # 关键：-f 强制覆盖已有的 mihomo 文件
+          gzip -df mihomo.gz
 
-          # 确认解压后文件存在
-          if [ ! -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            echo "Error: mihomo binary not found"
-            exit 1
-          fi
-
-          # 和 sing-box 一样，mv 到最终文件名
-          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           chmod +x ./mihomo
           ./mihomo -v
 
