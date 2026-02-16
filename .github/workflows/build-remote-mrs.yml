@@ -1,14 +1,14 @@
 name: Build Remote Rules (MRS+SRS)
 
 on:
-  # 手动触发：你点 Run workflow 一定会跑
+  # 手动触发
   workflow_dispatch: {}
 
   # 定时触发：每天北京时间 12:10（UTC 04:10）
   schedule:
     - cron: "10 4 * * *"
 
-  # 推送触发：不做 paths 限制，避免“没反应”
+  # 推送触发
   push:
     branches: [ "main", "master" ]
 
@@ -22,12 +22,15 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # 拉代码
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Python 环境
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -38,11 +41,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
 
-      # ---------- Download sing-box (for .srs) ----------
+      # 清理旧的远程规则产物（保证增删同步）
+      - name: Clean old remote outputs
+        run: |
+          set -eux
+          rm -f remote-mrs/*.mrs || true
+          rm -f remote-srs/*.srs || true
+          rm -rf remote-tmp/* || true
+
+      # 下载 sing-box（用于 .srs）
       - name: Download sing-box
         run: |
           set -eux
-          # 先清理一下旧文件
           rm -f sing-box sing-box.tar.gz || true
           rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" || true
 
@@ -53,11 +63,10 @@ jobs:
           ./sing-box version
           rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" sing-box.tar.gz
 
-      # ---------- Download mihomo (for .mrs) ----------
+      # 下载 mihomo（用于 .mrs）
       - name: Download mihomo
         run: |
           set -eux
-          # 先清理旧文件，防止下次改配置又撞名
           rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
@@ -70,16 +79,16 @@ jobs:
           chmod +x ./mihomo
           ./mihomo -v
 
-      # ---------- Sanity check ----------
+      # 基本检查
       - name: Precheck
         run: |
           set -eux
           test -f remote-rules.json
           test -f scripts/Diversion_Conversion.py
-          echo "=== remote-rules.json ==="
+          echo "remote-rules.json:"
           cat remote-rules.json
 
-      # ---------- Build remote outputs (MRS+SRS) ----------
+      # 生成远程规则（MRS+SRS）
       - name: Build remote MRS+SRS
         env:
           SINGBOX_BIN: ./sing-box
@@ -88,18 +97,18 @@ jobs:
           set -eux
           python scripts/Diversion_Conversion.py
 
-      # ---------- List outputs ----------
+      # 列出结果目录
       - name: List outputs
         run: |
           set -eux
-          echo "=== remote-mrs ==="
+          echo "remote-mrs:"
           ls -la remote-mrs || true
-          echo "=== remote-srs ==="
+          echo "remote-srs:"
           ls -la remote-srs || true
-          echo "=== remote-tmp ==="
+          echo "remote-tmp:"
           ls -la remote-tmp || true
 
-      # ---------- Commit & Push ----------
+      # 提交并推送
       - name: Commit and push changes
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -111,11 +120,10 @@ jobs:
 
           echo "Default branch: $DEFAULT_BRANCH"
 
-          # 先跟远端同步一次，确保基线是干净的
           git fetch origin
           git pull --rebase origin "$DEFAULT_BRANCH" || true
 
-          # ✅ 用 -A 提交新增 / 修改 / 删除（关键：删除的 .mrs/.srs 也要带上）
+          # 只提交远程规则相关文件
           if [ -d remote-mrs ]; then
             git add -A remote-mrs
           fi
@@ -124,14 +132,11 @@ jobs:
             git add -A remote-srs
           fi
 
-          # remote-tmp 是临时文件夹，不建议入库，所以不 add
-          # 如果你就是想把 tmp 也提交，那改成：git add -A remote-tmp
-
           if [ -f remote-rules.json ]; then
             git add remote-rules.json
           fi
 
-          echo "=== git status (after add) ==="
+          echo "git status (after add):"
           git status --porcelain || true
 
           if git diff --cached --quiet; then
@@ -141,13 +146,15 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # 推送失败时做 3 次重试（每次先拉取 + rebase 一下）
           for i in 1 2 3; do
             if git push origin "HEAD:$DEFAULT_BRANCH"; then
               echo "Push success on attempt $i"
-              break
+              exit 0
             fi
             echo "Push failed on attempt $i, pulling and rebasing..."
             git fetch origin
             git pull --rebase origin "$DEFAULT_BRANCH" || true
           done
+
+          echo "Failed to push after retries."
+          exit 1
