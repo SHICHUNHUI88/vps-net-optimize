@@ -117,36 +117,18 @@ jobs:
           echo "=== LIST remote-mrs ==="
           ls -la ${REMOTE_MRS_DIR} || true
 
-      # =========================================================
-      # Commit & Push (包含“删除同步” + rebase 重试)
-      # =========================================================
-      - name: Commit and push changes (add deletions + safe rebase + retry)
+      
+      # Commit & Push (包含“删除同步” + rebase 重试) 
+      - name: Commit and push changes (full add + autostash rebase + retry)
         run: |
           set -eux
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # ✅ 关键：用 -A 提交新增/修改/删除（解决你 cn_dns_cdn_ip.mrs 删不掉的问题）
-          if [ -d "${SRC_DIR}" ]; then
-            git add -A "${SRC_DIR}"
-          fi
+          # ✅ 关键：全仓库暂存（新增/修改/删除全部包含，避免漏网导致 rebase 报 unstaged）
+          git add -A
 
-          if [ -d "${SBOX_DIR}" ]; then
-            git add -A "${SBOX_DIR}"
-          fi
-
-          if [ -d "${REMOTE_MRS_DIR}" ]; then
-            git add -A "${REMOTE_MRS_DIR}"
-          fi
-
-          if [ -d "${REMOTE_SRC_DIR}" ]; then
-            git add -A "${REMOTE_SRC_DIR}"
-          fi
-
-          if [ -f "remote-rules.json" ]; then
-            git add "remote-rules.json"
-          fi
-
+          # 没有任何变化就退出
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
@@ -154,17 +136,27 @@ jobs:
 
           git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
 
-          # ✅ 关键：push 前先 fetch+rebase，避免 rejected (fetch first)
+          # ✅ push 前先 fetch+rebase（自动 stash），避免 rejected / unstaged changes
           BRANCH="${GITHUB_REF_NAME:-main}"
 
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
 
-            git rebase "origin/${BRANCH}" || {
+            # ✅ autostash：就算此刻工作区又脏了，也能自动 stash -> rebase -> pop
+            git rebase --autostash "origin/${BRANCH}" || {
               git rebase --abort || true
               echo "Rebase failed (possible conflict)."
               exit 1
             }
+
+            # 极少数情况：rebase 后又产生新改动（比如脚本写时间戳/缓存）
+            # 这里再统一补一刀，确保 push 前工作区干净
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              git add -A
+              if ! git diff --cached --quiet; then
+                git commit -m "build: post-rebase sync $(date -u +'%Y-%m-%d %H:%M UTC')" || true
+              fi
+            fi
 
             if git push origin "HEAD:${BRANCH}"; then
               echo "Push success."
