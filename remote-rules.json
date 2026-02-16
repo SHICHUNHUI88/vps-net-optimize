@@ -15,5 +15,5 @@
   {"name":"Loy-private","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt","format":"domain-text"},
   {"name":"Loy-applications","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt","format":"domain-text"},
 
-{"name":"shi-Alibaba","url":"https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/clash/Alibaba.yaml","format":"clash"},
+{"name":"shi-Alibaba","url":"https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/clash/Alibaba.yaml","format":"clash"}
 ]
