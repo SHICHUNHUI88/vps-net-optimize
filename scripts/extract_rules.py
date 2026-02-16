@@ -7,11 +7,20 @@ import subprocess
 
 # 从环境变量读取，默认 clash
 SRC_DIR = os.getenv("SRC_DIR", "clash")
-MIHOMO_BIN = "./mihomo"
+MIHOMO_BIN = os.getenv("MIHOMO_BIN", "./mihomo")
 
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+def safe_unlink(path: str) -> None:
+    """删除文件（不存在就忽略）"""
+    try:
+        if path and os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        log(f"    ⚠️ Failed to delete {path}: {e}")
 
 
 def extract_rules_from_payload(payload):
@@ -38,41 +47,43 @@ def extract_rules_from_payload(payload):
         stripped = line.lstrip()
 
         # ---------- 域名规则 ----------
+        # DOMAIN / DOMAIN-SUFFIX / DOMAIN-KEYWORD / DOMAIN-WILDCARD 等都收集 value
+        # 但排除 DOMAIN-REGEX（regex 不适合丢给 behavior=domain）
         if stripped.startswith("DOMAIN") and not stripped.startswith("DOMAIN-REGEX"):
-            # 例如：DOMAIN-SUFFIX,google.com,no-resolve
             parts = [p.strip() for p in line.split(",") if p.strip()]
             if len(parts) >= 2:
-                # type = parts[0]  # DOMAIN / DOMAIN-SUFFIX / ...
                 value = parts[1]
-                # 直接收集域名字符串，交给 mihomo 去做行为判断
                 domains.add(value)
             continue
 
         # ---------- IP 规则 ----------
+        # IP-CIDR / IP-CIDR6 都收集
         if stripped.startswith("IP-CIDR"):
-            # 例如：IP-CIDR,1.1.1.0/24,no-resolve
             parts = [p.strip() for p in line.split(",") if p.strip()]
             if len(parts) >= 2:
                 cidr = parts[1]
                 try:
-                    # 校验一下是不是合法网段
                     ipaddress.ip_network(cidr, strict=False)
                     cidrs.add(cidr)
                 except ValueError:
-                    # 非法就丢掉
                     pass
             continue
 
-    # 排好序返回
     return sorted(domains), sorted(cidrs)
 
 
-def convert_with_mihomo(behavior: str, src_yaml: str, dst_mrs: str) -> bool:
+def convert_with_mihomo_atomic(behavior: str, src_yaml: str, dst_mrs: str) -> bool:
     """
-    调用 mihomo convert-ruleset 进行转换。
-    behavior: "domain" / "ipcidr"
+    调用 mihomo convert-ruleset 进行转换（原子写入）：
+    - 先输出到 dst_mrs.tmp
+    - 成功后 replace 覆盖 dst_mrs
     """
-    cmd = [MIHOMO_BIN, "convert-ruleset", behavior, "yaml", src_yaml, dst_mrs]
+    tmp_out = dst_mrs + ".tmp"
+
+    # 每次都先清理旧 tmp，避免脏文件影响判断
+    safe_unlink(tmp_out)
+
+    cmd = [MIHOMO_BIN, "convert-ruleset", behavior, "yaml", src_yaml, tmp_out]
     log(f"    ▶ Run: {' '.join(cmd)}")
     result = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -83,17 +94,42 @@ def convert_with_mihomo(behavior: str, src_yaml: str, dst_mrs: str) -> bool:
 
     if result.returncode != 0:
         log(f"    ❌ mihomo exit code: {result.returncode}")
+        safe_unlink(tmp_out)
         return False
 
-    if not os.path.exists(dst_mrs):
-        log("    ❌ MRS file not created")
+    if not os.path.exists(tmp_out):
+        log("    ❌ tmp MRS file not created")
         return False
 
-    size = os.path.getsize(dst_mrs)
-    log(f"    ✅ MRS generated: {dst_mrs} ({size} bytes)")
+    size = os.path.getsize(tmp_out)
+    log(f"    ✅ tmp MRS generated: {tmp_out} ({size} bytes)")
+
+    # 如果产物为空：视为无效，删掉 tmp，并且删掉正式文件（增删同步）
     if size == 0:
-        log("    ⚠️  MRS file is empty!")
-    return size > 0
+        log("    ⚠️  tmp MRS is empty -> delete output for sync")
+        safe_unlink(tmp_out)
+        safe_unlink(dst_mrs)
+        return False
+
+    # 原子替换：成功后再覆盖正式文件
+    try:
+        os.replace(tmp_out, dst_mrs)
+    except Exception as e:
+        log(f"    ❌ Failed to replace {dst_mrs}: {e}")
+        safe_unlink(tmp_out)
+        return False
+
+    final_size = os.path.getsize(dst_mrs)
+    log(f"    ✅ MRS updated: {dst_mrs} ({final_size} bytes)")
+    return True
+
+
+def write_temp_payload_yaml(temp_path: str, items) -> None:
+    """写一个 payload: 列表给 mihomo 用（纯值列表）"""
+    with open(temp_path, "w", encoding="utf-8") as f:
+        f.write("payload:\n")
+        for it in items:
+            f.write(f"  - {it}\n")
 
 
 def process_yaml_file(yaml_path: str, base_name: str) -> None:
@@ -115,47 +151,47 @@ def process_yaml_file(yaml_path: str, base_name: str) -> None:
 
     log(f"  Found {len(domains)} domain entries, {len(cidrs)} IP CIDR entries")
 
+    # 输出文件（固定命名）
+    out_domain = os.path.join(SRC_DIR, f"{base_name}_domain.mrs")
+    out_ip = os.path.join(SRC_DIR, f"{base_name}_ip.mrs")
+
     # ---------- 域名规则 -> _domain.mrs ----------
     if domains:
         temp_domain = os.path.join(SRC_DIR, f"temp_domain_{base_name}.yaml")
-        out_domain = os.path.join(SRC_DIR, f"{base_name}_domain.mrs")
-
         try:
-            with open(temp_domain, "w", encoding="utf-8") as f:
-                f.write("payload:\n")
-                for d in domains:
-                    # 这里直接写纯域名字符串
-                    f.write(f"  - {d}\n")
+            write_temp_payload_yaml(temp_domain, domains)
             log(f"  🚀 Converting domain rules ({len(domains)}) ...")
-            ok = convert_with_mihomo("domain", temp_domain, out_domain)
+            ok = convert_with_mihomo_atomic("domain", temp_domain, out_domain)
             if not ok:
-                log("  ❌ Domain rules conversion failed")
+                log("  ❌ Domain rules conversion failed (old output NOT used)")
         finally:
-            if os.path.exists(temp_domain):
-                os.remove(temp_domain)
+            safe_unlink(temp_domain)
     else:
-        log("  ℹ️ No domain rules, skip domain.mrs")
+        # 增删同步：如果源里已经没有域名规则了，就删掉对应产物
+        if os.path.exists(out_domain):
+            log("  🧹 No domain rules -> delete *_domain.mrs for sync")
+            safe_unlink(out_domain)
+        else:
+            log("  ℹ️ No domain rules, skip domain.mrs")
 
     # ---------- IP 规则 -> _ip.mrs ----------
     if cidrs:
         temp_ip = os.path.join(SRC_DIR, f"temp_ip_{base_name}.yaml")
-        out_ip = os.path.join(SRC_DIR, f"{base_name}_ip.mrs")
-
         try:
-            with open(temp_ip, "w", encoding="utf-8") as f:
-                f.write("payload:\n")
-                for c in cidrs:
-                    # 只写纯 CIDR，例如 1.1.1.0/24
-                    f.write(f"  - {c}\n")
+            write_temp_payload_yaml(temp_ip, cidrs)
             log(f"  🚀 Converting IP rules ({len(cidrs)}) ...")
-            ok = convert_with_mihomo("ipcidr", temp_ip, out_ip)
+            ok = convert_with_mihomo_atomic("ipcidr", temp_ip, out_ip)
             if not ok:
-                log("  ❌ IP rules conversion failed")
+                log("  ❌ IP rules conversion failed (old output NOT used)")
         finally:
-            if os.path.exists(temp_ip):
-                os.remove(temp_ip)
+            safe_unlink(temp_ip)
     else:
-        log("  ℹ️ No IP rules, skip _ip.mrs")
+        # 增删同步：如果源里已经没有 IP 规则了，就删掉对应产物
+        if os.path.exists(out_ip):
+            log("  🧹 No IP rules -> delete *_ip.mrs for sync")
+            safe_unlink(out_ip)
+        else:
+            log("  ℹ️ No IP rules, skip _ip.mrs")
 
 
 def main():
@@ -173,6 +209,7 @@ def main():
         return
 
     log(f"🔧 Using SRC_DIR = {SRC_DIR}")
+    log(f"🔧 MIHOMO_BIN = {MIHOMO_BIN}")
     log(f"🔧 Found {len(yaml_files)} yaml files")
 
     for yaml_file in sorted(yaml_files):
