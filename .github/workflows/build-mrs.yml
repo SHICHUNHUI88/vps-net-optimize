@@ -49,22 +49,17 @@ jobs:
         run: |
           set -eux
 
-          # 清理旧的 mihomo 相关文件
-          rm -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz" mihomo || true
+          # 不管之前有没有，先删掉同名文件，避免撞名
+          rm -f mihomo mihomo.gz "mihomo-linux-amd64-v${MIHOMO_VERSION}" || true
 
-          # 保持原始文件名，便于后面 mv
-          wget "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          gzip -df mihomo.gz
 
-          # 解压，-f 强制覆盖同名文件
-          gzip -df "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-
-          # 理论上这里一定会有这个文件
-          if [ ! -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            echo "Error: mihomo binary not found"
-            exit 1
+          # 这里其实解压出来的就是 mihomo，不会叫 mihomo-linux-xxx
+          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
+            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           fi
 
-          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" ./mihomo
           chmod +x ./mihomo
           ./mihomo -v
 
