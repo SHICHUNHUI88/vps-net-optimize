@@ -406,6 +406,36 @@ payload:
   - DOMAIN-KEYWORD,gongan
   - DOMAIN-KEYWORD,mps
 
+  # 💿 夸克进程名（Android / TV / PC）
+  - PROCESS-NAME,com.quark.browser
+  - PROCESS-NAME,com.quark.clouddrive
+  - PROCESS-NAME,com.quark.scanking
+  - PROCESS-NAME,com.quark.yun.tv
+  - PROCESS-NAME,com.quark.aisearch
+  - PROCESS-NAME,QuarkCloudDrive.exe
+  - PROCESS-NAME,ChromeHost.exe
+  # 主站 / 网盘 / AI / 文档 / 扫描王 等域名 
+  - DOMAIN-SUFFIX,quark.cn
+  - DOMAIN-SUFFIX,myquark.cn
+  - DOMAIN,pan.quark.cn
+  - DOMAIN,ai.quark.cn
+  - DOMAIN,b.quark.cn
+  - DOMAIN,doc.quark.cn
+  - DOMAIN,image.quark.cn
+  # 关键字匹配（兜底用，小心误伤其它 “quark” 站点）
+  - DOMAIN-KEYWORD,quark
+  - DOMAIN-KEYWORD,myquark
+  - DOMAIN-KEYWORD,quarkcloud
+  - DOMAIN-KEYWORD,quarkpan
+  # ===== 正则兜底（夸克系域名）=====
+  - DOMAIN-REGEX,(?i)(^|\\.)quark\\.cn$
+  - DOMAIN-REGEX,(?i)(^|\\.)myquark\\.cn$
+  - DOMAIN-REGEX,(?i)(^|\\.)pan\\.quark\\.cn$
+  - DOMAIN-REGEX,(?i)(^|\\.)doc\\.quark\\.cn$
+  - DOMAIN-REGEX,(?i)(^|\\.)image\\.quark\\.cn$
+  # ===== ASN（后端基本都在阿里系 ASN 上）=====
+  - IP-ASN,37963
+
   # ==== 阿里 / 淘宝 IP 段（保留 no-resolve）====
   - IP-CIDR,39.97.204.0/22,no-resolve
   - IP-CIDR,39.97.204.0/23,no-resolve
