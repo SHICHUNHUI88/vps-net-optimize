@@ -48,35 +48,31 @@ jobs:
       - name: Download mihomo
         run: |
           set -eux
-          wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          gzip -d mihomo.gz
-          if [ -f "mihomo-linux-amd64-v${MIHOMO_VERSION}" ]; then
-            mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
-          elif [ ! -f "mihomo" ]; then
-            echo "Error: mihomo binary not found"
-            exit 1
-          fi
-          chmod +x mihomo
+
+          # 清理旧的 mihomo 和压缩包
+          rm -f mihomo "mihomo-linux-amd64-v${MIHOMO_VERSION}" "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz" || true
+
+          wget "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          gzip -d "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+          chmod +x ./mihomo
           ./mihomo -v
 
       # ---------- 下载 sing-box（用于 .srs + remote-mrs） ----------
       - name: Download sing-box
         run: |
           set -eux
+
+          # 清理旧的 sing-box 和目录/压缩包
+          rm -f sing-box sing-box.tar.gz || true
+          rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" || true
+
           wget -O sing-box.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf sing-box.tar.gz
-          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box ./sing-box
+          mv "sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box" ./sing-box
           chmod +x ./sing-box
           ./sing-box version
-          rm -rf sing-box-${SINGBOX_VERSION}-linux-amd64 sing-box.tar.gz
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install PyYAML
-        run: pip install pyyaml
+          rm -rf "sing-box-${SINGBOX_VERSION}-linux-amd64" sing-box.tar.gz
 
       # =========================================================
       # A) Mihomo: clash/*.yaml -> clash/*_domain.mrs & *_ip.mrs
