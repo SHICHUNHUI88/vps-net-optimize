@@ -25,9 +25,21 @@ REMOTE_MRS = ROOT / "remote-mrs"
 SINGBOX_BIN = os.getenv("SINGBOX_BIN", "./sing-box")
 MIHOMO_BIN = os.getenv("MIHOMO_BIN", "./mihomo")
 
+# 严格模式：只要本次构建失败/无规则，就删除旧产物，避免“假更新”
+STRICT_MODE = True
+
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+def safe_unlink(path: Path) -> None:
+    """安全删除文件（不存在就忽略）。"""
+    try:
+        if path.exists():
+            path.unlink()
+    except Exception as e:
+        log(f"    ⚠️ 删除失败: {path} -> {e}")
 
 
 def http_get(url: str) -> str:
@@ -214,7 +226,7 @@ def parse_rule_lines_from_clash_like(raw_text: str) -> list:
                 s = str(x).strip()
                 if not s or s.startswith("#"):
                     continue
-                out.append(s.lstrip("-").strip())
+                out.append(str(s).lstrip("-").strip())
             return out
         return []
 
@@ -224,7 +236,7 @@ def parse_rule_lines_from_clash_like(raw_text: str) -> list:
             s = str(x).strip()
             if not s or s.startswith("#"):
                 continue
-            out.append(s.lstrip("-").strip())
+            out.append(str(s).lstrip("-").strip())
         return out
 
     out = []
@@ -306,11 +318,6 @@ def parse_domain_list(raw_text: str) -> list:
     """
     解析 Loy 那种一行一个域名 / .域名 的 txt 列表，
     也兼容 "DOMAIN,xxx" / "DOMAIN-SUFFIX,xxx" 这种写法。
-
-    这里严格一点，只保留“像域名”的内容：
-      - 必须包含至少一个 '.'
-      - 不能有空格、不能有 '/'
-      - 排除 YAML 字段名（例如 payload:）
     """
     out = []
     for line in (raw_text or "").splitlines():
@@ -330,15 +337,13 @@ def parse_domain_list(raw_text: str) -> list:
             else:
                 continue
 
-        # 必须像域名：至少有一个点，避免把 payload: 之类字段名当成域名
+        # 必须像域名：至少有一个点
         if "." not in s:
             continue
 
-        # 有空格或者斜杠基本就不是单纯域名了，丢掉
         if " " in s or "/" in s:
             continue
 
-        # 像 "payload:" 这种带冒号的也不要
         if ":" in s:
             continue
 
@@ -361,7 +366,6 @@ def parse_cidr_list(raw_text: str):
         if not s:
             continue
 
-        # 兼容 TYPE,VALUE
         if looks_like_clash_rule_line(s):
             t, v = [x.strip() for x in strip_action(s).split(",", 1)]
             if t.upper() in ("IP-CIDR", "IP-CIDR6"):
@@ -400,7 +404,6 @@ def build_singbox_source_json(b: dict) -> dict:
     if b.get("domain_regex"):
         rule["domain_regex"] = sorted(b["domain_regex"])
 
-    # 合并 IPv4+IPv6 到 ip_cidr，避免 ip_cidr6 把 sing-box 弄崩
     ip_cidr_merged = set(b.get("ip_cidr") or [])
     ip_cidr_merged.update(b.get("ip_cidr6") or [])
     if ip_cidr_merged:
@@ -427,67 +430,230 @@ def write_mihomo_payload_yaml(lines: list, path: Path) -> None:
             f.write(f"  - {x}\n")
 
 
-def convert_with_mihomo(behavior: str, src_yaml: Path, dst_mrs: Path) -> None:
+def output_paths_for_name(name: str):
+    """给定 name，返回该 name 对应的 SRS 与 MRS 路径。"""
+    srs_path = REMOTE_SRS / f"{name}.srs"
+    domain_mrs = REMOTE_MRS / f"{name}_domain.mrs"
+    ip_mrs = REMOTE_MRS / f"{name}_ipcidr.mrs"
+    return srs_path, domain_mrs, ip_mrs
+
+
+def cleanup_outputs_for_name(name: str) -> None:
+    """严格增删同步：删除一个 name 对应的所有产物。"""
+    srs_path, domain_mrs, ip_mrs = output_paths_for_name(name)
+    safe_unlink(srs_path)
+    safe_unlink(domain_mrs)
+    safe_unlink(ip_mrs)
+
+
+def cleanup_orphan_outputs(valid_names) -> None:
     """
-    mihomo convert-ruleset <behavior> yaml <src_yaml> <dst_mrs>
-      behavior: domain / ipcidr
+    manifest 删除的 name 对应的 SRS/MRS 也要同步删除。
     """
+    valid_names = set(valid_names)
+
+    # remote-srs/*.srs
+    if REMOTE_SRS.exists():
+        for p in REMOTE_SRS.glob("*.srs"):
+            name = p.stem
+            if name not in valid_names:
+                log(f"🧹 STRICT: 删除孤儿 SRS: {p}")
+                safe_unlink(p)
+
+    # remote-mrs/*_domain.mrs / *_ipcidr.mrs
+    if REMOTE_MRS.exists():
+        for p in REMOTE_MRS.glob("*.mrs"):
+            fname = p.name
+            base = None
+            if fname.endswith("_domain.mrs"):
+                base = fname[: -len("_domain.mrs")]
+            elif fname.endswith("_ipcidr.mrs"):
+                base = fname[: -len("_ipcidr.mrs")]
+            if base and base not in valid_names:
+                log(f"🧹 STRICT: 删除孤儿 MRS: {p}")
+                safe_unlink(p)
+
+
+# ========= 严格模式：sing-box SRS 编译 =========
+
+def compile_singbox_srs_strict(src_json: dict, name: str) -> bool:
+    """
+    严格模式编译 SRS：
+    - 源 JSON 写到 remote-tmp/{name}.json
+    - 编译输出到 remote-srs/{name}.srs.tmp
+    - 成功且非空：替换 remote-srs/{name}.srs
+    - 失败/空：删除 tmp，并在 STRICT_MODE 下删除旧 srs
+    """
+    srs_path, _, _ = output_paths_for_name(name)
+    tmp_srs = srs_path.with_suffix(".srs.tmp")
+
+    # 写源 JSON
+    sbox_json_path = REMOTE_TMP / f"{name}.json"
+    sbox_json_path.write_text(
+        json.dumps(src_json, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    log(f"    ✅ write sing-box source: {sbox_json_path}")
+
+    safe_unlink(tmp_srs)
+
+    cmd = [SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(tmp_srs)]
+
+    try:
+        run(cmd, timeout=240)
+    except Exception as e:
+        log(f"    ❌ 编译 SRS 出错: {e}")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(srs_path)
+        # 源 JSON 只作为中间产物，可以保留或删除，这里保留，便于调试
+        return False
+
+    if not tmp_srs.exists():
+        log("    ❌ 临时 SRS 文件未生成")
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(srs_path)
+        return False
+
+    size = tmp_srs.stat().st_size
+    log(f"    ✅ 临时 SRS 生成成功: {tmp_srs} ({size} bytes)")
+
+    if size == 0:
+        log("    ⚠️ 临时 SRS 大小为 0，视为失败")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(srs_path)
+        return False
+
+    # 原子替换
+    try:
+        os.replace(tmp_srs, srs_path)
+    except Exception as e:
+        log(f"    ❌ 替换正式 SRS 失败: {e}")
+        safe_unlink(tmp_srs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 SRS 以避免用到脏产物")
+            safe_unlink(srs_path)
+        return False
+
+    final_size = srs_path.stat().st_size
+    log(f"    ✅ SRS 更新成功: {srs_path} ({final_size} bytes)")
+    return True
+
+
+# ========= 严格模式：MRS 编译 =========
+
+def convert_with_mihomo_strict(behavior: str, src_yaml: Path, dst_mrs: Path) -> bool:
+    """
+    严格模式编译 MRS：
+    - 输出先写到 dst_mrs.tmp
+    - 成功且非空再替换 dst_mrs
+    - 失败/空时删除 tmp，并在 STRICT_MODE 下删除旧 mrs
+    """
+    tmp_mrs = dst_mrs.with_suffix(dst_mrs.suffix + ".tmp")
+    safe_unlink(tmp_mrs)
+
     cmd = [
         MIHOMO_BIN,
         "convert-ruleset",
         behavior,
         "yaml",
         str(src_yaml),
-        str(dst_mrs),
+        str(tmp_mrs),
     ]
-    run(cmd, timeout=180)
+
+    try:
+        run(cmd, timeout=180)
+    except Exception as e:
+        log(f"    ❌ mihomo 转换出错: {e}")
+        safe_unlink(tmp_mrs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 MRS 以避免用到脏产物")
+            safe_unlink(dst_mrs)
+        return False
+
+    if not tmp_mrs.exists():
+        log("    ❌ 临时 MRS 文件未生成")
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 MRS 以避免用到脏产物")
+            safe_unlink(dst_mrs)
+        return False
+
+    size = tmp_mrs.stat().st_size
+    log(f"    ✅ 临时 MRS 生成成功: {tmp_mrs} ({size} bytes)")
+
+    if size == 0:
+        log("    ⚠️ 临时 MRS 大小为 0，视为失败")
+        safe_unlink(tmp_mrs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 MRS 以避免用到脏产物")
+            safe_unlink(dst_mrs)
+        return False
+
+    try:
+        os.replace(tmp_mrs, dst_mrs)
+    except Exception as e:
+        log(f"    ❌ 替换正式 MRS 失败: {e}")
+        safe_unlink(tmp_mrs)
+        if STRICT_MODE:
+            log("    🧹 STRICT: 删除旧 MRS 以避免用到脏产物")
+            safe_unlink(dst_mrs)
+        return False
+
+    final_size = dst_mrs.stat().st_size
+    log(f"    ✅ MRS 更新成功: {dst_mrs} ({final_size} bytes)")
+    return True
 
 
-def compile_singbox_srs(src_json: dict, name: str) -> Path:
-    sbox_json_path = REMOTE_TMP / f"{name}.json"
-    sbox_json_path.write_text(
-        json.dumps(src_json, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    log(f"    ✅ write sing-box source: {sbox_json_path}")
-    srs_path = REMOTE_SRS / f"{name}.srs"
-    run(
-        [SINGBOX_BIN, "rule-set", "compile", str(sbox_json_path), "-o", str(srs_path)],
-        timeout=240,
-    )
-    log(f"    ✅ SRS: {srs_path} ({srs_path.stat().st_size} bytes)")
-    return srs_path
+def build_mrs_domain_from_list(domains: list, name: str) -> bool:
+    """
+    严格模式：
+    - 有域名：编译到 name_domain.mrs（严格模式 + 原子写）
+    - 无域名：删除 name_domain.mrs（增删同步）
+    """
+    _, domain_mrs, _ = output_paths_for_name(name)
 
-
-def build_mrs_domain_from_list(domains: list, name: str):
     if not domains:
-        log("    ℹ️ no domain entries, skip domain.mrs")
-        return None
+        log("    ℹ️ no domain entries, delete domain.mrs if exists (sync)")
+        safe_unlink(domain_mrs)
+        return False
+
     tmp_domain_yaml = REMOTE_TMP / f"{name}_domain.yaml"
-    out_domain_mrs = REMOTE_MRS / f"{name}_domain.mrs"
     write_mihomo_payload_yaml(domains, tmp_domain_yaml)
     log(f"    ✅ write mihomo domain source: {tmp_domain_yaml}")
-    convert_with_mihomo("domain", tmp_domain_yaml, out_domain_mrs)
-    log(
-        f"    ✅ MRS(domain): {out_domain_mrs} "
-        f"({out_domain_mrs.stat().st_size} bytes)"
-    )
-    return out_domain_mrs
+
+    ok = convert_with_mihomo_strict("domain", tmp_domain_yaml, domain_mrs)
+    safe_unlink(tmp_domain_yaml)
+    if ok:
+        log(f"    ✅ MRS(domain): {domain_mrs} ({domain_mrs.stat().st_size} bytes)")
+    return ok
 
 
-def build_mrs_ip_from_list(cidrs: list, name: str):
+def build_mrs_ip_from_list(cidrs: list, name: str) -> bool:
+    """
+    严格模式：
+    - 有 CIDR：编译到 name_ipcidr.mrs
+    - 无 CIDR：删除 name_ipcidr.mrs
+    """
+    _, _, ip_mrs = output_paths_for_name(name)
+
     if not cidrs:
-        log("    ℹ️ no ipcidr entries, skip ipcidr.mrs")
-        return None
+        log("    ℹ️ no ipcidr entries, delete ipcidr.mrs if exists (sync)")
+        safe_unlink(ip_mrs)
+        return False
+
     tmp_ip_yaml = REMOTE_TMP / f"{name}_ipcidr.yaml"
-    out_ip_mrs = REMOTE_MRS / f"{name}_ipcidr.mrs"
     write_mihomo_payload_yaml(cidrs, tmp_ip_yaml)
     log(f"    ✅ write mihomo ipcidr source: {tmp_ip_yaml}")
-    convert_with_mihomo("ipcidr", tmp_ip_yaml, out_ip_mrs)
-    log(
-        f"    ✅ MRS(ipcidr): {out_ip_mrs} "
-        f"({out_ip_mrs.stat().st_size} bytes)"
-    )
-    return out_ip_mrs
+
+    ok = convert_with_mihomo_strict("ipcidr", tmp_ip_yaml, ip_mrs)
+    safe_unlink(tmp_ip_yaml)
+    if ok:
+        log(f"    ✅ MRS(ipcidr): {ip_mrs} ({ip_mrs.stat().st_size} bytes)")
+    return ok
 
 
 # ========= main =========
@@ -504,9 +670,13 @@ def main() -> None:
         log("❌ remote-rules.json is empty or invalid.")
         sys.exit(1)
 
-    # 检查二进制
+    # 先检查二进制
     run([SINGBOX_BIN, "version"], timeout=60)
     run([MIHOMO_BIN, "-v"], timeout=60)
+
+    # 先清理已不存在于 manifest 中的孤儿产物
+    valid_names = [ (it.get("name") or "").strip() for it in items if (it.get("name") or "").strip() ]
+    cleanup_orphan_outputs(valid_names)
 
     for it in items:
         name = (it.get("name") or "").strip()
@@ -517,21 +687,40 @@ def main() -> None:
             log(f"⚠️ Skip invalid item: {it}")
             continue
 
-        raw = http_get(url)
+        log(f"\n==> {name}\n    url: {url}\n    format: {fmt_in}")
+
+        # 默认认为失败时要清理对应 name 的所有产物
+        try:
+            # 拉取远程内容
+            raw = http_get(url)
+        except Exception as e:
+            log(f"    ❌ HTTP 拉取失败: {e}")
+            if STRICT_MODE:
+                log("    🧹 STRICT: HTTP 失败 -> 删除该 name 的所有产物")
+                cleanup_outputs_for_name(name)
+            continue
+
         fmt = detect_format(fmt_in, raw)
-        log(f"\n==> {name}\n    url: {url}\n    format: {fmt_in} -> {fmt}")
+        log(f"    🔍 detected format: {fmt_in} -> {fmt}")
 
         obj = safe_load_struct(raw)
 
         # ---- 1) singbox-json 源（有就原样编译）----
         if fmt == "singbox-json" and is_singbox_ruleset_json(obj):
-            src_json = obj
-            compile_singbox_srs(src_json, name)
+            src_json = obj or {}
+            rules = src_json.get("rules") or []
+            if not rules:
+                log("    ⚠️ singbox-json 中 rules 为空 -> 删除该 name 的所有产物（增删同步）")
+                cleanup_outputs_for_name(name)
+                continue
+
+            # 编译 SRS
+            compile_singbox_srs_strict(src_json, name)
 
             # 顺手从 sing-box JSON 抽 domain/ip 生成 mrs
             domains = []
             cidrs = []
-            for r in src_json.get("rules") or []:
+            for r in rules:
                 if not isinstance(r, dict):
                     continue
                 for d in r.get("domain") or []:
@@ -555,7 +744,8 @@ def main() -> None:
             domains = parse_domain_list(raw)
             log(f"    ✅ parsed domain lines: {len(domains)}")
             if not domains:
-                log("    ⚠️ domain-text parsed 0, skip")
+                log("    ⚠️ domain-text parsed 0 -> 删除该 name 的所有产物（增删同步）")
+                cleanup_outputs_for_name(name)
                 continue
 
             # mrs(domain)
@@ -571,7 +761,7 @@ def main() -> None:
                 "ip_cidr6": set(),
                 "process_name": set(),
             }
-            compile_singbox_srs(build_singbox_source_json(b), name)
+            compile_singbox_srs_strict(build_singbox_source_json(b), name)
             continue
 
         # ---- 3) 纯 CIDR txt ----
@@ -579,11 +769,14 @@ def main() -> None:
             v4, v6 = parse_cidr_list(raw)
             log(f"    ✅ parsed cidr lines: v4={len(v4)} v6={len(v6)}")
             if not v4 and not v6:
-                log("    ⚠️ ip-text parsed 0, skip")
+                log("    ⚠️ ip-text parsed 0 -> 删除该 name 的所有产物（增删同步）")
+                cleanup_outputs_for_name(name)
                 continue
 
+            all_cidrs = sorted(set(v4 + v6))
+
             # mrs(ipcidr)：v4+v6 一起
-            build_mrs_ip_from_list(sorted(set(v4 + v6)), name)
+            build_mrs_ip_from_list(all_cidrs, name)
 
             # srs：v4+v6 全塞 ip_cidr
             b = {
@@ -591,11 +784,11 @@ def main() -> None:
                 "domain_suffix": set(),
                 "domain_keyword": set(),
                 "domain_regex": set(),
-                "ip_cidr": set(v4 + v6),
+                "ip_cidr": set(all_cidrs),
                 "ip_cidr6": set(),
                 "process_name": set(),
             }
-            compile_singbox_srs(build_singbox_source_json(b), name)
+            compile_singbox_srs_strict(build_singbox_source_json(b), name)
             continue
 
         # ---- 4) Clash 类规则（默认）----
@@ -619,11 +812,12 @@ def main() -> None:
         )
 
         if cnt == 0:
-            log("    ⚠️ extracted 0 supported rules, skip")
+            log("    ⚠️ extracted 0 supported rules -> 删除该 name 的所有产物（增删同步）")
+            cleanup_outputs_for_name(name)
             continue
 
         # 先给 sing-box 出 SRS
-        compile_singbox_srs(build_singbox_source_json(b), name)
+        compile_singbox_srs_strict(build_singbox_source_json(b), name)
 
         # 再给 mihomo 出 MRS（domain / ipcidr）
         domains_for_mrs = []
@@ -631,8 +825,8 @@ def main() -> None:
             domains_for_mrs.append(d.lstrip("."))
         for ds in b["domain_suffix"]:
             domains_for_mrs.append(ds.lstrip("."))
-        domains_for_mrs = sorted(set(domains_for_mrs))
 
+        domains_for_mrs = sorted(set(domains_for_mrs))
         ip_for_mrs = sorted(set(list(b["ip_cidr"]) + list(b["ip_cidr6"])))
 
         build_mrs_domain_from_list(domains_for_mrs, name)
