@@ -49,12 +49,11 @@ jobs:
         run: |
           set -eux
 
-          # 清理旧的 mihomo 和压缩包
-          rm -f mihomo "mihomo-linux-amd64-v${MIHOMO_VERSION}" "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz" || true
+          # 先清掉旧文件，防止 gzip 提示 mihomo already exists
+          rm -f mihomo mihomo.gz || true
 
-          wget "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          gzip -d "mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          mv "mihomo-linux-amd64-v${MIHOMO_VERSION}" mihomo
+          wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
+          gzip -d mihomo.gz     # 这里会生成 ./mihomo
           chmod +x ./mihomo
           ./mihomo -v
 
