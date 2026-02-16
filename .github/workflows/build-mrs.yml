@@ -49,11 +49,11 @@ jobs:
         run: |
           set -eux
 
-          # 先清掉旧文件，防止 gzip 提示 mihomo already exists
+          # 解压前先清理旧文件，避免 gzip 提示 mihomo already exists
           rm -f mihomo mihomo.gz || true
 
           wget -O mihomo.gz "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
-          gzip -d mihomo.gz     # 这里会生成 ./mihomo
+          gzip -d mihomo.gz    # 这里解压后就直接得到 ./mihomo
           chmod +x ./mihomo
           ./mihomo -v
 
