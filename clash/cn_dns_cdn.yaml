@@ -324,4 +324,34 @@ payload:
   # ===== ASN（后端基本都在阿里系 ASN 上）=====
   - IP-ASN,37963
 
+  # 📶 Xesim （相关规则集）
+  - PROCESS-NAME,com.elink.xesim
+  # 官网 / 主站
+  - DOMAIN-SUFFIX,xesim.cc
+  - DOMAIN-SUFFIX,xesim.com
+  - DOMAIN-SUFFIX,xesim.net
+  - DOMAIN,www.xesim.cc
+  - DOMAIN,xesim.cc
+  - DOMAIN,www.xesim.com
+  - DOMAIN,xesim.com
+  # eSIM 管理 / SeedLink / 教程接口
+  - DOMAIN-SUFFIX,app.xesim.net
+  - DOMAIN-SUFFIX,esim.xesim.net
+  - DOMAIN,app.xesim.net
+  - DOMAIN,esim.xesim.net
+  - DOMAIN,shop.xesim.com
+  - DOMAIN,eu.shop.xesim.com
+  - DOMAIN,ro.shop.xesim.com
+  # 帮助中心 / 隐私 / Blog（都在自家域名下）
+  - DOMAIN-KEYWORD,seedlink
+  - DOMAIN-KEYWORD,xesim
+  - DOMAIN-KEYWORD,xesimcc
+  # 正则兜底（配合上面的 DOMAIN-SUFFIX）
+  - DOMAIN-REGEX,(?i)(^|\.)xesim\.cc$
+  - DOMAIN-REGEX,(?i)(^|\.)xesim\.com$
+  - DOMAIN-REGEX,(?i)(^|\.)xesim\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)app\.xesim\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)esim\.xesim\.net$
+  - DOMAIN-REGEX,(?i)(^|\.)shop\.xesim\.com$
+  
   
