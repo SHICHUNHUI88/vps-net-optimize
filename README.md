@@ -129,4 +129,17 @@ https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 ```
+> 说明：这是“目录链接”，ClashMi 会按需下载其中的 `.mrs` 小文件（例如 `geosite/google.mrs`、`geoip/telegram.mrs`）。
+
+---
+
+## 同步机制
+
+- 上游来源：Loyalsoldier / MetaCubeX 相关 Geo 规则体系（拆分 `.mrs`）
+- 同步频率：每日自动同步（北京时间凌晨更新）
+- 同步策略：**增删同步**（上游新增/删除/更新都会同步到本仓库）
+
+---
+
+
 
