@@ -1,10 +1,9 @@
-name: Sync MetaCubeX Geo RuleSet (MRS)
+name: Sync GEOX 4 Files (Loyalsoldier)
 
 on:
   workflow_dispatch: {}
-  # 每天北京时间 05:00（UTC 21:00）
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "0 21 * * *"   # 每天北京时间 05:00（UTC 21:00）
   push:
     paths:
       - ".github/workflows/sync-metarules-geo.yml"
@@ -13,58 +12,74 @@ permissions:
   contents: write
 
 concurrency:
-  group: sync-metarules-geo
+  group: sync-geox-4files
   cancel-in-progress: true
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (your repo)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Clone upstream (MetaCubeX/meta-rules-dat)
+      - name: Prepare dir (clean for add/remove sync)
         run: |
           set -e
-          rm -rf _upstream
-          git clone --depth 1 https://github.com/MetaCubeX/meta-rules-dat.git _upstream
-          ls -la _upstream/meta/geo || true
+          mkdir -p geodata
+          # 只保留这4个，其他都删（保证“删同步”干净）
+          find geodata -type f \
+            ! -name 'geoip.dat' \
+            ! -name 'geosite.dat' \
+            ! -name 'GeoLite2-Country.mmdb' \
+            ! -name 'GeoLite2-ASN.mmdb' \
+            -delete || true
 
-      - name: Mirror geo mrs (add/remove sync)
+      - name: Download or delete if missing
         run: |
           set -e
 
-          # 目标目录：你仓库里的 geo/
-          mkdir -p geo
+          fetch_or_delete() {
+            local url="$1"
+            local out="$2"
+            echo "==> $url -> $out"
+            if curl -L --fail --retry 5 --retry-delay 2 -o "$out" "$url"; then
+              echo "✅ OK"
+            else
+              echo "⚠️  FAILED, delete local: $out"
+              rm -f "$out" || true
+            fi
+          }
 
-          # 为了实现“删同步”：每次先删掉旧的，再复制新的
-          rm -rf geo/geosite geo/geoip
-          mkdir -p geo/geosite geo/geoip
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat" \
+            "geodata/geoip.dat"
 
-          # 复制上游两个目录
-          cp -a _upstream/meta/geo/geosite/. geo/geosite/
-          cp -a _upstream/meta/geo/geoip/.   geo/geoip/
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat" \
+            "geodata/geosite.dat"
 
-          # 只保留 .mrs（更干净）
-          find geo/geosite -type f ! -name '*.mrs' -delete || true
-          find geo/geoip   -type f ! -name '*.mrs' -delete || true
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/GeoLite2-Country.mmdb" \
+            "geodata/GeoLite2-Country.mmdb"
 
-          echo "==== list some files ===="
-          find geo -maxdepth 2 -type f | head -n 40 || true
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/GeoLite2-ASN.mmdb" \
+            "geodata/GeoLite2-ASN.mmdb"
+
+          echo "==== files ===="
+          ls -lh geodata || true
 
       - name: Commit & push if changed
         run: |
           set -e
-          git add -A geo
-
+          git add -A geodata
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: sync MetaCubeX geo ruleset"
+          git commit -m "chore: sync geox 4 files"
           git push
