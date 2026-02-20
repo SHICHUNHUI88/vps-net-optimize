@@ -182,4 +182,5 @@ https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
 
+> 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如 `geosite/geosite-google.srs`、`geoip/geoip-google.srs`）。
 
