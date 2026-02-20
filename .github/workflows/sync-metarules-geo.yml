@@ -1,0 +1,63 @@
+name: Sync MetaCubeX Geo RuleSet (MRS)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 21 * * *"   # 每天北京时间 05:00（UTC 21:00）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-metarules-geo
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (your repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream (sparse checkout)
+        run: |
+          set -e
+          rm -rf _upstream
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/MetaCubeX/meta-rules-dat.git _upstream
+          cd _upstream
+          git sparse-checkout set meta/geo/geosite meta/geo/geoip
+          ls -la meta/geo || true
+
+      - name: Mirror to your repo (add/remove sync)
+        run: |
+          set -e
+          # 目标目录（你仓库里的）
+          mkdir -p geo
+
+          # 为了“删同步”，先清空旧目录再复制新目录
+          rm -rf geo/geosite geo/geoip
+          mkdir -p geo/geosite geo/geoip
+
+          cp -a _upstream/meta/geo/geosite/. geo/geosite/
+          cp -a _upstream/meta/geo/geoip/.   geo/geoip/
+
+          # 可选：只保留 .mrs（更干净）
+          find geo/geosite -type f ! -name '*.mrs' -delete || true
+          find geo/geoip   -type f ! -name '*.mrs' -delete || true
+
+      - name: Commit & push if changed
+        run: |
+          set -e
+          git add -A geo
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync MetaCubeX geo ruleset"
+          git push
