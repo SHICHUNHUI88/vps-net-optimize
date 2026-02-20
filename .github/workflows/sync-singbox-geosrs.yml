@@ -1,0 +1,80 @@
+name: Sync sing-box Geo RuleSet (Split SRS)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 21 * * *"  # 每天北京时间 05:00（UTC 21:00）
+  push:
+    paths:
+      - ".github/workflows/sync-singbox-geosrs.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-singbox-geosrs
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (your repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone upstream (SagerNet rule-set branches)
+        run: |
+          set -e
+          rm -rf _geosite _geoip
+
+          # 注意：这里用 rule-set 分支（里面直接是 .srs 小文件）
+          git clone --depth 1 --branch rule-set https://github.com/SagerNet/sing-geosite.git _geosite
+          git clone --depth 1 --branch rule-set https://github.com/SagerNet/sing-geoip.git   _geoip
+
+          echo "==== upstream sample ===="
+          ls -la _geosite | head -n 50 || true
+          ls -la _geoip   | head -n 50 || true
+
+      - name: Mirror split srs to your repo (add/remove sync)
+        run: |
+          set -e
+          mkdir -p singbox
+
+          # 删同步：每次完全以 upstream 为准
+          rm -rf singbox/geosite singbox/geoip
+          mkdir -p singbox/geosite singbox/geoip
+
+          # 复制所有 .srs 小文件
+          cp -a _geosite/. singbox/geosite/
+          cp -a _geoip/.   singbox/geoip/
+
+          # 只保留 .srs
+          find singbox/geosite -type f ! -name '*.srs' -delete || true
+          find singbox/geoip   -type f ! -name '*.srs' -delete || true
+
+          echo "==== sample files ===="
+          find singbox -maxdepth 2 -type f | head -n 60 || true
+
+      - name: Commit & push (singbox only)
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin
+          git pull --rebase origin "$DEFAULT_BRANCH"
+
+          git add -A singbox
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git commit -m "chore: sync sing-box geo srs (geosite/geoip)"
+          git push origin "HEAD:$DEFAULT_BRANCH"
