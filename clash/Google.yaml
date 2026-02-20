@@ -2,7 +2,6 @@ payload:
   # 📱 进程名匹配（Google 全家桶）
   - PROCESS-NAME,BackupandSync
   - PROCESS-NAME,GoogleDriveFS.exe
-  - PROCESS-NAME,com.android.chrome
   - PROCESS-NAME,com.android.vending
   - PROCESS-NAME,com.google.android.apps.docs
   - PROCESS-NAME,com.google.android.apps.photos
@@ -25,7 +24,6 @@ payload:
   - PROCESS-NAME,com.google.android.apps.tachyon
   - PROCESS-NAME,com.google.android.calendar
   - PROCESS-NAME,com.google.android.apps.subscriptions.red
-  - PROCESS-NAME,chrome.exe
   - PROCESS-NAME,GoogleUpdate.exe
   - PROCESS-NAME,GoogleCrashHandler.exe
   # 🌐 域名规则
