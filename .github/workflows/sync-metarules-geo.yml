@@ -55,15 +55,16 @@ jobs:
           find geo -maxdepth 2 -type f | head -n 40 || true
 
       - name: Commit & push geo only
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -e
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 拉最新，避免 non-fast-forward
           git fetch origin
-          git pull --rebase origin main
+          git pull --rebase origin "$DEFAULT_BRANCH"
 
           git add -A geo
 
@@ -73,4 +74,4 @@ jobs:
           fi
 
           git commit -m "chore: sync split geo mrs (geosite/geoip)"
-          git push origin HEAD:main
+          git push origin "HEAD:$DEFAULT_BRANCH"
