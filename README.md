@@ -104,3 +104,29 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/099059cfce913ef7b8
 
 https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json
 
+---
+
+# ClashMi Geo RuleSet（自建镜像）
+
+本仓库将上游 Geo 规则库同步到我的仓库中，主要用于 **ClashMi / mihomo** 的 **Geo RuleSet（MRS 拆分规则集）** 拉取。
+
+这样做的目的：
+- 使用自己的链接，避免上游访问不稳定导致拉取失败
+- 每天定时同步上游更新（包含 **增删同步**），本仓库始终保持最新
+
+---
+
+## 使用方法（ClashMi）
+
+在 ClashMi → **Geo RuleSet** 中填写以下两个目录链接（推荐使用 CDN）：
+
+### GeoSite（域名规则集目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
+```
+
+### GeoIP（IP 规则集目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
+```
+
