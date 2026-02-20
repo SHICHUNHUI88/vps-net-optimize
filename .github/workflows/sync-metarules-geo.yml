@@ -28,7 +28,6 @@ jobs:
         run: |
           set -e
           rm -rf _upstream
-          # 关键：一定要 meta 分支（你之前链接就是 refs/heads/meta）
           git clone --depth 1 --branch meta https://github.com/MetaCubeX/meta-rules-dat.git _upstream
 
           echo "==== upstream check ===="
@@ -41,24 +40,31 @@ jobs:
           set -e
           mkdir -p geo
 
-          # 为了“删同步”：先删除旧目录再复制
+          # 删同步：每次都以 upstream 为准
           rm -rf geo/geosite geo/geoip
           mkdir -p geo/geosite geo/geoip
 
-          # 复制拆分好的小文件库
           cp -a _upstream/geo/geosite/. geo/geosite/
           cp -a _upstream/geo/geoip/.   geo/geoip/
 
-          # 只保留 .mrs（更干净）
+          # 只保留 .mrs
           find geo/geosite -type f ! -name '*.mrs' -delete || true
           find geo/geoip   -type f ! -name '*.mrs' -delete || true
 
           echo "==== sample files ===="
           find geo -maxdepth 2 -type f | head -n 40 || true
 
-      - name: Commit & push if changed
+      - name: Commit & push geo only
         run: |
           set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 拉最新，避免 non-fast-forward
+          git fetch origin
+          git pull --rebase origin main
+
           git add -A geo
 
           if git diff --cached --quiet; then
@@ -66,7 +72,5 @@ jobs:
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: sync split geo mrs (geosite/geoip)"
-          git push
+          git push origin HEAD:main
