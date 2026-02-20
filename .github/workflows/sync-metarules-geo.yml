@@ -3,7 +3,7 @@ name: Sync MetaCubeX Geo RuleSet (MRS)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 21 * * *"   # 每天北京时间 05:00（UTC 21:00）
+    - cron: "0 21 * * *"  # 每天北京时间 05:00（UTC 21:00）
 
 permissions:
   contents: write
@@ -21,31 +21,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch upstream (sparse checkout)
+      - name: Clone upstream (MetaCubeX/meta-rules-dat)
         run: |
           set -e
           rm -rf _upstream
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/MetaCubeX/meta-rules-dat.git _upstream
-          cd _upstream
-          git sparse-checkout set meta/geo/geosite meta/geo/geoip
-          ls -la meta/geo || true
+          git clone --depth 1 https://github.com/MetaCubeX/meta-rules-dat.git _upstream
+          ls -la _upstream/meta/geo || true
 
-      - name: Mirror to your repo (add/remove sync)
+      - name: Mirror geo mrs (add/remove sync)
         run: |
           set -e
-          # 目标目录（你仓库里的）
+
+          # 目标目录：你仓库里的 geo/
           mkdir -p geo
 
-          # 为了“删同步”，先清空旧目录再复制新目录
+          # 为了实现“删同步”：每次先删掉旧的，再复制新的
           rm -rf geo/geosite geo/geoip
           mkdir -p geo/geosite geo/geoip
 
+          # 复制上游两个目录
           cp -a _upstream/meta/geo/geosite/. geo/geosite/
           cp -a _upstream/meta/geo/geoip/.   geo/geoip/
 
-          # 可选：只保留 .mrs（更干净）
+          # 只保留 .mrs（更干净）
           find geo/geosite -type f ! -name '*.mrs' -delete || true
           find geo/geoip   -type f ! -name '*.mrs' -delete || true
+
+          echo "==== list some files ===="
+          find geo -maxdepth 2 -type f | head -n 40 || true
 
       - name: Commit & push if changed
         run: |
