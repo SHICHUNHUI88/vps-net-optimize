@@ -1,0 +1,83 @@
+name: Sync Geodata (Add/Remove)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 21 * * *"   # 每天北京时间 05:00（UTC 21:00）
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-geodata
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare dir (clean for add/remove sync)
+        run: |
+          set -e
+          mkdir -p geodata
+          # 只同步这4个文件，其他一律删掉（实现“删同步”）
+          find geodata -type f ! -name 'geoip.dat' ! -name 'geosite.dat' ! -name 'GeoLite2-Country.mmdb' ! -name 'GeoLite2-ASN.mmdb' -delete || true
+
+      - name: Sync 4 files (delete local if upstream missing)
+        run: |
+          set -e
+
+          fetch_or_delete() {
+            local url="$1"
+            local out="$2"
+            echo "==> Fetch: $url"
+            if curl -L --fail --retry 5 --retry-delay 2 -o "$out" "$url"; then
+              echo "✅ OK: $out"
+            else
+              echo "⚠️  Failed: $url"
+              # 上游拿不到就删除本地旧文件（实现“删同步”，避免保留脏数据）
+              rm -f "$out" || true
+            fi
+          }
+
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat" \
+            "geodata/geoip.dat"
+
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat" \
+            "geodata/geosite.dat"
+
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/GeoLite2-Country.mmdb" \
+            "geodata/GeoLite2-Country.mmdb"
+
+          fetch_or_delete \
+            "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/GeoLite2-ASN.mmdb" \
+            "geodata/GeoLite2-ASN.mmdb"
+
+      - name: Show files
+        run: |
+          ls -lh geodata || true
+          sha256sum geodata/* 2>/dev/null || true
+
+      - name: Commit & push if changed
+        run: |
+          set -e
+          git add -A geodata
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "chore: sync geodata (add/remove)"
+          git push
