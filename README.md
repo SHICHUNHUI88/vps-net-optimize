@@ -143,6 +143,43 @@ https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 - 同步策略：**增删同步**（上游新增/删除/更新都会同步到本仓库）
 
 ---
+# sing-box RuleSet Mirror（Split SRS）
 
+本仓库提供 **sing-box 拆分规则集（`.srs`）** 的自建镜像，主要用于在 sing-box 配置中通过 `rule_set: remote` 方式按需拉取规则。
+
+特点：
+- **拆分小件**：按分类提供大量 `.srs` 文件（例如 `geosite-openai.srs`、`geoip-cn.srs`）
+- **自建镜像**：将上游规则集同步到我的仓库，便于国内/跨网环境稳定拉取
+- **增删同步**：上游新增/删除/更新都会同步到本仓库
+- **定时更新**：每日自动同步（北京时间凌晨）
+
+---
+
+## 上游来源
+
+本仓库同步的拆分 `.srs` 规则集来自 sing-box 官方生态（SagerNet）：
+
+- `SagerNet/sing-geosite`（geosite 拆分规则集）
+- `SagerNet/sing-geoip`（geoip 拆分规则集）
+
+---
+
+## 目录结构
+singbox/ geosite/   # 域名类规则集（.srs） geoip/     # IP 类规则集（.srs）
+---
+
+## CDN 目录链接（推荐）
+
+### GeoSite（SRS 目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geosite
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geosite
+
+### GeoIP（SRS 目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
 
 
