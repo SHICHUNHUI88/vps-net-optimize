@@ -124,13 +124,13 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
 ```
-https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/geo/geosite
 
 ### GeoIP（IP 规则集目录）
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 ```
-https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/geo/geoip
 
 > 说明：这是“目录链接”，ClashMi 会按需下载其中的 `.mrs` 小文件（例如 `geosite/google.mrs`、`geoip/google.mrs`）。
 
@@ -174,13 +174,13 @@ singbox/ geosite/   # 域名类规则集（.srs） geoip/     # IP 类规则集�
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geosite
 ```
-https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geosite
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geosite
 
 ### GeoIP（SRS 目录）
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
 ```
-https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geoip
 
 > 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如 `geosite/geosite-google.srs`、`geoip/geoip-google.srs`）。
 
