@@ -2,8 +2,12 @@ name: Sync MetaCubeX Geo RuleSet (MRS)
 
 on:
   workflow_dispatch: {}
+  # 每天北京时间 05:00（UTC 21:00）
   schedule:
-    - cron: "0 21 * * *"  # 每天北京时间 05:00（UTC 21:00）
+    - cron: "0 21 * * *"
+  push:
+    paths:
+      - ".github/workflows/sync-metarules-geo.yml"
 
 permissions:
   contents: write
