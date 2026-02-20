@@ -124,11 +124,14 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
 ```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
 
 ### GeoIP（IP 规则集目录）
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 ```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
+
 > 说明：这是“目录链接”，ClashMi 会按需下载其中的 `.mrs` 小文件（例如 `geosite/google.mrs`、`geoip/telegram.mrs`）。
 
 ---
