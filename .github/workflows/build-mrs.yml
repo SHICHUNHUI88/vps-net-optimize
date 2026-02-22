@@ -22,7 +22,7 @@ on:
 permissions:
   contents: write
 
-# 全仓库写 main 的统一锁：让所有会 push 的 workflow 排队
+# 全仓库写 main 的统一锁：所有会 push main 的 workflow 必须同一个 group 才能排队
 concurrency:
   group: repo-main-writer
   cancel-in-progress: false
@@ -39,7 +39,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,7 +52,6 @@ jobs:
           set -eux
           BIN="${RUNNER_TEMP}/mihomo"
           rm -f "${BIN}" "${BIN}.gz" || true
-
           wget -O "${BIN}.gz" "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d "${BIN}.gz"
           chmod +x "${BIN}"
@@ -66,21 +64,21 @@ jobs:
           BIN="${RUNNER_TEMP}/sing-box"
           rm -f "${BIN}" "${RUNNER_TEMP}/sing-box.tar.gz" || true
           rm -rf "${RUNNER_TEMP}/sing-box-${SINGBOX_VERSION}-linux-amd64" || true
-
           wget -O "${RUNNER_TEMP}/sing-box.tar.gz" "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf "${RUNNER_TEMP}/sing-box.tar.gz" -C "${RUNNER_TEMP}"
           mv "${RUNNER_TEMP}/sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box" "${BIN}"
           chmod +x "${BIN}"
           "${BIN}" version
 
-      # Python 环境
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install PyYAML
-        run: pip install pyyaml
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
 
       # 清理旧产物（确保增删同步）
       - name: Clean old outputs
@@ -88,25 +86,27 @@ jobs:
           set -eux
           rm -f "${SRC_DIR}"/*.mrs || true
           rm -f "${SBOX_DIR}"/*.srs || true
+          rm -f remote-mrs/*.mrs || true
+          rm -f remote-srs/*.srs || true
           rm -rf remote-tmp || true
 
       # A) clash/*.yaml -> clash/*.mrs
-      - name: Build MRS (Mihomo)
+      - name: Build MRS (mihomo)
         run: python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
           MIHOMO_BIN: ${{ runner.temp }}/mihomo
 
       # B) singbox/*.json -> singbox/*.srs
-      - name: Build SRS (Sing-box)
+      - name: Build SRS (sing-box)
         run: python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
           RULESET_VERSION: "3"
 
-      # C) remote-rules.json -> remote-mrs/*.mrs （isolated）
-      - name: Build Remote MRS (isolated)
+      # C) remote-rules.json -> remote-mrs/*.mrs + remote-srs/*.srs (+ remote-tmp as temp)
+      - name: Build Remote Rules (MRS+SRS)
         run: |
           set -eux
           python scripts/Diversion_Conversion.py
@@ -114,6 +114,10 @@ jobs:
           ls -la "${REMOTE_SRC_DIR}" || true
           echo "=== remote-mrs ==="
           ls -la "${REMOTE_MRS_DIR}" || true
+          echo "=== remote-srs ==="
+          ls -la "remote-srs" || true
+          echo "=== remote-tmp ==="
+          ls -la "remote-tmp" || true
         env:
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
           MIHOMO_BIN: ${{ runner.temp }}/mihomo
@@ -129,14 +133,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 不提交中间产物
+          # 不保留中间产物，但要把删除也 stage 掉，保证 rebase 前工作区干净
           rm -rf remote-tmp || true
 
           # 只暂存规则相关目录和 remote-rules.json
           [ -d "${SRC_DIR}" ] && git add -A "${SRC_DIR}"
           [ -d "${SBOX_DIR}" ] && git add -A "${SBOX_DIR}"
-          [ -d "${REMOTE_MRS_DIR}" ] && git add -A "${REMOTE_MRS_DIR}"
-          [ -d "${REMOTE_SRC_DIR}" ] && git add -A "${REMOTE_SRC_DIR}"
+          [ -d "remote-mrs" ] && git add -A remote-mrs
+          [ -d "remote-srs" ] && git add -A remote-srs
+
+          # 关键：把 remote-tmp 的删除也暂存（否则会出现 unstaged D）
+          git add -A remote-tmp || true
+
           [ -f "remote-rules.json" ] && git add remote-rules.json
 
           echo "git status (after add):"
@@ -147,7 +155,14 @@ jobs:
             exit 0
           fi
 
-          git commit -m "build: update MRS+SRS+remote-mrs $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git commit -m "build: update MRS+SRS+remote rules $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          # 确保工作区干净再 rebase
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Working tree not clean, aborting:"
+            git status --porcelain
+            exit 1
+          fi
 
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
