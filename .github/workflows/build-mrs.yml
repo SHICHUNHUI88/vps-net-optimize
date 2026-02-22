@@ -1,28 +1,26 @@
-name: Build MRS (mihomo) + SRS (sing-box) + Remote-MRS (isolated)
+name: Build MRS (mihomo) + SRS (sing-box)
 
 on:
   # 定时触发：每天北京时间 03:00（UTC 19:00）
   schedule:
     - cron: "0 19 * * *"
 
-  # 只在关键文件变更时触发，避免自激振荡
+  workflow_dispatch: {}
+
+  # 只在本地规则/脚本/本工作流变更时触发
   push:
     branches: [ "main" ]
     paths:
       - "clash/**.yaml"
       - "singbox/**.json"
-      - "remote-rules.json"
       - "scripts/extract_rules.py"
       - "scripts/compile_srs.py"
-      - "scripts/Diversion_Conversion.py"
       - ".github/workflows/build-mrs.yml"
-
-  workflow_dispatch: {}
 
 permissions:
   contents: write
 
-# 全仓库写 main 的统一锁：所有会 push main 的 workflow 必须同一个 group 才能排队
+# 全仓库写 main 的统一锁（与 build-remote-mrs.yml 用同一个）
 concurrency:
   group: repo-main-writer
   cancel-in-progress: false
@@ -30,23 +28,19 @@ concurrency:
 env:
   MIHOMO_VERSION: "1.19.10"
   SINGBOX_VERSION: "1.11.0"
-
   SRC_DIR: clash
   SBOX_DIR: singbox
-  REMOTE_SRC_DIR: remote-src
-  REMOTE_MRS_DIR: remote-mrs
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
-      # Download mihomo -> $RUNNER_TEMP/mihomo
       - name: Download mihomo (temp)
         run: |
           set -eux
@@ -57,7 +51,6 @@ jobs:
           chmod +x "${BIN}"
           "${BIN}" -v
 
-      # Download sing-box -> $RUNNER_TEMP/sing-box
       - name: Download sing-box (temp)
         run: |
           set -eux
@@ -80,50 +73,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
 
-      # 清理旧产物（确保增删同步）
-      - name: Clean old outputs
+      - name: Clean old outputs (local only)
         run: |
           set -eux
           rm -f "${SRC_DIR}"/*.mrs || true
           rm -f "${SBOX_DIR}"/*.srs || true
-          rm -f remote-mrs/*.mrs || true
-          rm -f remote-srs/*.srs || true
-          rm -rf remote-tmp || true
 
-      # A) clash/*.yaml -> clash/*.mrs
-      - name: Build MRS (mihomo)
+      - name: Build MRS (extract_rules.py)
         run: python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
           MIHOMO_BIN: ${{ runner.temp }}/mihomo
 
-      # B) singbox/*.json -> singbox/*.srs
-      - name: Build SRS (sing-box)
+      - name: Build SRS (compile_srs.py)
         run: python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
           RULESET_VERSION: "3"
 
-      # C) remote-rules.json -> remote-mrs/*.mrs + remote-srs/*.srs (+ remote-tmp as temp)
-      - name: Build Remote Rules (MRS+SRS)
-        run: |
-          set -eux
-          python scripts/Diversion_Conversion.py
-          echo "=== remote-src ==="
-          ls -la "${REMOTE_SRC_DIR}" || true
-          echo "=== remote-mrs ==="
-          ls -la "${REMOTE_MRS_DIR}" || true
-          echo "=== remote-srs ==="
-          ls -la "remote-srs" || true
-          echo "=== remote-tmp ==="
-          ls -la "remote-tmp" || true
-        env:
-          SINGBOX_BIN: ${{ runner.temp }}/sing-box
-          MIHOMO_BIN: ${{ runner.temp }}/mihomo
-
-      # 提交并推送（安全：commit -> rebase -> push 重试）
-      - name: Commit & push (safe)
+      - name: Commit & push (safe, local only)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -133,33 +102,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 不保留中间产物，但要把删除也 stage 掉，保证 rebase 前工作区干净
-          rm -rf remote-tmp || true
-
-          # 只暂存规则相关目录和 remote-rules.json
+          # 只提交本地产物目录
           [ -d "${SRC_DIR}" ] && git add -A "${SRC_DIR}"
           [ -d "${SBOX_DIR}" ] && git add -A "${SBOX_DIR}"
-          [ -d "remote-mrs" ] && git add -A remote-mrs
-          [ -d "remote-srs" ] && git add -A remote-srs
 
-          # 关键：把 remote-tmp 的删除也暂存（否则会出现 unstaged D）
-          git add -A remote-tmp || true
-
-          [ -f "remote-rules.json" ] && git add remote-rules.json
-
-          echo "git status (after add):"
+          echo "git status:"
           git status --porcelain || true
 
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No changes."
             exit 0
           fi
 
-          git commit -m "build: update MRS+SRS+remote rules $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git commit -m "build: update local MRS+SRS $(date -u +'%Y-%m-%d %H:%M UTC')"
 
           # 确保工作区干净再 rebase
           if [ -n "$(git status --porcelain)" ]; then
-            echo "Working tree not clean, aborting:"
+            echo "Working tree not clean:"
             git status --porcelain
             exit 1
           fi
@@ -171,13 +130,11 @@ jobs:
               echo "Rebase failed."
               exit 1
             }
-
             if git push origin "HEAD:${BRANCH}"; then
               echo "Push success."
               exit 0
             fi
-
-            echo "Push rejected (race). Retry attempt=${i}"
+            echo "Push rejected (race). retry=${i}"
             sleep $((i*2))
           done
 
