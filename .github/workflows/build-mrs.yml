@@ -1,9 +1,11 @@
 name: Build MRS (mihomo) + SRS (sing-box) + Remote-MRS (isolated)
 
 on:
+  # 定时触发：每天北京时间 03:00（UTC 19:00）
   schedule:
-    - cron: "0 19 * * *"  # 北京时间 03:00（UTC 19:00）
-  workflow_dispatch: {}
+    - cron: "0 19 * * *"
+
+  # 只在关键文件变更时触发，避免自激振荡
   push:
     branches: [ "main" ]
     paths:
@@ -15,9 +17,12 @@ on:
       - "scripts/Diversion_Conversion.py"
       - ".github/workflows/build-mrs.yml"
 
+  workflow_dispatch: {}
+
 permissions:
   contents: write
 
+# 全仓库写 main 的统一锁：让所有会 push 的 workflow 排队
 concurrency:
   group: repo-main-writer
   cancel-in-progress: false
@@ -25,6 +30,7 @@ concurrency:
 env:
   MIHOMO_VERSION: "1.19.10"
   SINGBOX_VERSION: "1.11.0"
+
   SRC_DIR: clash
   SBOX_DIR: singbox
   REMOTE_SRC_DIR: remote-src
@@ -33,35 +39,41 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
+      # Download mihomo -> $RUNNER_TEMP/mihomo
       - name: Download mihomo (temp)
         run: |
           set -eux
           BIN="${RUNNER_TEMP}/mihomo"
           rm -f "${BIN}" "${BIN}.gz" || true
+
           wget -O "${BIN}.gz" "https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-amd64-v${MIHOMO_VERSION}.gz"
           gzip -d "${BIN}.gz"
           chmod +x "${BIN}"
           "${BIN}" -v
 
+      # Download sing-box -> $RUNNER_TEMP/sing-box
       - name: Download sing-box (temp)
         run: |
           set -eux
           BIN="${RUNNER_TEMP}/sing-box"
           rm -f "${BIN}" "${RUNNER_TEMP}/sing-box.tar.gz" || true
           rm -rf "${RUNNER_TEMP}/sing-box-${SINGBOX_VERSION}-linux-amd64" || true
+
           wget -O "${RUNNER_TEMP}/sing-box.tar.gz" "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
           tar -xzf "${RUNNER_TEMP}/sing-box.tar.gz" -C "${RUNNER_TEMP}"
           mv "${RUNNER_TEMP}/sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box" "${BIN}"
           chmod +x "${BIN}"
           "${BIN}" version
 
+      # Python 环境
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -70,32 +82,43 @@ jobs:
       - name: Install PyYAML
         run: pip install pyyaml
 
+      # 清理旧产物（确保增删同步）
       - name: Clean old outputs
         run: |
+          set -eux
           rm -f "${SRC_DIR}"/*.mrs || true
           rm -f "${SBOX_DIR}"/*.srs || true
           rm -rf remote-tmp || true
 
-      - name: Build MRS (mihomo)
+      # A) clash/*.yaml -> clash/*.mrs
+      - name: Build MRS (Mihomo)
         run: python scripts/extract_rules.py
         env:
           SRC_DIR: ${{ env.SRC_DIR }}
           MIHOMO_BIN: ${{ runner.temp }}/mihomo
 
-      - name: Build SRS (sing-box)
+      # B) singbox/*.json -> singbox/*.srs
+      - name: Build SRS (Sing-box)
         run: python scripts/compile_srs.py
         env:
           SBOX_DIR: ${{ env.SBOX_DIR }}
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
           RULESET_VERSION: "3"
 
+      # C) remote-rules.json -> remote-mrs/*.mrs （isolated）
       - name: Build Remote MRS (isolated)
         run: |
           set -eux
           python scripts/Diversion_Conversion.py
+          echo "=== remote-src ==="
+          ls -la "${REMOTE_SRC_DIR}" || true
+          echo "=== remote-mrs ==="
+          ls -la "${REMOTE_MRS_DIR}" || true
         env:
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
+          MIHOMO_BIN: ${{ runner.temp }}/mihomo
 
+      # 提交并推送（安全：commit -> rebase -> push 重试）
       - name: Commit & push (safe)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -106,15 +129,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 只提交需要的目录（不要把临时二进制带进来）
+          # 不提交中间产物
+          rm -rf remote-tmp || true
+
+          # 只暂存规则相关目录和 remote-rules.json
           [ -d "${SRC_DIR}" ] && git add -A "${SRC_DIR}"
           [ -d "${SBOX_DIR}" ] && git add -A "${SBOX_DIR}"
           [ -d "${REMOTE_MRS_DIR}" ] && git add -A "${REMOTE_MRS_DIR}"
           [ -d "${REMOTE_SRC_DIR}" ] && git add -A "${REMOTE_SRC_DIR}"
           [ -f "remote-rules.json" ] && git add remote-rules.json
 
+          echo "git status (after add):"
+          git status --porcelain || true
+
           if git diff --cached --quiet; then
-            echo "No changes."
+            echo "No changes to commit."
             exit 0
           fi
 
@@ -122,12 +151,18 @@ jobs:
 
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
-            git rebase "origin/${BRANCH}"
+            git rebase "origin/${BRANCH}" || {
+              git rebase --abort || true
+              echo "Rebase failed."
+              exit 1
+            }
+
             if git push origin "HEAD:${BRANCH}"; then
               echo "Push success."
               exit 0
             fi
-            echo "Push rejected (race). retry=${i}"
+
+            echo "Push rejected (race). Retry attempt=${i}"
             sleep $((i*2))
           done
 
