@@ -3,7 +3,7 @@ name: Sync MetaCubeX Geo RuleSet (Split MRS)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 21 * * *"  # 每天北京时间 05:00（UTC 21:00）
+    - cron: "0 21 * * *"  # 北京时间 05:00（UTC 21:00）
   push:
     paths:
       - ".github/workflows/sync-metarules-geo.yml"
@@ -12,63 +12,45 @@ permissions:
   contents: write
 
 concurrency:
-  group: sync-metarules-geo
-  cancel-in-progress: true
+  group: repo-main-writer
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (your repo)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # 明确检出默认分支，避免 schedule / 手动触发时落到奇怪 ref
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Clone upstream meta-rules-dat (meta branch)
         run: |
-          set -e
+          set -eux
           rm -rf _upstream
           git clone --depth 1 --branch meta https://github.com/MetaCubeX/meta-rules-dat.git _upstream
 
-          echo "==== upstream check ===="
-          ls -la _upstream/geo || true
-          ls -la _upstream/geo/geosite || true
-          ls -la _upstream/geo/geoip || true
-
-      - name: Mirror split mrs to your repo (add/remove sync)
+      - name: Mirror split mrs (geo/)
         run: |
-          set -e
-          mkdir -p geo
-
-          # 删同步：每次都以 upstream 为准
+          set -eux
           rm -rf geo/geosite geo/geoip
           mkdir -p geo/geosite geo/geoip
-
           cp -a _upstream/geo/geosite/. geo/geosite/
           cp -a _upstream/geo/geoip/.   geo/geoip/
-
-          # 只保留 .mrs
           find geo/geosite -type f ! -name '*.mrs' -delete || true
           find geo/geoip   -type f ! -name '*.mrs' -delete || true
 
-          echo "==== sample files ===="
-          find geo -maxdepth 2 -type f | head -n 40 || true
-
-          echo "==== git status (after mirror) ===="
-          git status --porcelain || true
-
-      - name: Commit & push geo only
+      - name: Commit & push (safe)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          set -e
+          set -eux
+          BRANCH="${DEFAULT_BRANCH:-main}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 只提交 geo 目录（包含新增/修改/删除）
           git add -A geo
 
           if git diff --cached --quiet; then
@@ -78,5 +60,16 @@ jobs:
 
           git commit -m "chore: sync split geo mrs (geosite/geoip)"
 
-          # 不要 pull/rebase，直接 push 当前工作流检出的默认分支
-          git push origin "HEAD:$DEFAULT_BRANCH"
+          for i in 1 2 3 4 5; do
+            git fetch origin "${BRANCH}"
+            git rebase "origin/${BRANCH}"
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Push success."
+              exit 0
+            fi
+            echo "Push rejected (race). retry=${i}"
+            sleep $((i*2))
+          done
+
+          echo "Failed to push after retries."
+          exit 1
