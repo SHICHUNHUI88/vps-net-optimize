@@ -2,12 +2,14 @@ name: Build Remote Rules (MRS+SRS)
 
 on:
   workflow_dispatch: {}
+  # 定时触发：每天北京时间 04:00（UTC 20:00）
   schedule:
-    - cron: "0 20 * * *"  # 北京时间 04:00（UTC 20:00）
+    - cron: "0 20 * * *"
 
 permissions:
   contents: write
 
+# 全仓库写 main 的统一锁（与 build-mrs.yml 用同一个）
 concurrency:
   group: repo-main-writer
   cancel-in-progress: false
@@ -65,13 +67,21 @@ jobs:
           chmod +x "${BIN}"
           "${BIN}" -v
 
-      - name: Build remote MRS+SRS
-        run: python scripts/Diversion_Conversion.py
+      - name: Precheck
+        run: |
+          set -eux
+          test -f remote-rules.json
+          test -f scripts/Diversion_Conversion.py
+
+      - name: Build remote rules (Diversion_Conversion.py)
+        run: |
+          set -eux
+          python scripts/Diversion_Conversion.py
         env:
           SINGBOX_BIN: ${{ runner.temp }}/sing-box
           MIHOMO_BIN: ${{ runner.temp }}/mihomo
 
-      - name: Commit & push (safe)
+      - name: Commit & push (safe, remote only)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -81,12 +91,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 不提交 remote-tmp（中间产物）
+          # 不保留 remote-tmp（中间产物），但要把删除也 stage 掉
           rm -rf remote-tmp || true
+          git add -A remote-tmp || true
 
+          # 只提交 remote 产物 + 清单
           [ -d remote-mrs ] && git add -A remote-mrs
           [ -d remote-srs ] && git add -A remote-srs
           [ -f remote-rules.json ] && git add remote-rules.json
+
+          echo "git status:"
+          git status --porcelain || true
 
           if git diff --cached --quiet; then
             echo "No changes."
@@ -95,9 +110,20 @@ jobs:
 
           git commit -m "build: update remote MRS+SRS $(date -u +'%Y-%m-%d %H:%M UTC')"
 
+          # 确保工作区干净再 rebase
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Working tree not clean:"
+            git status --porcelain
+            exit 1
+          fi
+
           for i in 1 2 3 4 5; do
             git fetch origin "${BRANCH}"
-            git rebase "origin/${BRANCH}"
+            git rebase "origin/${BRANCH}" || {
+              git rebase --abort || true
+              echo "Rebase failed."
+              exit 1
+            }
             if git push origin "HEAD:${BRANCH}"; then
               echo "Push success."
               exit 0
