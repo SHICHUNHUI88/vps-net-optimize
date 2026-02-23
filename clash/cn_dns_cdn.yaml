@@ -324,5 +324,10 @@ payload:
   # ===== ASN（后端基本都在阿里系 ASN 上）=====
   - IP-ASN,37963
 
+  # 星辉
+  - DOMAIN,5cili.app
+  - DOMAIN-SUFFIX,5cili.app
+  - DOMAIN-KEYWORD,5cili
+
   
   
