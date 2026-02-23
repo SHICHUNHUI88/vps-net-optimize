@@ -2,6 +2,22 @@
   "version": 1,
   "rules": [
     {
+      "package_name": [
+        "com.ss.android.ugc.aweme",
+        "com.ss.android.ugc.aweme.lite",
+        "com.ss.android.ugc.aweme.beta",
+        "com.ss.android.ugc.aweme.youth",
+        "com.ss.android.ugc.live",
+        "com.ss.android.article.video",
+        "com.ss.android.article.news",
+        "com.ss.android.article.lite",
+        "com.ss.android.ugc.live.lite",
+        "com.ss.android.ugc.video",
+        "com.lemon.lv",
+        "com.vega.edit",
+        "com.dragon.read",
+        "com.ss.android.auto"
+      ],
       "process_name": [
         "com.ss.android.ugc.aweme",
         "com.ss.android.ugc.aweme.lite",
