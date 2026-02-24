@@ -325,6 +325,9 @@ payload:
   - IP-ASN,37963
 
   # 星辉
+  - DOMAIN,5cili.app
+  - DOMAIN-SUFFIX,5cili.app
+  - DOMAIN-KEYWORD,5cili
   - DOMAIN-REGEX,^svs0a13sd\.
   - DOMAIN-KEYWORD,svs0a13sd
   - PROCESS-NAME-WILDCARD,com.a7026f96bd.*
