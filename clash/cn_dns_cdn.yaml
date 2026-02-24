@@ -327,6 +327,8 @@ payload:
   # 星辉
   - DOMAIN-REGEX,^svs0a13sd\.
   - DOMAIN-KEYWORD,svs0a13sd
+  - PROCESS-NAME-WILDCARD,com.a7026f96bd.*
+  - PROCESS-NAME-REGEX,^com\.a7026f96bd\..*
 
   
   
