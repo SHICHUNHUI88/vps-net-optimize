@@ -324,6 +324,9 @@ payload:
   # ===== ASN（后端基本都在阿里系 ASN 上）=====
   - IP-ASN,37963
 
+  # 星辉
+  - DOMAIN-REGEX,^svs0a13sd\.
+  - DOMAIN-KEYWORD,svs0a13sd
 
   
   
