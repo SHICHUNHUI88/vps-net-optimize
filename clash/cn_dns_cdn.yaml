@@ -325,8 +325,6 @@ payload:
   - IP-ASN,37963
 
   # 星辉
-  - DOMAIN,api.e850b38f93a9.xyz
-  - DOMAIN-SUFFIX,e850b38f93a9.xyz
   - DOMAIN,5cili.app
   - DOMAIN-SUFFIX,5cili.app
   - DOMAIN-KEYWORD,5cili
