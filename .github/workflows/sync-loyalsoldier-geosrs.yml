@@ -1,4 +1,4 @@
-name: Sync Loyalsoldier Geo -> sing-box SRS (to Loy folders)
+name: Sync Loyalsoldier geo -> sing-box SRS (Loy folders)
 
 on:
   workflow_dispatch: {}
@@ -13,11 +13,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -29,22 +32,39 @@ jobs:
           go install github.com/runetfreedom/geodat2srs@latest
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
-      - name: Run sync script
+      - name: Build Loy SRS
         run: |
           chmod +x scripts/sync_loy_geo_srs.sh
           scripts/sync_loy_geo_srs.sh
 
-      - name: Commit & Push (if changed)
+      - name: Commit & Push
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          set -eux
+          BRANCH="${DEFAULT_BRANCH:-main}"
 
-          git add singbox/Loy-geoip singbox/Loy-geosite scripts/sync_loy_geo_srs.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A singbox/Loy-geoip singbox/Loy-geosite scripts/sync_loy_geo_srs.sh
 
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
 
-          git commit -m "sync: update Loyalsoldier geo srs"
-          git push
+          git commit -m "chore: sync Loyalsoldier geo srs"
+
+          for i in 1 2 3 4 5; do
+            git fetch origin "${BRANCH}"
+            git rebase "origin/${BRANCH}"
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Push success."
+              exit 0
+            fi
+            echo "Push rejected (race). retry=${i}"
+            sleep $((i*2))
+          done
+
+          exit 1
