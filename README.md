@@ -197,10 +197,10 @@ https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geoip
 
 ## 目录结构（Loyalsoldier）
 
-```text
 singbox/
   Loy-geosite/   # 域名类规则集（.srs）
   Loy-geoip/     # IP 类规则集（.srs）
+
 ---
 
 ## CDN 目录链接（推荐）
