@@ -184,3 +184,38 @@ https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geoip
 
 > 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如 `geosite/geosite-google.srs`、`geoip/geoip-google.srs`）。
 
+---
+
+## 上游来源（Loyalsoldier）
+
+本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
+
+- `Loyalsoldier/v2ray-rules-dat`（`geosite.dat`）
+- `Loyalsoldier/geoip`（`geoip.dat`）
+
+---
+
+## 目录结构（Loyalsoldier）
+
+```text
+singbox/
+  Loy-geosite/   # 域名类规则集（.srs）
+  Loy-geoip/     # IP 类规则集（.srs）
+---
+
+## CDN 目录链接（推荐）
+
+### Loy-GeoSite（SRS 目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/Loy-geosite
+```
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/Loy-geosite
+
+### GeoIP（SRS 目录）
+```
+https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/Loy-geoip
+```
+https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/Loy-geoip
+
+> 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如 `Loy-geosite/geosite-google.srs`、`Loy-geoip/geoip-google.srs`）。
+
