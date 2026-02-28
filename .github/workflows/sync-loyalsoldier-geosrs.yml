@@ -1,9 +1,12 @@
-name: Sync Loyalsoldier geo -> sing-box SRS (Loy folders)
+name: Sync Loyalsoldier Geo -> sing-box SRS (Loy folders)
 
 on:
   workflow_dispatch: {}
   schedule:
     - cron: "0 23 * * *"  # 北京时间 07:00（UTC 23:00）
+  push:
+    paths:
+      - ".github/workflows/sync-loyalsoldier-geosrs.yml"
 
 permissions:
   contents: write
@@ -32,10 +35,20 @@ jobs:
           go install github.com/runetfreedom/geodat2srs@latest
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
-      - name: Build Loy SRS
+      - name: Download & Convert (Loy)
         run: |
-          chmod +x scripts/sync_loy_geo_srs.sh
-          scripts/sync_loy_geo_srs.sh
+          set -eux
+          GEOIP_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat'
+          GEOSITE_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
+
+          mkdir -p singbox/Loy-geoip singbox/Loy-geosite
+          rm -f singbox/Loy-geoip/*.srs singbox/Loy-geosite/*.srs 2>/dev/null || true
+
+          curl -fsSL --retry 3 --retry-delay 2 "$GEOIP_URL" -o geoip.dat
+          curl -fsSL --retry 3 --retry-delay 2 "$GEOSITE_URL" -o geosite.dat
+
+          geodat2srs geoip   -i geoip.dat   -o singbox/Loy-geoip
+          geodat2srs geosite -i geosite.dat -o singbox/Loy-geosite
 
       - name: Commit & Push
         env:
@@ -47,7 +60,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A singbox/Loy-geoip singbox/Loy-geosite scripts/sync_loy_geo_srs.sh
+          git add -A singbox/Loy-geoip singbox/Loy-geosite
 
           if git diff --cached --quiet; then
             echo "No changes."
