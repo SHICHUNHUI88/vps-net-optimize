@@ -12,6 +12,5 @@
   {"name":"Loy-gfw","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt","format":"domain-text"},
   {"name":"Loy-tld-not-cn","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt","format":"domain-text"},
   {"name":"Loy-direct","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt","format":"domain-text"},
-  {"name":"Loy-private","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt","format":"domain-text"},
-  {"name":"Loy-applications","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt","format":"domain-text"}
+  {"name":"Loy-private","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt","format":"domain-text"}
 ]
