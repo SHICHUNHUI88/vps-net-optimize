@@ -5,11 +5,10 @@ set -euo pipefail
 GEOIP_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat'
 GEOSITE_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
 
-# ===== 你的仓库目录结构（按你截图）=====
-OUT_GEOIP_DIR='singbox/geoip'
-OUT_GEOSITE_DIR='singbox/geosite'
+# ===== 输出目录：你要求的两个新文件夹 =====
+OUT_GEOIP_DIR='singbox/Loy-geoip'
+OUT_GEOSITE_DIR='singbox/Loy-geosite'
 
-# 临时目录
 WORKDIR="$(mktemp -d)"
 cleanup(){ rm -rf "$WORKDIR"; }
 trap cleanup EXIT
@@ -22,11 +21,14 @@ curl -fsSL --retry 3 --retry-delay 2 "$GEOIP_URL" -o "$WORKDIR/geoip.dat"
 echo "[2/4] Download geosite.dat"
 curl -fsSL --retry 3 --retry-delay 2 "$GEOSITE_URL" -o "$WORKDIR/geosite.dat"
 
-echo "[3/4] Convert geoip.dat -> SRS (prefix: Loy-)"
-# 生成一堆：Loy-cn.srs / Loy-telegram.srs ...（具体取决于 dat 内的 list）
-geodat2srs geoip -i "$WORKDIR/geoip.dat" -o "$OUT_GEOIP_DIR" --prefix "Loy-"
+# 可选：避免旧文件残留（强烈建议开）
+rm -f "$OUT_GEOIP_DIR"/*.srs 2>/dev/null || true
+rm -f "$OUT_GEOSITE_DIR"/*.srs 2>/dev/null || true
 
-echo "[4/4] Convert geosite.dat -> SRS (prefix: Loy-)"
-geodat2srs geosite -i "$WORKDIR/geosite.dat" -o "$OUT_GEOSITE_DIR" --prefix "Loy-"
+echo "[3/4] Convert geoip.dat -> SRS (no prefix, output to $OUT_GEOIP_DIR)"
+geodat2srs geoip -i "$WORKDIR/geoip.dat" -o "$OUT_GEOIP_DIR"
+
+echo "[4/4] Convert geosite.dat -> SRS (no prefix, output to $OUT_GEOSITE_DIR)"
+geodat2srs geosite -i "$WORKDIR/geosite.dat" -o "$OUT_GEOSITE_DIR"
 
 echo "Done."
