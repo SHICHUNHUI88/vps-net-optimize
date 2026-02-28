@@ -190,8 +190,8 @@ https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geoip
 
 本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
 
-- `Loyalsoldier/v2ray-rules-dat`（`geosite.dat`）
-- `Loyalsoldier/geoip`（`geoip.dat`）
+- `Loyalsoldier/v2ray-rules-dat`（geosite.dat）
+- `Loyalsoldier/geoip`（geoip.dat）
 
 ---
 
