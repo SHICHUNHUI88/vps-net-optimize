@@ -132,7 +132,9 @@ https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 ```
 https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/geo/geoip
 
-> 说明：这是“目录链接”，ClashMi 会按需下载其中的 `.mrs` 小文件（例如 `geosite/google.mrs`、`geoip/google.mrs`）。
+> 说明：这是“目录链接”，ClashMi 会按需下载其中的 `.mrs` 小文件（例如 
+- `geosite/google.mrs`
+- `geoip/google.mrs`
 
 ---
 
@@ -182,7 +184,9 @@ https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/geoip
 ```
 https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/geoip
 
-> 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如 `geosite/geosite-google.srs`、`geoip/geoip-google.srs`）。
+> 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如
+- `geosite/geosite-google.srs`
+- `geoip/geoip-google.srs`
 
 ---
 
@@ -219,5 +223,5 @@ https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/singbox/Loy-geoip
 
 > 说明：这是“目录链接”，singbox 会按需下载其中的 `.srs` 小文件（例如
 - `Loy-geosite/geosite-google.srs`
-- `Loy-geoip/geoip-google.srs`）。
+- `Loy-geoip/geoip-google.srs`
 
