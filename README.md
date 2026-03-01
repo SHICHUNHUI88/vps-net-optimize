@@ -120,7 +120,9 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 
 本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
 
-geox-url: {geoip:      "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat", geosite: "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"}
+geox-url: 
+  - geoip:   "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat" 
+  - geosite:"https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
 
 
 ---
