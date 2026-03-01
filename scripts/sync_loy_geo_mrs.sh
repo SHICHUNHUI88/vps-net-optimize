@@ -80,4 +80,7 @@ for f in "$WORKDIR/geosite_txt"/*.txt; do
   ./mihomo convert-ruleset domain text "$out" "${OUT_GEOSITE_DIR}/${tag}.mrs"
 done
 
+ls -lah geo || true
+find geo -maxdepth 2 -type f | head -n 20 || true
+
 echo "Done."
