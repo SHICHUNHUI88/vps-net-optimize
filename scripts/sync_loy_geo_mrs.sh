@@ -150,3 +150,6 @@ echo "geosite mrs: $(find "$OUT_GEOSITE_DIR" -type f -name '*.mrs' | wc -l | tr 
 
 echo "[DEBUG] geo tree sample:"
 find geo -maxdepth 2 -type f | head -n 30 || true
+
+# （可选）不想在仓库保留报告文件就清理掉
+rm -f geo/REPORT-loy-geosite-filtered.txt geo/REPORT-loy-geosite-skipped-keyword-regexp.txt || true
