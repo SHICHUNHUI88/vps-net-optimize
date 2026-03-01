@@ -41,23 +41,31 @@ jobs:
       - name: Install mihomo (for convert-ruleset)
         run: |
           set -eux
-          MIHOMO_URL="$(curl -fsSL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
-            | grep browser_download_url \
-            | grep linux-amd64 \
-            | head -n 1 \
-            | cut -d '"' -f 4)"
-          echo "mihomo url: $MIHOMO_URL"
-          curl -fsSL "$MIHOMO_URL" -o mihomo.tar.gz
 
-          if tar -tzf mihomo.tar.gz >/dev/null 2>&1; then
+          MIHOMO_VERSION="1.19.10"
+          ARCH="amd64"
+
+          URL_TGZ="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-${ARCH}-v${MIHOMO_VERSION}.tar.gz"
+          URL_GZ="https://github.com/MetaCubeX/mihomo/releases/download/v${MIHOMO_VERSION}/mihomo-linux-${ARCH}-v${MIHOMO_VERSION}.gz"
+
+          echo "Try tar.gz: $URL_TGZ"
+          if curl -fL --retry 3 --retry-delay 2 "$URL_TGZ" -o mihomo.tar.gz; then
             tar -xzf mihomo.tar.gz
-            chmod +x mihomo*/mihomo 2>/dev/null || true
-            cp -f mihomo*/mihomo ./mihomo
+            # 有的 release 会套目录，兜底找一下
+            if [ -f mihomo ]; then
+              chmod +x mihomo
+            else
+              BIN="$(find . -maxdepth 3 -type f -name mihomo | head -n 1)"
+              cp -f "$BIN" ./mihomo
+              chmod +x ./mihomo
+            fi
           else
-            gunzip -c mihomo.tar.gz > ./mihomo
+            echo "tar.gz not found, try gz: $URL_GZ"
+            curl -fL --retry 3 --retry-delay 2 "$URL_GZ" -o mihomo.gz
+            gunzip -c mihomo.gz > ./mihomo
+            chmod +x ./mihomo
           fi
 
-          chmod +x ./mihomo
           ./mihomo -v
 
       # ✅ 先同步到最新（工作区干净，rebase 不会失败）
