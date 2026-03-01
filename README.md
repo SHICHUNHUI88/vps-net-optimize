@@ -120,13 +120,13 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 
 在 ClashMi → **Geo RuleSet** 中填写以下两个目录链接（推荐使用 CDN）：
 
-### GeoSite mrs（域名规则集目录）
+### GeoSite mrs（域名-mrs 规则集目录）
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geosite
 ```
 https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/geo/geosite
 
-### GeoIP mrs（IP 规则集目录）
+### GeoIP（IP-mrs 规则集目录）
 ```
 https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/geo/geoip
 ```
