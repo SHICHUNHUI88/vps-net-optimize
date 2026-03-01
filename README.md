@@ -116,6 +116,15 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 
 ---
 
+## 上游来源（Loyalsoldier）
+
+本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
+
+geox-url: {geoip:      "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat", geosite: "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"}
+
+
+---
+
 ## 使用方法（ClashMi）
 
 在 ClashMi → **Geo RuleSet** 中填写以下两个目录链接（推荐使用 CDN）：
@@ -143,15 +152,6 @@ https://github.com/SHICHUNHUI88/vps-net-optimize/tree/main/geo/geoip
 - 上游来源：Loyalsoldier / MetaCubeX 相关 Geo 规则体系（拆分 `.mrs`）
 - 同步频率：每日自动同步（北京时间凌晨更新）
 - 同步策略：**增删同步**（上游新增/删除/更新都会同步到本仓库）
-
----
-
-## 上游来源（Loyalsoldier）
-
-本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
-
-- `Loyalsoldier/v2ray-rules-dat`（geosite.dat）
-- `Loyalsoldier/geoip`（geoip.dat）
 
 ---
 
