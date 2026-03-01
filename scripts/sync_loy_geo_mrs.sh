@@ -4,20 +4,17 @@ set -euo pipefail
 GEOIP_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat'
 GEOSITE_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
 
-# 输出目录（你要的）
 OUT_GEOIP_DIR='geo/geoip'
 OUT_GEOSITE_DIR='geo/geosite'
 
 MIHOMO_BIN="${MIHOMO_BIN:-./mihomo}"
 
-# ---- 保证在仓库根目录执行（避免相对路径跑偏）----
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "[INFO] repo root: $(pwd)"
 
-# --- 检查依赖 ---
 command -v v2dat >/dev/null 2>&1 || { echo "ERROR: v2dat not found in PATH"; exit 1; }
 [ -x "$MIHOMO_BIN" ] || { echo "ERROR: mihomo not executable at $MIHOMO_BIN"; ls -lah; exit 1; }
 
@@ -33,8 +30,10 @@ curl -fsSL --retry 3 --retry-delay 2 "$GEOSITE_URL" -o "$WORKDIR/geosite.dat"
 
 echo "[2/6] Unpack dat -> txt..."
 mkdir -p "$WORKDIR/geoip_txt" "$WORKDIR/geosite_txt"
-v2dat unpack geoip   -d "$WORKDIR/geoip_txt"   "$WORKDIR/geoip.dat"
-v2dat unpack geosite -d "$WORKDIR/geosite_txt" "$WORKDIR/geosite.dat"
+
+# ✅ 关键修复：urlesistiana/v2dat 用 -o/--out，不支持 -d
+v2dat unpack geoip   -o "$WORKDIR/geoip_txt"   "$WORKDIR/geoip.dat"
+v2dat unpack geosite -o "$WORKDIR/geosite_txt" "$WORKDIR/geosite.dat"
 
 echo "[DEBUG] unpack samples:"
 echo "  geoip_txt:"
@@ -47,9 +46,9 @@ GEOSITE_TXT_COUNT="$(find "$WORKDIR/geosite_txt" -type f -name '*.txt' | wc -l |
 echo "[DEBUG] geoip txt count   = $GEOIP_TXT_COUNT"
 echo "[DEBUG] geosite txt count = $GEOSITE_TXT_COUNT"
 
-# 如果解包后一个 txt 都没有，直接失败（别“假成功”）
 if [ "$GEOIP_TXT_COUNT" -eq 0 ] || [ "$GEOSITE_TXT_COUNT" -eq 0 ]; then
-  echo "ERROR: unpack produced 0 txt files. v2dat output structure/command may differ."
+  echo "ERROR: unpack produced 0 txt files."
+  echo "Hint: check v2dat output files (maybe not .txt) or permissions."
   exit 1
 fi
 
@@ -57,17 +56,15 @@ echo "[3/6] Clean output (sync add/del)..."
 rm -rf "$OUT_GEOIP_DIR" "$OUT_GEOSITE_DIR"
 mkdir -p "$OUT_GEOIP_DIR" "$OUT_GEOSITE_DIR" geo
 
-# 报告
 REPORT_FILTERED="geo/REPORT-loy-geosite-filtered.txt"
 REPORT_SKIPPED="geo/REPORT-loy-geosite-skipped-keyword-regexp.txt"
 : > "$REPORT_FILTERED"
 : > "$REPORT_SKIPPED"
 
-# 原子写：先生成 tmp 成功再替换
 convert_atomic() {
-  local behavior="$1"  # domain / ipcidr
-  local src_text="$2"  # input text file
-  local dst_mrs="$3"   # output mrs file
+  local behavior="$1"   # domain / ipcidr
+  local src_text="$2"   # input text file
+  local dst_mrs="$3"    # output mrs file
   local tmp_out="${dst_mrs}.tmp"
 
   rm -f "$tmp_out" 2>/dev/null || true
@@ -112,7 +109,6 @@ while IFS= read -r f; do
   out_txt="$WORKDIR/geosite_domain_only/${tag}.txt"
   : > "$out_txt"
 
-  # 只保留 domain/full，丢弃 keyword/regexp（mrs 不支持）
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     case "$line" in
