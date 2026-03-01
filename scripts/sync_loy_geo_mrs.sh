@@ -2,15 +2,25 @@
 set -euo pipefail
 
 # ---------------------------
-# Loy DAT -> Split MRS (geo/)
-# Requirements:
-#   - v2dat in PATH
-#   - ./mihomo in repo root (or MIHOMO_BIN env)
+# Loyalsoldier DAT -> Split MRS (geo/)
 # Output:
 #   geo/geoip/*.mrs
 #   geo/geosite/*.mrs
+# Reports:
+#   geo/REPORT-loy-geosite-filtered.txt
+#   geo/REPORT-loy-geosite-skipped-keyword-regexp.txt
+#
+# Requirements:
+#   - v2dat in PATH
+#   - ./mihomo exists in repo root (or set MIHOMO_BIN)
 # Notes:
-#   - geosite supports domain/full only; keyword/regexp are skipped (mrs can't represent them)
+#   - geosite.dat contains keyword/regexp which cannot be represented in .mrs domain ruleset.
+#     We keep only:
+#       - domain (suffix)  => ".example.com"
+#       - full (exact)     => "www.example.com"
+#     Skip:
+#       - keyword:*
+#       - regexp:*
 # ---------------------------
 
 GEOIP_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat'
@@ -18,18 +28,19 @@ GEOSITE_URL='https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/ge
 
 OUT_GEOIP_DIR='geo/geoip'
 OUT_GEOSITE_DIR='geo/geosite'
+REPORT_DIR='geo'
 
-# allow override
 MIHOMO_BIN="${MIHOMO_BIN:-./mihomo}"
 
 log() { echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $*"; }
 
-# Ensure we are at repo root (script may be called from anywhere)
+# Ensure run at repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$REPO_ROOT"
 
 log "Repo root: $(pwd)"
+
 log "Check tools..."
 command -v v2dat >/dev/null 2>&1 || { echo "ERROR: v2dat not found in PATH"; exit 1; }
 [ -x "$MIHOMO_BIN" ] || { echo "ERROR: mihomo not executable at: $MIHOMO_BIN"; ls -lah; exit 1; }
@@ -48,46 +59,51 @@ curl -fsSL --retry 3 --retry-delay 2 "$GEOSITE_URL" -o "$WORKDIR/geosite.dat"
 
 log "2) Unpack DAT -> split txt..."
 mkdir -p "$WORKDIR/geoip_txt" "$WORKDIR/geosite_txt"
-# v2dat output filenames are typically geoip_<tag>.txt and geosite_<tag>.txt
+
+# v2dat 输出结构可能是：直接一堆 txt，或者多层子目录
 v2dat unpack geoip   -d "$WORKDIR/geoip_txt"   "$WORKDIR/geoip.dat"
 v2dat unpack geosite -d "$WORKDIR/geosite_txt" "$WORKDIR/geosite.dat"
 
+log "DEBUG: show unpack outputs (first 80 files)"
+find "$WORKDIR/geoip_txt"   -maxdepth 4 -type f | head -n 40 || true
+find "$WORKDIR/geosite_txt" -maxdepth 4 -type f | head -n 40 || true
+
 log "3) Rebuild output dirs (clean sync)..."
 rm -rf "$OUT_GEOIP_DIR" "$OUT_GEOSITE_DIR"
-mkdir -p "$OUT_GEOIP_DIR" "$OUT_GEOSITE_DIR"
+mkdir -p "$OUT_GEOIP_DIR" "$OUT_GEOSITE_DIR" "$REPORT_DIR"
 
-log "4) Compile geoip -> split mrs..."
-shopt -s nullglob
-geoip_count=0
-for f in "$WORKDIR/geoip_txt"/*.txt; do
-  base="$(basename "$f")"   # geoip_<TAG>.txt (normally)
-  tag="${base#geoip_}"
-  tag="${tag%.txt}"
-  # If naming doesn't match expected, fall back to base name without ext
-  if [[ "$tag" == "$base" ]]; then
-    tag="${base%.txt}"
-  fi
-  "$MIHOMO_BIN" convert-ruleset ipcidr text "$f" "${OUT_GEOIP_DIR}/${tag}.mrs"
-  geoip_count=$((geoip_count+1))
-done
-log "geoip mrs generated: ${geoip_count}"
-
-log "5) Compile geosite -> split mrs (domain/full only)..."
-mkdir -p "$WORKDIR/geosite_domain_only"
-
-# Report files
-REPORT_DIR="geo"
 REPORT_FILTERED="${REPORT_DIR}/REPORT-loy-geosite-filtered.txt"
 REPORT_SKIPPED="${REPORT_DIR}/REPORT-loy-geosite-skipped-keyword-regexp.txt"
 : > "$REPORT_FILTERED"
 : > "$REPORT_SKIPPED"
 
+log "4) Compile geoip -> split mrs..."
+geoip_count=0
+# 用 find 抓所有 txt，避免 v2dat 输出在子目录导致匹配不到
+while IFS= read -r f; do
+  base="$(basename "$f")"
+  tag="${base#geoip_}"
+  tag="${tag%.txt}"
+  # 如果命名不是 geoip_xxx.txt，就用文件名本体
+  if [[ "$tag" == "$base" ]]; then
+    tag="${base%.txt}"
+  fi
+
+  "$MIHOMO_BIN" convert-ruleset ipcidr text "$f" "${OUT_GEOIP_DIR}/${tag}.mrs"
+  geoip_count=$((geoip_count+1))
+done < <(find "$WORKDIR/geoip_txt" -type f -name '*.txt' | sort)
+
+log "geoip mrs generated: ${geoip_count}"
+
+log "5) Compile geosite -> split mrs (domain/full only)..."
+mkdir -p "$WORKDIR/geosite_domain_only"
+
 geosite_count=0
 filtered_empty_count=0
 skipped_kw_re_count=0
 
-for f in "$WORKDIR/geosite_txt"/*.txt; do
-  base="$(basename "$f")"   # geosite_<TAG>.txt
+while IFS= read -r f; do
+  base="$(basename "$f")"
   tag="${base#geosite_}"
   tag="${tag%.txt}"
   if [[ "$tag" == "$base" ]]; then
@@ -97,10 +113,6 @@ for f in "$WORKDIR/geosite_txt"/*.txt; do
   out="$WORKDIR/geosite_domain_only/${tag}.txt"
   : > "$out"
 
-  # Convert lines:
-  #   - keyword:* / regexp:*  -> skip (mrs can't represent)
-  #   - full:example.com      -> keep as exact domain
-  #   - example.com (domain)  -> convert to ".example.com" (suffix match)
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
 
@@ -114,8 +126,7 @@ for f in "$WORKDIR/geosite_txt"/*.txt; do
         echo "${line#full:}" >> "$out"
         ;;
       *)
-        # domain line => suffix rule
-        # keep wildcard or already-dot lines
+        # 普通 domain：转后缀匹配 .example.com
         if [[ "$line" == .* || "$line" == *"*"* ]]; then
           echo "$line" >> "$out"
         else
@@ -125,6 +136,7 @@ for f in "$WORKDIR/geosite_txt"/*.txt; do
     esac
   done < "$f"
 
+  # 过滤后为空（这个 tag 全是 keyword/regexp）就记录并跳过
   if [[ ! -s "$out" ]]; then
     echo "${tag}" >> "$REPORT_FILTERED"
     filtered_empty_count=$((filtered_empty_count+1))
@@ -133,24 +145,22 @@ for f in "$WORKDIR/geosite_txt"/*.txt; do
 
   "$MIHOMO_BIN" convert-ruleset domain text "$out" "${OUT_GEOSITE_DIR}/${tag}.mrs"
   geosite_count=$((geosite_count+1))
-done
+done < <(find "$WORKDIR/geosite_txt" -type f -name '*.txt' | sort)
 
 log "geosite mrs generated: ${geosite_count}"
-log "geosite tags filtered empty (all keyword/regexp): ${filtered_empty_count}"
-log "geosite lines skipped (keyword/regexp total): ${skipped_kw_re_count}"
+log "geosite tags filtered empty: ${filtered_empty_count}"
+log "geosite lines skipped (keyword/regexp): ${skipped_kw_re_count}"
 
-log "6) Debug listing..."
-log "Repo root files:"
-ls -lah | sed -n '1,120p' || true
-
-log "geo tree:"
+log "6) Final debug listing..."
+log "geo folder:"
 ls -lah geo || true
+
 echo "geoip .mrs count:"
 find "$OUT_GEOIP_DIR" -type f -name '*.mrs' | wc -l || true
 echo "geosite .mrs count:"
 find "$OUT_GEOSITE_DIR" -type f -name '*.mrs' | wc -l || true
 
-log "Sample output files (first 30):"
-find geo -maxdepth 2 -type f | head -n 30 || true
+log "Sample outputs (first 40):"
+find geo -maxdepth 2 -type f | head -n 40 || true
 
 log "Done."
