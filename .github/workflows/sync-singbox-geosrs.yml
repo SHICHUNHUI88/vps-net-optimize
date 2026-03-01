@@ -3,7 +3,7 @@ name: Sync sing-box Geo RuleSet (Split SRS)
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 22 * * *"  # 北京时间 06:00（UTC 22:00）
+    - cron: "0 23 * * *"  # 北京时间 07:00（UTC 23:00）
   push:
     paths:
       - ".github/workflows/sync-singbox-geosrs.yml"
