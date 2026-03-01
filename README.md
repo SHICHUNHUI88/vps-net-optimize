@@ -118,7 +118,7 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 
 ## 上游来源（Loyalsoldier）
 
-本仓库同步并转换的 `.srs` 规则集来自 Loyalsoldier：
+本仓库同步并转换的 `.mrs` 规则集来自 Loyalsoldier：
 
 geox-url: 
   - geoip:   "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat" 
