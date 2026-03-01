@@ -122,7 +122,8 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e8
 
 geox-url: 
   - geoip:   "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/geoip.dat" 
-  - geosite:"https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
+  - geosite:
+"https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
 
 
 ---
