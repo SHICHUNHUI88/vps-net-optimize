@@ -1,0 +1,101 @@
+name: Sync Loyalsoldier DAT -> Split MRS (geo/)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 21 * * *"  # 北京时间 05:00（UTC 21:00）
+  push:
+    paths:
+      - ".github/workflows/sync-loyalsoldier-geomrs.yml"
+      - "scripts/sync_loy_geo_mrs.sh"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repo-geo-writer
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup Go (for v2dat)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Install v2dat
+        run: |
+          set -eux
+          go install github.com/urlesistiana/v2dat@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          v2dat -h || true
+
+      - name: Install mihomo (for convert-ruleset)
+        run: |
+          set -eux
+          # 固定版本更稳，你也可以把 latest 改成某个 tag
+          MIHOMO_URL="$(curl -fsSL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
+            | grep browser_download_url \
+            | grep linux-amd64 \
+            | head -n 1 \
+            | cut -d '"' -f 4)"
+          echo "mihomo url: $MIHOMO_URL"
+          curl -fsSL "$MIHOMO_URL" -o mihomo.tar.gz
+
+          if tar -tzf mihomo.tar.gz >/dev/null 2>&1; then
+            tar -xzf mihomo.tar.gz
+            chmod +x mihomo*/mihomo 2>/dev/null || true
+            cp -f mihomo*/mihomo ./mihomo
+          else
+            gunzip -c mihomo.tar.gz > ./mihomo
+          fi
+
+          chmod +x ./mihomo
+          ./mihomo -v
+
+      - name: Run sync script
+        run: |
+          set -eux
+          chmod +x scripts/sync_loy_geo_mrs.sh
+          scripts/sync_loy_geo_mrs.sh
+
+      - name: Commit & push (safe)
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -eux
+          BRANCH="${DEFAULT_BRANCH:-main}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A geo
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git commit -m "chore: sync Loyalsoldier dat -> split mrs (geo)"
+
+          for i in 1 2 3 4 5; do
+            git fetch origin "${BRANCH}"
+            git rebase "origin/${BRANCH}"
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Push success."
+              exit 0
+            fi
+            echo "Push rejected (race). retry=${i}"
+            sleep $((i*2))
+          done
+
+          echo "Failed to push after retries."
+          exit 1
