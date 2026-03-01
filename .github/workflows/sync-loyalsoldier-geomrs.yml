@@ -60,7 +60,7 @@ jobs:
           chmod +x ./mihomo
           ./mihomo -v
 
-      # ✅ 关键：先同步到最新（此时工作区干净，rebase 不会失败）
+      # ✅ 先同步到最新（工作区干净，rebase 不会失败）
       - name: Sync branch to latest (pre-run)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -76,14 +76,17 @@ jobs:
           chmod +x scripts/sync_loy_geo_mrs.sh
           scripts/sync_loy_geo_mrs.sh
 
-      # （可选但强烈推荐）让你在日志里一眼看到生成了多少
+      # ✅ 强烈建议：把 ignored 也打印出来，秒定位 *.mrs 是否被忽略
       - name: Show outputs (debug)
         run: |
           set -eux
           ls -lah geo || true
           echo "geoip mrs count:";   find geo/geoip   -type f -name '*.mrs' | wc -l || true
           echo "geosite mrs count:"; find geo/geosite -type f -name '*.mrs' | wc -l || true
+          echo "git status (porcelain):"
           git status --porcelain || true
+          echo "git status (ignored):"
+          git status --ignored --porcelain || true
 
       - name: Commit & push (safe)
         env:
@@ -95,7 +98,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # ✅ 先正常 add
           git add -A geo
+          # ✅ 再强制 add mrs（即使 .gitignore 忽略也能提交）
+          git add -f geo/geoip/*.mrs geo/geosite/*.mrs 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No changes."
