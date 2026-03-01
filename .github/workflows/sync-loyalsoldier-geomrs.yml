@@ -51,7 +51,6 @@ jobs:
           echo "Try tar.gz: $URL_TGZ"
           if curl -fL --retry 3 --retry-delay 2 "$URL_TGZ" -o mihomo.tar.gz; then
             tar -xzf mihomo.tar.gz
-            # 有的 release 会套目录，兜底找一下
             if [ -f mihomo ]; then
               chmod +x mihomo
             else
@@ -68,7 +67,6 @@ jobs:
 
           ./mihomo -v
 
-      # ✅ 先同步到最新（工作区干净，rebase 不会失败）
       - name: Sync branch to latest (pre-run)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -84,7 +82,6 @@ jobs:
           chmod +x scripts/sync_loy_geo_mrs.sh
           scripts/sync_loy_geo_mrs.sh
 
-      # ✅ 强烈建议：把 ignored 也打印出来，秒定位 *.mrs 是否被忽略
       - name: Show outputs (debug)
         run: |
           set -eux
@@ -96,6 +93,7 @@ jobs:
           echo "git status (ignored):"
           git status --ignored --porcelain || true
 
+      # ✅ 这里整段换成“stash 版”，push 被拒绝也不会因为工作区脏导致 rebase 失败
       - name: Commit & push (safe)
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -106,9 +104,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # ✅ 先正常 add
           git add -A geo
-          # ✅ 再强制 add mrs（即使 .gitignore 忽略也能提交）
           git add -f geo/geoip/*.mrs geo/geosite/*.mrs 2>/dev/null || true
 
           if git diff --cached --quiet; then
@@ -123,9 +119,28 @@ jobs:
               echo "Push success."
               exit 0
             fi
+
             echo "Push rejected (race). retry=${i}"
+
+            # 让工作区变干净，避免 rebase 报 unstaged changes
+            git stash push -u -m "actions-autostash" || true
+
             git fetch origin "${BRANCH}"
             git rebase "origin/${BRANCH}"
+
+            git stash pop || true
+
+            # 重新 add（stash pop 会带回变动）
+            git add -A geo
+            git add -f geo/geoip/*.mrs geo/geosite/*.mrs 2>/dev/null || true
+
+            # 如果出现冲突，直接失败（避免推错）
+            if git diff --name-only --diff-filter=U | grep -q .; then
+              echo "Conflict after rebase/stash pop. Abort."
+              git status --porcelain || true
+              exit 1
+            fi
+
             sleep $((i*2))
           done
 
