@@ -88,9 +88,7 @@ wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/mack-
 适用于 Android 手機 ClashMeta /Clash Mi（ Mihomo
 ）支持与 VPS 11协议配合使用：
 
-👉 一键查看模板：
-
-https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/099059cfce913ef7b80496fbf4241324/raw/us_la.yaml
+[👉 一键查看模板](https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/099059cfce913ef7b80496fbf4241324/raw/us_la.yaml)
 
 可以将此模板全部复制给gpt让他记住，然后把VPS的11个协议全部复制出来给gpt让他按照这个模板来提取连接配置更换就可以了
 
@@ -100,9 +98,7 @@ https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/099059cfce913ef7b8
 
 **✅ 适配Android sing-box 内核 1.12.12以上**
 
-👉 一键查看模板：
-
-https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json
+[👉 一键查看模板](https://cdn.gh-proxy.org/https://gist.github.com/SHICHUNHUI88/ea81e07938efe1b2e892db7a9bee872e/raw/singbox-v1.12-config.json)
 
 ---
 
