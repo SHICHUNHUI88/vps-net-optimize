@@ -758,12 +758,14 @@ payload:
   - DOMAIN-KEYWORD,recaptcha
   - DOMAIN-KEYWORD,youtube
   - DOMAIN-KEYWORD,ytimg  
-  # 🌐 IP地址段匹配
+  # 🌐 IP地址段匹配/ASN
   - IP-CIDR,172.110.32.0/21
   - IP-CIDR,173.194.0.0/16
   - IP-CIDR,216.73.80.0/20
   - IP-CIDR,74.125.0.0/16
   - IP-CIDR6,2620:120:e000::/40  
+  - IP-ASN,15169
+  - IP-ASN,396982
 
   # ==== 🤖 Gemini / Bard (Google AI) ====
   - PROCESS-NAME,com.google.android.apps.bard
