@@ -141,6 +141,7 @@ def detect_format(fmt: str, raw_text: str) -> str:
         "ip_text",
         "singbox-json",
         "singbox_json",
+        "source",
         "auto",
     ):
         pass
