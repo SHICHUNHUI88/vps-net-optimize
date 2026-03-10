@@ -156,6 +156,8 @@ def detect_format(fmt: str, raw_text: str) -> str:
             return "ip-text"
         if fmt == "singbox_json":
             return "singbox-json"
+        if fmt == "source":
+            return "singbox-json"
         return fmt
 
     # 自动检测
