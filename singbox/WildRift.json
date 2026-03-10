@@ -1,27 +1,27 @@
 {
-  "version": 1,
+  "version": 3,
   "rules": [
     {
       "domain_suffix": [
-        "riotgames.com",
-        "riot.com",
-        "pvp.net",
-        "leagueoflegends.com",
-        "playvalorant.com",
-        "vivox.com",
-        "vxe1.vivox.com",
-        "vxg1.vivox.com",
-        "account.riotgames.com",
-        "auth.riotgames.com",
-        "api.riotgames.com",
-        "riot-client.riotgames.com",
-        "clientconfig.rpg.riotgames.com",
-        "anticheat.riotgames.com",
-        "playerpreferences.riotgames.com",
-        "riotcdn.net",
-        "wr-assets.riotcdn.net",
-        "l3cdn.riotgames.com",
-        "riotgamespatcher-a.akamaized.net"
+        ".riotgames.com",
+        ".riot.com",
+        ".pvp.net",
+        ".leagueoflegends.com",
+        ".playvalorant.com",
+        ".vivox.com",
+        ".vxe1.vivox.com",
+        ".vxg1.vivox.com",
+        ".account.riotgames.com",
+        ".auth.riotgames.com",
+        ".api.riotgames.com",
+        ".riot-client.riotgames.com",
+        ".clientconfig.rpg.riotgames.com",
+        ".anticheat.riotgames.com",
+        ".playerpreferences.riotgames.com",
+        ".riotcdn.net",
+        ".wr-assets.riotcdn.net",
+        ".l3cdn.riotgames.com",
+        ".riotgamespatcher-a.akamaized.net"
       ]
     },
     {
