@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 3,
   "rules": [
     {
       "process_name": [
@@ -63,7 +63,7 @@
         ".fliggy.com",
         ".gw.alicdn.com",
         ".h5api.m.taobao.com",
-        ".id lefish.com",
+        ".idlefish.com",
         ".kunlun.com",
         ".laisi.com",
         ".lazada.com",
@@ -95,7 +95,7 @@
       "domain_keyword": [
         "1688",
         "alibaba",
-        "alibabacloud",
+        "alibacloud",
         "aliexpress",
         "alicdn",
         "aliyun",
