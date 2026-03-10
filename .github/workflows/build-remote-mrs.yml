@@ -5,6 +5,11 @@ on:
   # 定时触发：每天北京时间 04:00（UTC 20:00）
   schedule:
     - cron: "0 20 * * *"
+  push:
+    paths:
+      - remote-rules.json
+      - scripts/Diversion_Conversion.py
+      - .github/workflows/buile-remote-mrs.yml
 
 permissions:
   contents: write
