@@ -14,5 +14,5 @@
   {"name":"Loy-direct","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt","format":"domain-text"},
   {"name":"Loy-private","url":"https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt","format":"domain-text"},
 
-{"name":"zj-douyin","url":"https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/douyin.json","format":"source"}
+{"name":"zj-douyin","url":"https://cdn.jsdelivr.net/gh/SHICHUNHUI88/vps-net-optimize@main/singbox/douyin.json","format":"singbox-json"}
 ]
