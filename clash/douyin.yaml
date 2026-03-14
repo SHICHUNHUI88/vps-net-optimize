@@ -67,6 +67,7 @@ payload:
   - DOMAIN-SUFFIX,ecombdstatic.com
   - DOMAIN-SUFFIX,doubao.com
   - DOMAIN-SUFFIX,kuiniuca.com
+  - DOMAIN-SUFFIX,ecombdapi.com
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
@@ -136,6 +137,7 @@ payload:
   - DOMAIN-KEYWORD,bytev
   - DOMAIN-KEYWORD,oceanengine
   - DOMAIN-KEYWORD,qishui
+  - DOMAIN-KEYWORD,ecombdapi
   # ==== 抖音国内 CDN / 加速 IP ====
   - IP-CIDR,101.227.0.0/16,no-resolve
   - IP-CIDR,101.32.0.0/16,no-resolve
