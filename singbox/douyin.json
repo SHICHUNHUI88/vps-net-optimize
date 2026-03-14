@@ -124,7 +124,8 @@
         ".ndcpp.com",
         ".getui.com",
         ".igexin.com",
-        ".doubao.com"
+        ".doubao.com",
+        ".ecombdapi.com"
       ],
       "domain_keyword": [
         "cdnbuild",
@@ -150,7 +151,8 @@
         "zjcdn",
         "bytev",
         "oceanengine",
-        "qishui"
+        "qishui",
+        "ecombdapi"
       ],
       "ip_cidr": [
         "101.227.0.0/16",
