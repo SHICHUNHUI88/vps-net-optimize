@@ -14,6 +14,8 @@ payload:
   - PROCESS-NAME,com.vega.edit
   - PROCESS-NAME,com.dragon.read
   - PROCESS-NAME,com.ss.android.auto
+  # 子域名
+  - DOMAIN,api.doupay.com
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.cn
@@ -68,6 +70,8 @@ payload:
   - DOMAIN-SUFFIX,doubao.com
   - DOMAIN-SUFFIX,kuiniuca.com
   - DOMAIN-SUFFIX,ecombdapi.com
+  - DOMAIN-SUFFIX,bytehwm.com
+  - DOMAIN-SUFFIX,comfylink.com
   # ==== 火山引擎与基础服务 (含 AI 组件) ====
   - DOMAIN-SUFFIX,volces.com
   - DOMAIN-SUFFIX,volcengine.com
@@ -146,6 +150,16 @@ payload:
   - IP-CIDR,123.125.0.0/16,no-resolve
   - IP-CIDR,140.205.0.0/16,no-resolve
   - IP-CIDR,182.140.0.0/16,no-resolve
+  - IP-CIDR,144.7.122.48/32,no-resolve
+  - IP-CIDR,106.13.244.93/32,no-resolve
+  - IP-CIDR,182.100.44.245/32,no-resolve
+  - IP-CIDR,117.24.163.100/32,no-resolve
+  - IP-CIDR,117.24.161.206/32,no-resolve
+  - IP-CIDR,112.49.41.140/32,no-resolve
+  - IP-CIDR,183.250.185.131/32,no-resolve
+  - IP-CIDR,111.62.113.87/32,no-resolve
+  - IP-CIDR,221.204.57.167/32,no-resolve
+  - IP-CIDR,111.225.145.5/32,no-resolve
   # ==== IPv6 ====
   - IP-CIDR6,2409:8c04:1002:8::2021/128,no-resolve
   - IP-CIDR6,240e:940:a03:1200:8922::102/128,no-resolve
@@ -154,6 +168,13 @@ payload:
   - IP-CIDR6,240e:964:1004:203::34/128,no-resolve
   - IP-CIDR6,240e:965:801:104::b00:104/128,no-resolve
   - IP-CIDR6,2409:8c04:1002:8::2001/128,no-resolve
+  - IP-CIDR6,2409:8c20:5a63:16::6/128,no-resolve
+  - IP-CIDR6,2408:8770:0:44:8000:0:d00:5/128,no-resolve
+  - IP-CIDR6,2408:8770:0:44:8000:0:d00:6/128,no-resolve
+  - IP-CIDR6,2409:8c34:d00:d00::131/128,no-resolve
+  - IP-CIDR6,2409:8c0c:310:1a00::11c/128,no-resolve
+  - IP-CIDR6,2408:8756:d0fd:f002:8000:0:d00:14/128,no-resolve
+  - IP-CIDR6,2409:8c04:1002:8::200/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   # ✅ 进程正则兜底（防止变体包名 / 新后缀）
