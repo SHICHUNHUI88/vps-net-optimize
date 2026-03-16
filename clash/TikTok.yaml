@@ -36,6 +36,8 @@ payload:
   - DOMAIN-SUFFIX,tiktok-sso.com
   - DOMAIN-SUFFIX,pangleglobal.com
   - DOMAIN-SUFFIX,pangleglobal.net
+  - DOMAIN-SUFFIX,appsflyersdk.com
+  - DOMAIN-SUFFIX,worldfcdn2.com
   # 📦 静态资源与视频流 (CDN)
   - DOMAIN-SUFFIX,tiktokcdn-com.akamaized.net
   - DOMAIN,lf16-effectcdn.byteeffecttos-g.com
@@ -91,6 +93,21 @@ payload:
   - IP-CIDR,47.246.0.0/16,no-resolve
   - IP-CIDR,52.74.0.0/16,no-resolve
   - IP-CIDR,52.220.0.0/15,no-resolve
+  - IP-CIDR,79.127.206.222/32,no-resolve
+  - IP-CIDR,79.127.206.223/32,no-resolve
+  - IP-CIDR,79.127.206.224/32,no-resolve
+  - IP-CIDR,185.93.0.6/32,no-resolve
+  - IP-CIDR,71.18.116.251/32,no-resolve
+  - IP-CIDR,71.18.116.252/32,no-resolve
+  - IP-CIDR,143.244.51.17/32,no-resolve
+  - IP-CIDR,143.244.51.18/32,no-resolve
+  - IP-CIDR,156.146.59.211/32,no-resolve
+  - IP-CIDR,71.18.8.233/32,no-resolve
+  - IP-CIDR,71.18.8.234/32,no-resolve
+  - IP-CIDR,89.187.171.13/32,no-resolve
+  - IP-CIDR,71.18.162.252/32,no-resolve
+  - IP-CIDR,71.18.162.253/32,no-resolve
+  - IP-CIDR,71.18.162.254/32,no-resolve
   # ✅ 进程正则兜底（防止变体包名）
   - PROCESS-NAME-REGEX,(?i)^com\.zhiliaoapp\.musically(\..+)?$
   - PROCESS-NAME-REGEX,(?i)^com\.ss\.android\.ugc\.trill(\..+)?$
