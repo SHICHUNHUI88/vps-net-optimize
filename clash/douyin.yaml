@@ -176,6 +176,7 @@ payload:
   - IP-CIDR6,2409:8c0c:310:1a00::11c/128,no-resolve
   - IP-CIDR6,2408:8756:d0fd:f002:8000:0:d00:14/128,no-resolve
   - IP-CIDR6,2409:8c04:1002:8::200/128,no-resolve
+  - IP-CIDR6,2408:871a:6010:302::1:102/128,no-resolve
   # ==== ASN 兜底 ====
   - IP-ASN,138667
   # ✅ 进程正则兜底（防止变体包名 / 新后缀）
