@@ -16,6 +16,7 @@ payload:
   - DOMAIN-SUFFIX,tiktok-browser.com
   - DOMAIN-SUFFIX,tik-tokapi.com
   - DOMAIN-SUFFIX,musical.ly
+  - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,tiktokmusic.app
   - DOMAIN-SUFFIX,tiktokd.net
   - DOMAIN-SUFFIX,tiktokd.org
