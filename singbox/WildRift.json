@@ -2,34 +2,54 @@
   "version": 3,
   "rules": [
     {
+      "process_name": [
+        "com.riotgames.league.wildrift",
+        "com.riotgames.league.wildrift.android",
+        "com.riotgames.league.teamfighttactics",
+        "RiotClientServices.exe",
+        "LeagueClientUx.exe",
+        "LeagueClient.exe"
+      ]
+    },
+    {
+      "process_name_regex": [
+        "(?i)^com\\.riotgames\\.league\\.wildrift(\\..+)?$",
+        "(?i)^com\\.riotgames\\.league\\.teamfighttactics(\\..+)?$"
+      ]
+    },
+    {
       "domain_suffix": [
-        ".riotgames.com",
-        ".riot.com",
-        ".pvp.net",
-        ".leagueoflegends.com",
-        ".playvalorant.com",
-        ".vivox.com",
-        ".vxe1.vivox.com",
-        ".vxg1.vivox.com",
-        ".account.riotgames.com",
-        ".auth.riotgames.com",
-        ".api.riotgames.com",
-        ".riot-client.riotgames.com",
-        ".clientconfig.rpg.riotgames.com",
-        ".anticheat.riotgames.com",
-        ".playerpreferences.riotgames.com",
-        ".riotcdn.net",
-        ".wr-assets.riotcdn.net",
-        ".l3cdn.riotgames.com",
-        ".riotgamespatcher-a.akamaized.net"
+        "riotgames.com",
+        "riot.com",
+        "pvp.net",
+        "leagueoflegends.com",
+        "playvalorant.com",
+        "vivox.com",
+        "vxe1.vivox.com",
+        "vxg1.vivox.com",
+        "account.riotgames.com",
+        "auth.riotgames.com",
+        "api.riotgames.com",
+        "riot-client.riotgames.com",
+        "clientconfig.rpg.riotgames.com",
+        "anticheat.riotgames.com",
+        "playerpreferences.riotgames.com",
+        "riotcdn.net",
+        "wr-assets.riotcdn.net",
+        "l3cdn.riotgames.com",
+        "riotgamespatcher-a.akamaized.net"
       ]
     },
     {
       "domain_keyword": [
         "riot",
         "valorant",
-        "glz",
-        "pvp"
+        "glz"
+      ]
+    },
+    {
+      "ip_asn": [
+        6507
       ]
     },
     {
@@ -37,6 +57,21 @@
         "104.160.128.0/17",
         "172.65.192.0/18",
         "15.177.0.0/18"
+      ]
+    },
+    {
+      "domain_regex": [
+        "(?i)(^|\\.)riotgames\\.com$",
+        "(?i)(^|\\.)riot\\.com$",
+        "(?i)(^|\\.)pvp\\.net$",
+        "(?i)(^|\\.)leagueoflegends\\.com$",
+        "(?i)(^|\\.)playvalorant\\.com$",
+        "(?i)(^|\\.)glz-[a-z0-9-]+\\.[a-z0-9-]+\\.a\\.pvp\\.net$",
+        "(?i)(^|\\.)[a-z0-9-]+\\.a\\.pvp\\.net$",
+        "(?i)(^|\\.)vivox\\.com$",
+        "(?i)(^|\\.)vx[a-z0-9]+\\.vivox\\.com$",
+        "(?i)(^|\\.)riotcdn\\.net$",
+        "(?i)(^|\\.)[a-z0-9-]+\\.riotcdn\\.net$"
       ]
     }
   ]
