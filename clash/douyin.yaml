@@ -18,6 +18,7 @@ payload:
   - DOMAIN,api.doupay.com
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.cn
+  - DOMAIN-SUFFIX,amemv.com
   - DOMAIN-SUFFIX,amemv.net
   - DOMAIN-SUFFIX,douyin.com
   - DOMAIN-SUFFIX,douyincdn.com
