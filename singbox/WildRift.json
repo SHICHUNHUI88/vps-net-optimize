@@ -12,12 +12,6 @@
       ]
     },
     {
-      "process_name_regex": [
-        "(?i)^com\\.riotgames\\.league\\.wildrift(\\..+)?$",
-        "(?i)^com\\.riotgames\\.league\\.teamfighttactics(\\..+)?$"
-      ]
-    },
-    {
       "domain_suffix": [
         "riotgames.com",
         "riot.com",
@@ -45,11 +39,6 @@
         "riot",
         "valorant",
         "glz"
-      ]
-    },
-    {
-      "ip_asn": [
-        6507
       ]
     },
     {
