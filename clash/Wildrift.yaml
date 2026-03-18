@@ -12,6 +12,7 @@ payload:
   - DOMAIN-SUFFIX,pvp.net
   - DOMAIN-SUFFIX,leagueoflegends.com
   - DOMAIN-SUFFIX,playvalorant.com
+  - DOMAIN-SUFFIX,myqcloud.com
   # ==== 🎧 语音系统 (Vivox - 没它没语音) ====
   - DOMAIN-SUFFIX,vivox.com
   - DOMAIN-SUFFIX,vxe1.vivox.com
