@@ -2,6 +2,16 @@
   "version": 3,
   "rules": [
     {
+      "process_name": [
+        "com.riotgames.league.wildrift",
+        "com.riotgames.league.wildrift.android",
+        "com.riotgames.league.teamfighttactics",
+        "RiotClientServices.exe",
+        "LeagueClientUx.exe",
+        "LeagueClient.exe"
+      ]
+    },
+    {
       "domain_suffix": [
         ".riotgames.com",
         ".riot.com",
