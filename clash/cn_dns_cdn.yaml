@@ -324,6 +324,18 @@ payload:
   # ===== ASN（后端基本都在阿里系 ASN 上）=====
   - IP-ASN,37963
 
+  # cilicili
+  - DOMAIN-SUFFIX,fnrlgg.com
+  - DOMAIN-SUFFIX,kpgk8zvx9.com
+  - DOMAIN-SUFFIX,pmuwlj.com
+  - DOMAIN-SUFFIX,ewukbav.live
+  - DOMAIN-SUFFIX,5p2gjr7.com
+  - DOMAIN-SUFFIX,hau3ef3.com
+  - DOMAIN-SUFFIX,pcdy5zn.com
+  - DOMAIN-SUFFIX,tk27e5k.com
+  - DOMAIN-SUFFIX,6jkn3y5.com
+  - DOMAIN-SUFFIX,vyilwh.com
+
 
   
   
