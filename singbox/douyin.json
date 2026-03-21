@@ -37,7 +37,9 @@
       "domain": [
         "lf3-static.bytednsdoc.com",
         "v5-dy-o-abtest.zjcdn.com",
-        "api.doupay.com"
+        "api.doupay.com",
+        "lf-ucenter-web.yhgfb-cn-static.com",
+        "unpkg.byted-static.com"
       ],
       "domain_suffix": [
         ".xdrtc.com",
