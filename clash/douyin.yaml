@@ -171,6 +171,7 @@ payload:
   - IP-CIDR,221.204.57.211/32,no-resolve
   - IP-CIDR,112.16.235.10/32,no-resolve
   - IP-CIDR,36.139.109.246/32,no-resolve
+  - IP-CIDR,8.134.241.67/32,no-resolve
   # ==== IPv6 ====
   - IP-CIDR6,2409:8c04:1002:8::2021/128,no-resolve
   - IP-CIDR6,240e:940:a03:1200:8922::102/128,no-resolve
