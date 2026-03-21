@@ -96,6 +96,7 @@ payload:
   - DOMAIN-SUFFIX,qishui.cn
   - DOMAIN-SUFFIX,qishui.com
   - DOMAIN-SUFFIX,qishuimusic.cn
+  - DOMAIN-SUFFIX,bjmxy.net
   # ==== 补全 CDN 与 静态资源 ====
   - DOMAIN-SUFFIX,bytev.com
   - DOMAIN-SUFFIX,bytev.net
@@ -113,6 +114,9 @@ payload:
   - DOMAIN,api.doupay.com
   - DOMAIN,lf-ucenter-web.yhgfb-cn-static.com
   - DOMAIN,unpkg.byted-static.com
+  - DOMAIN,lf3-zlink-tos.ugurl.cn
+  - DOMAIN,lf9-apk.ugapk.cn
+  - DOMAIN,apischedule.ksyungslb.com
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
   - DOMAIN-SUFFIX,getui.com
@@ -166,6 +170,7 @@ payload:
   - IP-CIDR,42.237.112.78/32,no-resolve
   - IP-CIDR,221.204.57.211/32,no-resolve
   - IP-CIDR,112.16.235.10/32,no-resolve
+  - IP-CIDR,36.139.109.246/32,no-resolve
   # ==== IPv6 ====
   - IP-CIDR6,2409:8c04:1002:8::2021/128,no-resolve
   - IP-CIDR6,240e:940:a03:1200:8922::102/128,no-resolve
