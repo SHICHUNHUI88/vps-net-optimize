@@ -12,6 +12,7 @@ payload:
   - PROCESS-NAME-WILDCARD,*Anthropic*
   - PROCESS-NAME-WILDCARD,*anthropic*
   # 域名
+  - DOMAIN,cdn.usefathom.com
   - DOMAIN,claude.ai
   - DOMAIN-SUFFIX,claude.ai
   - DOMAIN,api.anthropic.com
