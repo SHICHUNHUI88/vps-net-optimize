@@ -14,8 +14,6 @@ payload:
   - PROCESS-NAME,com.vega.edit
   - PROCESS-NAME,com.dragon.read
   - PROCESS-NAME,com.ss.android.auto
-  # 子域名
-  - DOMAIN,api.doupay.com
   # ==== 字节跳动系 核心域名 ====
   - DOMAIN-SUFFIX,amemv.cn
   - DOMAIN-SUFFIX,amemv.com
@@ -112,6 +110,9 @@ payload:
   - DOMAIN,ice-stunserver.xdrtc.com.gtm.xdrtc.com
   - DOMAIN,lf3-static.bytednsdoc.com
   - DOMAIN,v5-dy-o-abtest.zjcdn.com
+  - DOMAIN,api.doupay.com
+  - DOMAIN,lf-ucenter-web.yhgfb-cn-static.com
+  - DOMAIN,unpkg.byted-static.com
   # ❓ 抖音不知域名
   - DOMAIN-SUFFIX,ndcpp.com
   - DOMAIN-SUFFIX,getui.com
